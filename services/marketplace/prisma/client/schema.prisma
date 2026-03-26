@@ -1,0 +1,114 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+// ── Enums ─────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PLACED
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  RETURNED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  RAZORPAY
+  COD
+}
+
+// ── Models ────────────────────────────────────────────────────
+
+model Order {
+  id          String @id @default(uuid())
+  orderNumber String @unique
+  farmerId    String // MongoDB ObjectId (cross-service reference)
+  supplierId  String // MongoDB ObjectId
+
+  // Items stored as JSON array
+  items Json // OrderItem[]
+
+  // Amounts (in paise for precision — BUG-011 fix)
+  subtotalPaise Int
+  taxPaise      Int
+  shippingPaise Int
+  totalPaise    Int
+
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+
+  // Razorpay fields (BUG-011 fix: actual payment integration)
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  razorpaySignature String?
+  paidAt            DateTime?
+
+  orderStatus OrderStatus @default(PLACED)
+
+  // Shipping
+  shippingAddress   Json // AddressDto
+  trackingNumber    String?
+  carrier           String?
+  estimatedDelivery DateTime?
+  actualDelivery    DateTime?
+
+  notes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([farmerId])
+  @@index([supplierId])
+  @@index([orderStatus])
+  @@index([paymentStatus])
+  @@index([createdAt(sort: Desc)])
+}
+
+model CartItem {
+  id         String   @id @default(uuid())
+  farmerId   String
+  productId  String
+  supplierId String
+  quantity   Int
+  snapshot   Json // ProductDto snapshot at time of add
+  addedAt    DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([farmerId, productId])
+  @@index([farmerId])
+}
+
+model Review {
+  id         String   @id @default(uuid())
+  productId  String
+  supplierId String
+  farmerId   String
+  orderId    String?
+  rating     Int // 1-5
+  title      String
+  body       String   @db.Text
+  isVerified Boolean  @default(false)
+  isFlagged  Boolean  @default(false)
+  flagReason String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId])
+  @@index([supplierId])
+  @@index([farmerId])
+}

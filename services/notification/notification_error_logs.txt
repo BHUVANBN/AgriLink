@@ -1,0 +1,6 @@
+
+> @agrilink/notification@1.0.0 dev /home/batman/AgriLink_v2/services/notification
+> tsx watch --tsconfig tsconfig.json src/index.ts
+
+[03:13:00.301] [32mINFO[39m (1900782): [36m[smtp] Email transporter verified ✓[39m
+ ELIFECYCLE  Command failed.

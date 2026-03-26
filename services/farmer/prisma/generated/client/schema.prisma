@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model FarmerProfile {
+  id              String  @id @default(uuid())
+  userId          String  @unique
+  userMongoId     String?
+  ethAddress      String? // Polygon/Ethereum address for land agreements
+  annualIncomeINR Float? // For government scheme matching
+
+  // Identity
+  nameEnglish     String?
+  nameKannada     String?
+  nameDisplay     String?
+  nameNormalized  String?
+  dob             String?
+  gender          String?
+  aadhaarAddress  String?
+  aadhaarVerified Boolean @default(false)
+  aadhaarDocCid   String?
+  aadhaarCloudUrl String?
+
+  // Land
+  district         String?
+  taluk            String?
+  hobli            String?
+  village          String?
+  surveyNumber     String?
+  hissaNumber      String?
+  totalExtentRaw   String?
+  totalExtentAcres Float?
+  soilType         String?
+  irrigationType   String?
+  rtcOwnerName     String?
+  rtcVerified      Boolean @default(false)
+  rtcDocCid        String?
+  rtcCloudUrl      String?
+  landSketchUrl    String?
+  landBoundary     Json? // GeoJSON or [[lat,lng]] array for the parcel
+  centerLat        Float?
+  centerLng        Float?
+
+  // Verification
+  nameMatchConfidence Float?
+  nameMatchStatus     String @default("pending")
+
+  // KYC
+  kycStatus          String    @default("not_started")
+  kycSubmittedAt     DateTime?
+  kycApprovedAt      DateTime?
+  kycRejectedAt      DateTime?
+  kycRejectionReason String?
+
+  // Land Integration
+  readyToIntegrate Boolean @default(false)
+
+  // Advanced Eligibility
+  landOwnershipType    String? // OWNED, LEASED, TENANT
+  casteCategory        String? // SC, ST, OBC, GENERAL
+  isIncomeTaxPayer     Boolean  @default(false)
+  isGovtEmployee       Boolean  @default(false)
+  hasKCC               Boolean  @default(false)
+  hasAadhaarLinkedBank Boolean  @default(false)
+  hasLivestock         Boolean  @default(false)
+  farmingType          String   @default("CONVENTIONAL") // ORGANIC, CONVENTIONAL
+  cropsGrown           String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kycStatus])
+  @@index([readyToIntegrate])
+  @@map("farmer_profiles")
+}
+
+model LandAgreementIndex {
+  id            String   @id @default(uuid())
+  agreementId   String   @unique
+  creatorUserId String
+  partnerUserId String
+  status        String   @default("pending") // pending | signed | revoked
+  createdAt     DateTime @default(now())
+
+  @@index([creatorUserId])
+  @@index([partnerUserId])
+  @@map("land_agreements")
+}

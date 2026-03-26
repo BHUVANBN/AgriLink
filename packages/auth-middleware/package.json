@@ -1,0 +1,23 @@
+{
+  "name": "@agrilink/auth-middleware",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/jwt": "^9.1.0",
+    "@types/node": "^20.17.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "fastify": "^5.8.2",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.0"
+  }
+}

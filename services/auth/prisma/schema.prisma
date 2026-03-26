@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  phone              String
+  passwordHash       String
+  role               String
+  fullName           String?
+  companyName        String?
+  emailVerified      Boolean   @default(false)
+  emailOtpHash       String?
+  otpExpiresAt       DateTime?
+  otpResendAfter     DateTime?
+  kycStatus          String    @default("not_started")
+  kycSubmittedAt     DateTime?
+  kycReviewedAt      DateTime?
+  kycReviewedBy      String?
+  kycRejectionReason String?
+  // Document Evidence (for Admin Review)
+  aadhaarUrl         String?
+  rtcUrl             String?
+  
+  // Cross-doc verification results
+  nameMatchConfidence Float?
+  nameMatchStatus     String?   @default("pending")
+  
+  tokenVersion       Int       @default(0)
+  isActive           Boolean   @default(true)
+  suspendedAt        DateTime?
+  suspendedBy        String?
+  suspendReason      String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([role, kycStatus])
+  @@index([kycStatus, kycSubmittedAt])
+  @@index([isActive, role])
+  @@map("users")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String   // User ID who performed the action
+  targetId  String?  // ID of user/scheme/order affected
+  action    String   // e.g., "KYC_APPROVE", "USER_SUSPEND", "CONFIG_UPDATE"
+  metadata  Json?    // Contextual data (reasons, old values, etc.)
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId, createdAt(sort: Desc)])
+  @@index([targetId, action])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  key       String   @id
+  value     String
+  isActive  Boolean  @default(true)
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+
+  @@map("system_configs")
+}

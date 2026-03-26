@@ -1,0 +1,2248 @@
+{
+    "groups": {},
+    "commodities": {
+        "0": [],
+        "1": [
+            {
+                "id": 28,
+                "name": "Bajra(Pearl Millet/Cumbu)"
+            },
+            {
+                "id": 29,
+                "name": "Barley(Jau)"
+            },
+            {
+                "id": 461,
+                "name": "Barnyard Millet"
+            },
+            {
+                "id": 216,
+                "name": "Beaten Rice"
+            },
+            {
+                "id": 465,
+                "name": "Browntop Millet"
+            },
+            {
+                "id": 467,
+                "name": "Chakhao(Black Rice)"
+            },
+            {
+                "id": 104,
+                "name": "Foxtail Millet(Navane)"
+            },
+            {
+                "id": 102,
+                "name": "Hybrid Cumbu"
+            },
+            {
+                "id": 442,
+                "name": "Jaee"
+            },
+            {
+                "id": 5,
+                "name": "Jowar(Sorghum)"
+            },
+            {
+                "id": 101,
+                "name": "Kodo Millet(Varagu)"
+            },
+            {
+                "id": 344,
+                "name": "Kutki"
+            },
+            {
+                "id": 498,
+                "name": "Little Millet "
+            },
+            {
+                "id": 4,
+                "name": "Maize"
+            },
+            {
+                "id": 343,
+                "name": "Paddy(Basmati)"
+            },
+            {
+                "id": 2,
+                "name": "Paddy(Common)"
+            },
+            {
+                "id": 511,
+                "name": "Proso Millet"
+            },
+            {
+                "id": 30,
+                "name": "Ragi(Finger Millet)"
+            },
+            {
+                "id": 446,
+                "name": "Rala"
+            },
+            {
+                "id": 3,
+                "name": "Rice"
+            },
+            {
+                "id": 225,
+                "name": "Sajje"
+            },
+            {
+                "id": 105,
+                "name": "Same/Savi"
+            },
+            {
+                "id": 239,
+                "name": "Soji"
+            },
+            {
+                "id": 534,
+                "name": "Sweet Corn "
+            },
+            {
+                "id": 103,
+                "name": "T.V. Cumbu"
+            },
+            {
+                "id": 1,
+                "name": "Wheat"
+            }
+        ],
+        "2": [
+            {
+                "id": 234,
+                "name": "Alasande Gram"
+            },
+            {
+                "id": 214,
+                "name": "Arhar Dal(Tur Dal)"
+            },
+            {
+                "id": 45,
+                "name": "Arhar(Tur/Red Gram)(Whole)"
+            },
+            {
+                "id": 223,
+                "name": "Avare Dal"
+            },
+            {
+                "id": 80,
+                "name": "Beans"
+            },
+            {
+                "id": 217,
+                "name": "Bengal Gram Dal(Chana Dal)"
+            },
+            {
+                "id": 6,
+                "name": "Bengal Gram(Gram)(Whole)"
+            },
+            {
+                "id": 97,
+                "name": "Big Gram"
+            },
+            {
+                "id": 218,
+                "name": "Black Gram Dal(Urd Dal)"
+            },
+            {
+                "id": 8,
+                "name": "Black Gram(Urd Beans)(Whole)"
+            },
+            {
+                "id": 237,
+                "name": "Bullar"
+            },
+            {
+                "id": 246,
+                "name": "Chennangi Dal"
+            },
+            {
+                "id": 198,
+                "name": "Chennangi(Whole)"
+            },
+            {
+                "id": 78,
+                "name": "Cowpea(Lobia/Karamani)"
+            },
+            {
+                "id": 77,
+                "name": "Dal(Avare)"
+            },
+            {
+                "id": 475,
+                "name": "Field Gram"
+            },
+            {
+                "id": 219,
+                "name": "Green Gram Dal(Moong Dal)"
+            },
+            {
+                "id": 9,
+                "name": "Green Gram(Moong)(Whole)"
+            },
+            {
+                "id": 46,
+                "name": "Green Peas"
+            },
+            {
+                "id": 342,
+                "name": "Guar Seed(Cluster Beans Seed)"
+            },
+            {
+                "id": 309,
+                "name": "Kabuli Chana(Chickpeas-White)"
+            },
+            {
+                "id": 99,
+                "name": "Karamani"
+            },
+            {
+                "id": 491,
+                "name": "Kidney Beans(Rajma)"
+            },
+            {
+                "id": 98,
+                "name": "Kulthi(Horse Gram)"
+            },
+            {
+                "id": 81,
+                "name": "Lak(Teora)"
+            },
+            {
+                "id": 52,
+                "name": "Lentil(Masur)(Whole)"
+            },
+            {
+                "id": 213,
+                "name": "Masur Dal"
+            },
+            {
+                "id": 79,
+                "name": "Mataki"
+            },
+            {
+                "id": 452,
+                "name": "Moath Dal"
+            },
+            {
+                "id": 82,
+                "name": "Other Pulses"
+            },
+            {
+                "id": 295,
+                "name": "Peas(Dry)"
+            },
+            {
+                "id": 7,
+                "name": "Red Gram"
+            },
+            {
+                "id": 518,
+                "name": "Rice Bean"
+            },
+            {
+                "id": 539,
+                "name": "Tevada"
+            },
+            {
+                "id": 100,
+                "name": "Thinai(Italian Millet)"
+            },
+            {
+                "id": 341,
+                "name": "White Peas"
+            },
+            {
+                "id": 541,
+                "name": "Wild Bean / Pod"
+            },
+            {
+                "id": 345,
+                "name": "buttery"
+            }
+        ],
+        "3": [
+            {
+                "id": 106,
+                "name": "Castor Seed"
+            },
+            {
+                "id": 96,
+                "name": "Coconut Seed"
+            },
+            {
+                "id": 111,
+                "name": "Copra"
+            },
+            {
+                "id": 84,
+                "name": "Cotton Seed"
+            },
+            {
+                "id": 222,
+                "name": "Ground Nut Seed"
+            },
+            {
+                "id": 10,
+                "name": "Groundnut"
+            },
+            {
+                "id": 265,
+                "name": "Groundnut(Split)"
+            },
+            {
+                "id": 232,
+                "name": "Gurellu"
+            },
+            {
+                "id": 107,
+                "name": "Honge seed"
+            },
+            {
+                "id": 493,
+                "name": "Kuchur - Kusum Seed"
+            },
+            {
+                "id": 444,
+                "name": "Laha"
+            },
+            {
+                "id": 56,
+                "name": "Linseed"
+            },
+            {
+                "id": 12,
+                "name": "Mustard"
+            },
+            {
+                "id": 83,
+                "name": "Niger Seed(Ramtil)"
+            },
+            {
+                "id": 48,
+                "name": "Safflower"
+            },
+            {
+                "id": 521,
+                "name": "Sal Seeds"
+            },
+            {
+                "id": 11,
+                "name": "Sesamum(Sesame,Gingelly,Til)"
+            },
+            {
+                "id": 449,
+                "name": "Soha"
+            },
+            {
+                "id": 13,
+                "name": "Soyabean"
+            },
+            {
+                "id": 14,
+                "name": "Sunflower"
+            },
+            {
+                "id": 238,
+                "name": "Sunflower Seed"
+            },
+            {
+                "id": 211,
+                "name": "Suva(Dill Seed)"
+            },
+            {
+                "id": 63,
+                "name": "Taramira"
+            },
+            {
+                "id": 55,
+                "name": "Toria"
+            }
+        ],
+        "4": [
+            {
+                "id": 346,
+                "name": "Ambady/Mesta/Patson"
+            },
+            {
+                "id": 15,
+                "name": "Cotton"
+            },
+            {
+                "id": 16,
+                "name": "Jute"
+            },
+            {
+                "id": 233,
+                "name": "Lint"
+            },
+            {
+                "id": 117,
+                "name": "Sanai/Sunhemp"
+            }
+        ],
+        "5": [
+            {
+                "id": 303,
+                "name": "Amla(Nelli Kai)"
+            },
+            {
+                "id": 17,
+                "name": "Apple"
+            },
+            {
+                "id": 276,
+                "name": "Apricot(Jardalu/Khumani)"
+            },
+            {
+                "id": 458,
+                "name": "Avocado"
+            },
+            {
+                "id": 347,
+                "name": "Bael"
+            },
+            {
+                "id": 19,
+                "name": "Banana"
+            },
+            {
+                "id": 304,
+                "name": "Ber(Zizyphus/Borehannu)"
+            },
+            {
+                "id": 462,
+                "name": "Bilimbi"
+            },
+            {
+                "id": 463,
+                "name": "Black Currant"
+            },
+            {
+                "id": 464,
+                "name": "Blueberry"
+            },
+            {
+                "id": 159,
+                "name": "Borehannu"
+            },
+            {
+                "id": 426,
+                "name": "Bread Fruit"
+            },
+            {
+                "id": 466,
+                "name": "Carissa(Karvand)"
+            },
+            {
+                "id": 158,
+                "name": "Chakotha"
+            },
+            {
+                "id": 278,
+                "name": "Cherry"
+            },
+            {
+                "id": 58,
+                "name": "Chikoos(Sapota)"
+            },
+            {
+                "id": 300,
+                "name": "Custard Apple(Sharifa)"
+            },
+            {
+                "id": 424,
+                "name": "Dragon fruit"
+            },
+            {
+                "id": 477,
+                "name": "Garcinia"
+            },
+            {
+                "id": 423,
+                "name": "Goose berry(Nellikkai)"
+            },
+            {
+                "id": 22,
+                "name": "Grapes"
+            },
+            {
+                "id": 484,
+                "name": "Grey Fruit"
+            },
+            {
+                "id": 156,
+                "name": "Guava"
+            },
+            {
+                "id": 486,
+                "name": "Hog Plum"
+            },
+            {
+                "id": 487,
+                "name": "Indian Sherbet Berry(Phalsa)"
+            },
+            {
+                "id": 153,
+                "name": "Jack Fruit(Ripe)"
+            },
+            {
+                "id": 155,
+                "name": "Jamun(Narale Hannu)"
+            },
+            {
+                "id": 157,
+                "name": "Karbuja(Musk Melon)"
+            },
+            {
+                "id": 443,
+                "name": "Khirni"
+            },
+            {
+                "id": 284,
+                "name": "Kinnow"
+            },
+            {
+                "id": 492,
+                "name": "Kiwi Fruit"
+            },
+            {
+                "id": 151,
+                "name": "Lime"
+            },
+            {
+                "id": 299,
+                "name": "Litchi"
+            },
+            {
+                "id": 285,
+                "name": "Lukad"
+            },
+            {
+                "id": 20,
+                "name": "Mango"
+            },
+            {
+                "id": 499,
+                "name": "Mangosteen"
+            },
+            {
+                "id": 152,
+                "name": "Marasebu"
+            },
+            {
+                "id": 64,
+                "name": "Mousambi(Sweet Lime)"
+            },
+            {
+                "id": 502,
+                "name": "Mulberry"
+            },
+            {
+                "id": 181,
+                "name": "Nearle Hannu"
+            },
+            {
+                "id": 182,
+                "name": "Nelli Kai"
+            },
+            {
+                "id": 18,
+                "name": "Orange"
+            },
+            {
+                "id": 59,
+                "name": "Papaya"
+            },
+            {
+                "id": 504,
+                "name": "Passion Fruit"
+            },
+            {
+                "id": 281,
+                "name": "Peach"
+            },
+            {
+                "id": 280,
+                "name": "Pear(Marasebu)"
+            },
+            {
+                "id": 277,
+                "name": "Persimon(Japani Fal)"
+            },
+            {
+                "id": 21,
+                "name": "Pineapple"
+            },
+            {
+                "id": 279,
+                "name": "Plum"
+            },
+            {
+                "id": 160,
+                "name": "Pomegranate"
+            },
+            {
+                "id": 513,
+                "name": "Quince(Nakh)"
+            },
+            {
+                "id": 514,
+                "name": "Rambutan"
+            },
+            {
+                "id": 447,
+                "name": "Ramphal"
+            },
+            {
+                "id": 162,
+                "name": "Seetapal"
+            },
+            {
+                "id": 154,
+                "name": "Siddota"
+            },
+            {
+                "id": 527,
+                "name": "Soursop"
+            },
+            {
+                "id": 528,
+                "name": "Star Fruit(Kamraikh)"
+            },
+            {
+                "id": 529,
+                "name": "Strawberry"
+            },
+            {
+                "id": 161,
+                "name": "Tender Coconut"
+            },
+            {
+                "id": 425,
+                "name": "Water Apple"
+            },
+            {
+                "id": 60,
+                "name": "Water Melon"
+            },
+            {
+                "id": 544,
+                "name": "Wild Melon"
+            },
+            {
+                "id": 427,
+                "name": "Wild lemon"
+            },
+            {
+                "id": 428,
+                "name": "Wood Apple"
+            }
+        ],
+        "6": [
+            {
+                "id": 455,
+                "name": "Aloe Vera"
+            },
+            {
+                "id": 138,
+                "name": "Alsandikai"
+            },
+            {
+                "id": 72,
+                "name": "Amaranthus"
+            },
+            {
+                "id": 456,
+                "name": "Ambat Chuka"
+            },
+            {
+                "id": 348,
+                "name": "Amranthas Red"
+            },
+            {
+                "id": 457,
+                "name": "Arrowroot"
+            },
+            {
+                "id": 69,
+                "name": "Ashgourd"
+            },
+            {
+                "id": 459,
+                "name": "Baby Corn"
+            },
+            {
+                "id": 420,
+                "name": "Bajji chilli"
+            },
+            {
+                "id": 228,
+                "name": "Balekai"
+            },
+            {
+                "id": 460,
+                "name": "Bamboo Shoot"
+            },
+            {
+                "id": 76,
+                "name": "Banana - Green"
+            },
+            {
+                "id": 414,
+                "name": "Banana Leaf"
+            },
+            {
+                "id": 412,
+                "name": "Banana flower"
+            },
+            {
+                "id": 413,
+                "name": "Banana stem"
+            },
+            {
+                "id": 129,
+                "name": "Beetroot"
+            },
+            {
+                "id": 71,
+                "name": "Bhindi(Ladies Finger)"
+            },
+            {
+                "id": 47,
+                "name": "Binoula"
+            },
+            {
+                "id": 67,
+                "name": "Bitter gourd"
+            },
+            {
+                "id": 68,
+                "name": "Bottle gourd"
+            },
+            {
+                "id": 32,
+                "name": "Brinjal"
+            },
+            {
+                "id": 416,
+                "name": "Brocoli"
+            },
+            {
+                "id": 126,
+                "name": "Cabbage"
+            },
+            {
+                "id": 136,
+                "name": "Capsicum"
+            },
+            {
+                "id": 125,
+                "name": "Carrot"
+            },
+            {
+                "id": 31,
+                "name": "Cauliflower"
+            },
+            {
+                "id": 141,
+                "name": "Chapparad Avare"
+            },
+            {
+                "id": 468,
+                "name": "Chhappan Kaddu"
+            },
+            {
+                "id": 74,
+                "name": "Chilly Capsicum"
+            },
+            {
+                "id": 139,
+                "name": "Chow Chow"
+            },
+            {
+                "id": 66,
+                "name": "Cluster beans"
+            },
+            {
+                "id": 269,
+                "name": "Colacasia"
+            },
+            {
+                "id": 39,
+                "name": "Coriander(Leaves)"
+            },
+            {
+                "id": 75,
+                "name": "Cowpea(Veg)"
+            },
+            {
+                "id": 131,
+                "name": "Cucumbar(Kheera)"
+            },
+            {
+                "id": 415,
+                "name": "Curry Leaf"
+            },
+            {
+                "id": 421,
+                "name": "Double Beans"
+            },
+            {
+                "id": 140,
+                "name": "Drumstick"
+            },
+            {
+                "id": 135,
+                "name": "Duster Beans"
+            },
+            {
+                "id": 247,
+                "name": "Elephant Yam(Suran)/Amorphophallus"
+            },
+            {
+                "id": 474,
+                "name": "Field Bean(Anumulu)"
+            },
+            {
+                "id": 53,
+                "name": "Field Pea"
+            },
+            {
+                "id": 249,
+                "name": "French Beans(Frasbean)"
+            },
+            {
+                "id": 298,
+                "name": "Galgal(Lemon)"
+            },
+            {
+                "id": 25,
+                "name": "Garlic"
+            },
+            {
+                "id": 479,
+                "name": "Gherkin"
+            },
+            {
+                "id": 568,
+                "name": "Gholbhaji"
+            },
+            {
+                "id": 480,
+                "name": "Ghost Pepper(King Chilli)"
+            },
+            {
+                "id": 87,
+                "name": "Ginger(Green)"
+            },
+            {
+                "id": 482,
+                "name": "Goosefoot"
+            },
+            {
+                "id": 306,
+                "name": "Gram Raw(Chholia)"
+            },
+            {
+                "id": 137,
+                "name": "Green Avare(W)"
+            },
+            {
+                "id": 73,
+                "name": "Green Chilli"
+            },
+            {
+                "id": 263,
+                "name": "Groundnut pods(raw)"
+            },
+            {
+                "id": 62,
+                "name": "Guar"
+            },
+            {
+                "id": 250,
+                "name": "Indian Beans(Seam)"
+            },
+            {
+                "id": 292,
+                "name": "Indian Colza(Sarson)"
+            },
+            {
+                "id": 489,
+                "name": "Jackfruit Seed"
+            },
+            {
+                "id": 556,
+                "name": "Jackfruit(Green/Raw/Unripe)"
+            },
+            {
+                "id": 147,
+                "name": "Jamamkhan"
+            },
+            {
+                "id": 256,
+                "name": "Kartali(Kantola)"
+            },
+            {
+                "id": 149,
+                "name": "Knool Khol"
+            },
+            {
+                "id": 127,
+                "name": "Ladies Finger"
+            },
+            {
+                "id": 143,
+                "name": "Leafy Vegetable"
+            },
+            {
+                "id": 495,
+                "name": "Leek"
+            },
+            {
+                "id": 261,
+                "name": "Lemon"
+            },
+            {
+                "id": 497,
+                "name": "Lesser Yam"
+            },
+            {
+                "id": 253,
+                "name": "Little gourd(Kundru)"
+            },
+            {
+                "id": 255,
+                "name": "Long Melon(Kakri)"
+            },
+            {
+                "id": 287,
+                "name": "Lotus Sticks"
+            },
+            {
+                "id": 144,
+                "name": "Mango(Raw-Ripe)"
+            },
+            {
+                "id": 288,
+                "name": "Mashrooms"
+            },
+            {
+                "id": 500,
+                "name": "Meal Maker (Soya Chunks)"
+            },
+            {
+                "id": 558,
+                "name": "Mentha(Mint)"
+            },
+            {
+                "id": 42,
+                "name": "Methi(Leaves)"
+            },
+            {
+                "id": 307,
+                "name": "Mint(Pudina)"
+            },
+            {
+                "id": 23,
+                "name": "Onion"
+            },
+            {
+                "id": 305,
+                "name": "Onion Green"
+            },
+            {
+                "id": 349,
+                "name": "Other green and fresh vegetables"
+            },
+            {
+                "id": 264,
+                "name": "Papaya(Raw)"
+            },
+            {
+                "id": 259,
+                "name": "Pea Pod/Pea Cod/\u0939\u0930\u0940 \u092e\u091f\u0930"
+            },
+            {
+                "id": 146,
+                "name": "Peas Wet"
+            },
+            {
+                "id": 252,
+                "name": "Pegeon Pea(Arhar Fali)"
+            },
+            {
+                "id": 418,
+                "name": "Perandai"
+            },
+            {
+                "id": 505,
+                "name": "Phuee(Leafy Veg)"
+            },
+            {
+                "id": 254,
+                "name": "Pointed gourd(Parval)"
+            },
+            {
+                "id": 509,
+                "name": "Pokcha Leafy Veg"
+            },
+            {
+                "id": 24,
+                "name": "Potato"
+            },
+            {
+                "id": 70,
+                "name": "Pumpkin"
+            },
+            {
+                "id": 512,
+                "name": "Purslane"
+            },
+            {
+                "id": 133,
+                "name": "Raddish"
+            },
+            {
+                "id": 258,
+                "name": "Rat Tail Radish(Mogari)"
+            },
+            {
+                "id": 422,
+                "name": "Red Cabbage"
+            },
+            {
+                "id": 516,
+                "name": "Red Gourd"
+            },
+            {
+                "id": 517,
+                "name": "Ribbed Celery"
+            },
+            {
+                "id": 519,
+                "name": "Ridge Gourd(Permal/Hybrid Gourd)"
+            },
+            {
+                "id": 132,
+                "name": "Ridgeguard(Tori)"
+            },
+            {
+                "id": 520,
+                "name": "Round Chilli"
+            },
+            {
+                "id": 257,
+                "name": "Round gourd"
+            },
+            {
+                "id": 230,
+                "name": "Season Leaves"
+            },
+            {
+                "id": 148,
+                "name": "Seemebadnekai"
+            },
+            {
+                "id": 523,
+                "name": "Sem"
+            },
+            {
+                "id": 419,
+                "name": "Siru Kizhagu"
+            },
+            {
+                "id": 128,
+                "name": "Snakeguard"
+            },
+            {
+                "id": 526,
+                "name": "Snow Mountain Garlic"
+            },
+            {
+                "id": 290,
+                "name": "Spinach"
+            },
+            {
+                "id": 262,
+                "name": "Sponge gourd"
+            },
+            {
+                "id": 282,
+                "name": "Squash(Chappal Kadoo)"
+            },
+            {
+                "id": 530,
+                "name": "Sugar Snap Peas"
+            },
+            {
+                "id": 417,
+                "name": "Sundaikai"
+            },
+            {
+                "id": 251,
+                "name": "Surat Beans(Papadi)"
+            },
+            {
+                "id": 150,
+                "name": "Suvarna Gadde"
+            },
+            {
+                "id": 531,
+                "name": "Swan Phali(Flat Bean)"
+            },
+            {
+                "id": 124,
+                "name": "Sweet Potato"
+            },
+            {
+                "id": 145,
+                "name": "Sweet Pumpkin"
+            },
+            {
+                "id": 535,
+                "name": "Sweet Saag"
+            },
+            {
+                "id": 85,
+                "name": "Tapioca"
+            },
+            {
+                "id": 537,
+                "name": "Taro (Arvi) Leaves"
+            },
+            {
+                "id": 538,
+                "name": "Taro (Arvi) Stem"
+            },
+            {
+                "id": 142,
+                "name": "Thogrikai"
+            },
+            {
+                "id": 134,
+                "name": "Thondekai"
+            },
+            {
+                "id": 297,
+                "name": "Tinda"
+            },
+            {
+                "id": 65,
+                "name": "Tomato"
+            },
+            {
+                "id": 260,
+                "name": "Turmeric(raw)"
+            },
+            {
+                "id": 289,
+                "name": "Turnip"
+            },
+            {
+                "id": 130,
+                "name": "White Pumpkin"
+            },
+            {
+                "id": 542,
+                "name": "Wild Cucumber"
+            },
+            {
+                "id": 543,
+                "name": "Wild Garlic / Shoots"
+            },
+            {
+                "id": 545,
+                "name": "Wild Spinach"
+            },
+            {
+                "id": 546,
+                "name": "Yam Bean / Mexican Turnip(Bankla)"
+            },
+            {
+                "id": 248,
+                "name": "Yam(Ratalu)"
+            }
+        ],
+        "7": [
+            {
+                "id": 115,
+                "name": "Ajwan"
+            },
+            {
+                "id": 434,
+                "name": "Asgand"
+            },
+            {
+                "id": 37,
+                "name": "Betelnuts"
+            },
+            {
+                "id": 34,
+                "name": "Black pepper"
+            },
+            {
+                "id": 36,
+                "name": "Cardamoms"
+            },
+            {
+                "id": 26,
+                "name": "Chili Red"
+            },
+            {
+                "id": 267,
+                "name": "Cinamon(Dalchini)"
+            },
+            {
+                "id": 89,
+                "name": "Cloves"
+            },
+            {
+                "id": 266,
+                "name": "Coca"
+            },
+            {
+                "id": 116,
+                "name": "Coconut"
+            },
+            {
+                "id": 92,
+                "name": "Corriander seed"
+            },
+            {
+                "id": 38,
+                "name": "Cummin Seed(Jeera)"
+            },
+            {
+                "id": 113,
+                "name": "Dry Chillies"
+            },
+            {
+                "id": 481,
+                "name": "Ginger Seed"
+            },
+            {
+                "id": 27,
+                "name": "Ginger(Dry)"
+            },
+            {
+                "id": 268,
+                "name": "Kacholam"
+            },
+            {
+                "id": 494,
+                "name": "Large Cardamom"
+            },
+            {
+                "id": 91,
+                "name": "Mace"
+            },
+            {
+                "id": 43,
+                "name": "Methi Seeds"
+            },
+            {
+                "id": 445,
+                "name": "Muskmelon Seeds"
+            },
+            {
+                "id": 90,
+                "name": "Nutmeg"
+            },
+            {
+                "id": 93,
+                "name": "Pepper garbled"
+            },
+            {
+                "id": 94,
+                "name": "Pepper ungarbled"
+            },
+            {
+                "id": 448,
+                "name": "Rayee"
+            },
+            {
+                "id": 286,
+                "name": "Saffron"
+            },
+            {
+                "id": 114,
+                "name": "Soanf"
+            },
+            {
+                "id": 35,
+                "name": "Turmeric"
+            },
+            {
+                "id": 352,
+                "name": "dried mango"
+            },
+            {
+                "id": 351,
+                "name": "mango powder"
+            },
+            {
+                "id": 353,
+                "name": "nigella"
+            },
+            {
+                "id": 350,
+                "name": "poppy seeds"
+            }
+        ],
+        "8": [
+            {
+                "id": 275,
+                "name": "Almond(Badam)"
+            },
+            {
+                "id": 33,
+                "name": "Cashewnuts"
+            },
+            {
+                "id": 472,
+                "name": "Dates"
+            },
+            {
+                "id": 231,
+                "name": "Dry Grapes"
+            },
+            {
+                "id": 476,
+                "name": "Fig (Dry)"
+            },
+            {
+                "id": 557,
+                "name": "Makhana(Foxnut)"
+            },
+            {
+                "id": 507,
+                "name": "Pine Nut(Chilgoza /Niyoza)"
+            },
+            {
+                "id": 508,
+                "name": "Pista(Pistachio)"
+            },
+            {
+                "id": 291,
+                "name": "Walnut"
+            }
+        ],
+        "9": [
+            {
+                "id": 553,
+                "name": "Chicory(Chikori/Kasni)"
+            },
+            {
+                "id": 88,
+                "name": "Cocoa"
+            },
+            {
+                "id": 41,
+                "name": "Coffee"
+            },
+            {
+                "id": 483,
+                "name": "Green Tea"
+            },
+            {
+                "id": 40,
+                "name": "Tea"
+            }
+        ],
+        "10": [
+            {
+                "id": 454,
+                "name": "Ajwain Husk"
+            },
+            {
+                "id": 242,
+                "name": "Bran"
+            },
+            {
+                "id": 244,
+                "name": "Broken Rice"
+            },
+            {
+                "id": 183,
+                "name": "Bunch Beans"
+            },
+            {
+                "id": 302,
+                "name": "Camel Hair"
+            },
+            {
+                "id": 196,
+                "name": "Cashew Kernnel"
+            },
+            {
+                "id": 469,
+                "name": "Coconut Coir"
+            },
+            {
+                "id": 57,
+                "name": "Dhaincha"
+            },
+            {
+                "id": 554,
+                "name": "Dhaincha(Seed)"
+            },
+            {
+                "id": 293,
+                "name": "Dry Fodder"
+            },
+            {
+                "id": 308,
+                "name": "Egypian Clover(Barseem)"
+            },
+            {
+                "id": 180,
+                "name": "Fig(Anjura/Anjeer)"
+            },
+            {
+                "id": 439,
+                "name": "Flax seeds"
+            },
+            {
+                "id": 301,
+                "name": "Goat Hair"
+            },
+            {
+                "id": 245,
+                "name": "Gramflour"
+            },
+            {
+                "id": 294,
+                "name": "Green Fodder"
+            },
+            {
+                "id": 61,
+                "name": "Gur(Jaggery)"
+            },
+            {
+                "id": 208,
+                "name": "Haralekai"
+            },
+            {
+                "id": 485,
+                "name": "Hilsa"
+            },
+            {
+                "id": 194,
+                "name": "Honey"
+            },
+            {
+                "id": 207,
+                "name": "Javi"
+            },
+            {
+                "id": 567,
+                "name": "Khandsari(Desi Khand)"
+            },
+            {
+                "id": 50,
+                "name": "Kharif Mash"
+            },
+            {
+                "id": 319,
+                "name": "Khoya"
+            },
+            {
+                "id": 200,
+                "name": "Kuchur"
+            },
+            {
+                "id": 433,
+                "name": "Ma.Inji"
+            },
+            {
+                "id": 340,
+                "name": "Mahedi"
+            },
+            {
+                "id": 241,
+                "name": "Maida Atta"
+            },
+            {
+                "id": 184,
+                "name": "Maragensu"
+            },
+            {
+                "id": 49,
+                "name": "Mash"
+            },
+            {
+                "id": 195,
+                "name": "Millets"
+            },
+            {
+                "id": 202,
+                "name": "Nargasi"
+            },
+            {
+                "id": 197,
+                "name": "Polherb"
+            },
+            {
+                "id": 210,
+                "name": "Pundi"
+            },
+            {
+                "id": 551,
+                "name": "Rab/Liquid Jaggery/Molasses"
+            },
+            {
+                "id": 205,
+                "name": "Rajgir"
+            },
+            {
+                "id": 515,
+                "name": "Raw Biomass(Agro Residue)"
+            },
+            {
+                "id": 54,
+                "name": "Raya"
+            },
+            {
+                "id": 51,
+                "name": "Riccbcan"
+            },
+            {
+                "id": 95,
+                "name": "Rubber"
+            },
+            {
+                "id": 243,
+                "name": "Sabu Dan"
+            },
+            {
+                "id": 204,
+                "name": "Sarasum"
+            },
+            {
+                "id": 209,
+                "name": "Seegu"
+            },
+            {
+                "id": 561,
+                "name": "Sehuwan (Seed)"
+            },
+            {
+                "id": 185,
+                "name": "Skin And Hide"
+            },
+            {
+                "id": 203,
+                "name": "Sompu"
+            },
+            {
+                "id": 44,
+                "name": "Sugar"
+            },
+            {
+                "id": 122,
+                "name": "Sugarcane"
+            },
+            {
+                "id": 199,
+                "name": "Suram"
+            },
+            {
+                "id": 432,
+                "name": "Tulasi"
+            },
+            {
+                "id": 540,
+                "name": "Water Plant(Kaseru)"
+            },
+            {
+                "id": 450,
+                "name": "Water chestnut"
+            },
+            {
+                "id": 240,
+                "name": "Wheat Atta"
+            },
+            {
+                "id": 296,
+                "name": "Wool"
+            },
+            {
+                "id": 201,
+                "name": "Yam"
+            }
+        ],
+        "11": [
+            {
+                "id": 118,
+                "name": "Arecanut(Betelnut/Supari)"
+            },
+            {
+                "id": 373,
+                "name": "Asalia"
+            },
+            {
+                "id": 435,
+                "name": "Ashoka"
+            },
+            {
+                "id": 372,
+                "name": "Ashwagandha"
+            },
+            {
+                "id": 363,
+                "name": "Asparagus"
+            },
+            {
+                "id": 436,
+                "name": "Atis"
+            },
+            {
+                "id": 121,
+                "name": "Betal Leaves"
+            },
+            {
+                "id": 367,
+                "name": "Chandrashoor"
+            },
+            {
+                "id": 470,
+                "name": "Coleus"
+            },
+            {
+                "id": 212,
+                "name": "Isabgul(Psyllium)"
+            },
+            {
+                "id": 488,
+                "name": "Isbgol"
+            },
+            {
+                "id": 496,
+                "name": "Lemongrass"
+            },
+            {
+                "id": 550,
+                "name": "MENETC*3"
+            },
+            {
+                "id": 283,
+                "name": "Mahua"
+            },
+            {
+                "id": 501,
+                "name": "Mentha Oil"
+            },
+            {
+                "id": 375,
+                "name": "Muesli"
+            },
+            {
+                "id": 357,
+                "name": "Muleti"
+            },
+            {
+                "id": 120,
+                "name": "Myrobolan(Harad)"
+            },
+            {
+                "id": 503,
+                "name": "Neem Fruits"
+            },
+            {
+                "id": 370,
+                "name": "Palash flowers"
+            },
+            {
+                "id": 354,
+                "name": "Poppy capsules"
+            },
+            {
+                "id": 376,
+                "name": "Pupadia"
+            },
+            {
+                "id": 532,
+                "name": "Swan Plant (Green Herb)"
+            },
+            {
+                "id": 562,
+                "name": "Tendu Leaves/Kendu leaves/Bidi Leaves"
+            },
+            {
+                "id": 119,
+                "name": "Tobacco"
+            },
+            {
+                "id": 366,
+                "name": "Vatsanabha"
+            },
+            {
+                "id": 358,
+                "name": "White Muesli"
+            },
+            {
+                "id": 364,
+                "name": "basil"
+            },
+            {
+                "id": 371,
+                "name": "dhawai flowers"
+            },
+            {
+                "id": 368,
+                "name": "karanja seeds"
+            },
+            {
+                "id": 355,
+                "name": "kutki"
+            },
+            {
+                "id": 361,
+                "name": "liquor turmeric"
+            },
+            {
+                "id": 356,
+                "name": "macoy"
+            },
+            {
+                "id": 374,
+                "name": "nigella seeds"
+            },
+            {
+                "id": 360,
+                "name": "pippali"
+            },
+            {
+                "id": 362,
+                "name": "sanay"
+            },
+            {
+                "id": 369,
+                "name": "stevia"
+            },
+            {
+                "id": 359,
+                "name": "stone pulverizer"
+            },
+            {
+                "id": 365,
+                "name": "vadang"
+            }
+        ],
+        "12": [
+            {
+                "id": 380,
+                "name": "Absinthe"
+            },
+            {
+                "id": 112,
+                "name": "Ambada Seed"
+            },
+            {
+                "id": 169,
+                "name": "Antawala"
+            },
+            {
+                "id": 164,
+                "name": "Bamboo"
+            },
+            {
+                "id": 271,
+                "name": "Bay leaf(Tejpatta)"
+            },
+            {
+                "id": 437,
+                "name": "Behada"
+            },
+            {
+                "id": 377,
+                "name": "Bhui Amlaya"
+            },
+            {
+                "id": 378,
+                "name": "Brahmi"
+            },
+            {
+                "id": 270,
+                "name": "Broomstick(Flower Broom)"
+            },
+            {
+                "id": 165,
+                "name": "Cane"
+            },
+            {
+                "id": 552,
+                "name": "Catechu(Black Cutch/ Khair/Katha)"
+            },
+            {
+                "id": 438,
+                "name": "Chironji"
+            },
+            {
+                "id": 563,
+                "name": "Engineered Wood/Processed Wood"
+            },
+            {
+                "id": 166,
+                "name": "Firewood"
+            },
+            {
+                "id": 312,
+                "name": "Flower Broom"
+            },
+            {
+                "id": 381,
+                "name": "Giloy"
+            },
+            {
+                "id": 440,
+                "name": "Gond"
+            },
+            {
+                "id": 382,
+                "name": "Gudmar"
+            },
+            {
+                "id": 383,
+                "name": "Guggal"
+            },
+            {
+                "id": 441,
+                "name": "Harrah"
+            },
+            {
+                "id": 108,
+                "name": "Hippe Seed"
+            },
+            {
+                "id": 555,
+                "name": "Imarti Wood(Good Quality)"
+            },
+            {
+                "id": 170,
+                "name": "Jute Seed"
+            },
+            {
+                "id": 385,
+                "name": "Kalihari"
+            },
+            {
+                "id": 386,
+                "name": "Kalmegh"
+            },
+            {
+                "id": 388,
+                "name": "Kooth"
+            },
+            {
+                "id": 318,
+                "name": "Mahua Seed(Hippe seed)"
+            },
+            {
+                "id": 109,
+                "name": "Neem Seed"
+            },
+            {
+                "id": 559,
+                "name": "Popular Wood"
+            },
+            {
+                "id": 110,
+                "name": "Pundi Seed"
+            },
+            {
+                "id": 560,
+                "name": "Rambans(Agave /Century plant)"
+            },
+            {
+                "id": 389,
+                "name": "Ratanjot"
+            },
+            {
+                "id": 272,
+                "name": "Resinwood"
+            },
+            {
+                "id": 522,
+                "name": "Salix-Pursi(Willow)"
+            },
+            {
+                "id": 379,
+                "name": "Sandalwood"
+            },
+            {
+                "id": 167,
+                "name": "Soapnut(Antawala/Retha)"
+            },
+            {
+                "id": 215,
+                "name": "Tamarind Fruit"
+            },
+            {
+                "id": 168,
+                "name": "Tamarind Seed"
+            },
+            {
+                "id": 273,
+                "name": "Torchwood"
+            },
+            {
+                "id": 451,
+                "name": "Wax"
+            },
+            {
+                "id": 163,
+                "name": "Wood"
+            },
+            {
+                "id": 565,
+                "name": "Wood Veneer"
+            },
+            {
+                "id": 564,
+                "name": "Wooden Stick / Wooden Pole"
+            },
+            {
+                "id": 390,
+                "name": "gulli"
+            },
+            {
+                "id": 387,
+                "name": "kokum"
+            },
+            {
+                "id": 384,
+                "name": "spikenard"
+            }
+        ],
+        "13": [
+            {
+                "id": 173,
+                "name": "Bull"
+            },
+            {
+                "id": 174,
+                "name": "Calf"
+            },
+            {
+                "id": 315,
+                "name": "Cock"
+            },
+            {
+                "id": 171,
+                "name": "Cow"
+            },
+            {
+                "id": 471,
+                "name": "Crab"
+            },
+            {
+                "id": 473,
+                "name": "Dry Fish"
+            },
+            {
+                "id": 317,
+                "name": "Duck"
+            },
+            {
+                "id": 314,
+                "name": "Egg"
+            },
+            {
+                "id": 313,
+                "name": "Fish"
+            },
+            {
+                "id": 178,
+                "name": "Goat"
+            },
+            {
+                "id": 175,
+                "name": "He Buffalo"
+            },
+            {
+                "id": 316,
+                "name": "Hen"
+            },
+            {
+                "id": 172,
+                "name": "Ox"
+            },
+            {
+                "id": 179,
+                "name": "Pigs"
+            },
+            {
+                "id": 510,
+                "name": "Prawn"
+            },
+            {
+                "id": 235,
+                "name": "Ram"
+            },
+            {
+                "id": 176,
+                "name": "She Buffalo"
+            },
+            {
+                "id": 236,
+                "name": "She Goat"
+            },
+            {
+                "id": 177,
+                "name": "Sheep"
+            },
+            {
+                "id": 524,
+                "name": "Shrimp"
+            },
+            {
+                "id": 525,
+                "name": "Silk Cocoon"
+            }
+        ],
+        "14": [
+            {
+                "id": 326,
+                "name": "Anthorium"
+            },
+            {
+                "id": 190,
+                "name": "Astera"
+            },
+            {
+                "id": 327,
+                "name": "BOP"
+            },
+            {
+                "id": 409,
+                "name": "Calendula"
+            },
+            {
+                "id": 322,
+                "name": "Carnation"
+            },
+            {
+                "id": 331,
+                "name": "Chrysanthemum"
+            },
+            {
+                "id": 189,
+                "name": "Chrysanthemum(Loose)"
+            },
+            {
+                "id": 407,
+                "name": "Clarkia"
+            },
+            {
+                "id": 401,
+                "name": "Cossandra"
+            },
+            {
+                "id": 329,
+                "name": "Daila(Chandni)"
+            },
+            {
+                "id": 339,
+                "name": "Delha"
+            },
+            {
+                "id": 566,
+                "name": "Flowers-Others"
+            },
+            {
+                "id": 400,
+                "name": "Gamphrena"
+            },
+            {
+                "id": 478,
+                "name": "Gerbera"
+            },
+            {
+                "id": 311,
+                "name": "Gladiolus Bulb"
+            },
+            {
+                "id": 310,
+                "name": "Gladiolus Cut Flower"
+            },
+            {
+                "id": 391,
+                "name": "Glardia"
+            },
+            {
+                "id": 403,
+                "name": "Heliconia species"
+            },
+            {
+                "id": 394,
+                "name": "Irish"
+            },
+            {
+                "id": 335,
+                "name": "Jaffri"
+            },
+            {
+                "id": 323,
+                "name": "Jarbara"
+            },
+            {
+                "id": 187,
+                "name": "Jasmine"
+            },
+            {
+                "id": 490,
+                "name": "Kagda"
+            },
+            {
+                "id": 188,
+                "name": "Kakada"
+            },
+            {
+                "id": 191,
+                "name": "Kankambra"
+            },
+            {
+                "id": 410,
+                "name": "Kevda"
+            },
+            {
+                "id": 325,
+                "name": "Lilly"
+            },
+            {
+                "id": 399,
+                "name": "Limonia(status)"
+            },
+            {
+                "id": 332,
+                "name": "Lotus"
+            },
+            {
+                "id": 408,
+                "name": "Lupine"
+            },
+            {
+                "id": 336,
+                "name": "Marget"
+            },
+            {
+                "id": 193,
+                "name": "Marigold(Calcutta)"
+            },
+            {
+                "id": 334,
+                "name": "Marigold(loose)"
+            },
+            {
+                "id": 431,
+                "name": "Marikozhunthu"
+            },
+            {
+                "id": 429,
+                "name": "Nerium"
+            },
+            {
+                "id": 328,
+                "name": "Orchid"
+            },
+            {
+                "id": 333,
+                "name": "Patti Calcutta"
+            },
+            {
+                "id": 506,
+                "name": "Pincushion Flower"
+            },
+            {
+                "id": 338,
+                "name": "Raibel"
+            },
+            {
+                "id": 321,
+                "name": "Rose(Local)"
+            },
+            {
+                "id": 186,
+                "name": "Rose(Loose))"
+            },
+            {
+                "id": 320,
+                "name": "Rose(Tata)"
+            },
+            {
+                "id": 533,
+                "name": "Swanflower"
+            },
+            {
+                "id": 395,
+                "name": "Sweet Sultan"
+            },
+            {
+                "id": 192,
+                "name": "Tube Flower"
+            },
+            {
+                "id": 330,
+                "name": "Tube Rose(Double)"
+            },
+            {
+                "id": 337,
+                "name": "Tube Rose(Loose)"
+            },
+            {
+                "id": 324,
+                "name": "Tube Rose(Single)"
+            },
+            {
+                "id": 392,
+                "name": "Tulip"
+            },
+            {
+                "id": 411,
+                "name": "balsam"
+            },
+            {
+                "id": 396,
+                "name": "cineraria"
+            },
+            {
+                "id": 405,
+                "name": "dianthus"
+            },
+            {
+                "id": 404,
+                "name": "golden rod"
+            },
+            {
+                "id": 398,
+                "name": "gypsophila"
+            },
+            {
+                "id": 402,
+                "name": "hydrangea"
+            },
+            {
+                "id": 430,
+                "name": "kakatan"
+            },
+            {
+                "id": 397,
+                "name": "salvia"
+            },
+            {
+                "id": 393,
+                "name": "sevanti"
+            },
+            {
+                "id": 406,
+                "name": "sweet william"
+            }
+        ]
+    },
+    "districts": {},
+    "markets": {}
+}

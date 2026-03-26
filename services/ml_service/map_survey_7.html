@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Survey No. 7 — Land Plot</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: sans-serif; display:flex; flex-direction:column; height:100vh; }
+  #header {
+    padding: 10px 18px;
+    background: #1a1a2e;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  #header h1 { font-size: 15px; font-weight: 600; }
+  #header .meta { font-size: 12px; color: #aaa; }
+  #header .stats { display:flex; gap:16px; }
+  .stat { text-align:center; }
+  .stat-val { font-size:15px; font-weight:600; color:#10b981; }
+  .stat-lbl { font-size:10px; color:#64748b; text-transform: uppercase; letter-spacing: 0.1em; }
+  #controls {
+    padding: 8px 18px;
+    background: #f8f8f8;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    padding: 5px 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .btn.active { background:#10b981; color:#fff; border-color:#10b981; }
+  #map { flex:1; background: #0f172a; }
+  .edge-label {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid #10b981;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #2e7d32;
+    white-space: nowrap;
+  }
+  .corner-label {
+    background: rgba(52,152,219,0.9);
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+  }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div>
+    <h1>Survey No. 7 — Land Plot</h1>
+    <div class="meta">13.63308°N, 75.43586°E &nbsp;|&nbsp; Karnataka, India</div>
+  </div>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val">12</div>
+      <div class="stat-lbl">Vertices</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">5995 m²</div>
+      <div class="stat-lbl">Area</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val">1.481</div>
+      <div class="stat-lbl">Acres</div>
+    </div>
+  </div>
+</div>
+
+<div id="controls">
+  <span style="font-size:13px;color:#555;font-weight:500;">Map layer:</span>
+  <button class="btn" onclick="setLayer('street',this)">Street</button>
+  <button class="btn active" onclick="setLayer('satellite',this)">Satellite</button>
+  <button class="btn" onclick="setLayer('topo',this)">Topo</button>
+  <button class="btn" onclick="setLayer('cadastral',this)">Cadastral (K-GIS)</button>
+  <span style="margin-left:auto;font-size:12px;color:#888;">Zoom: <span id="zoom-lbl">18</span></span>
+</div>
+
+<div id="map"></div>
+
+<script>
+const CENTER    = [13.63308, 75.43586];
+const POLYGON   = [[13.63359002, 75.43609643], [13.63347621, 75.43597933], [13.6334032, 75.43561695], [13.63319706, 75.43546228], [13.63298447, 75.43550868], [13.63297373, 75.43547553], [13.632963, 75.4355131], [13.63261298, 75.43558159], [13.63274826, 75.43591525], [13.63289428, 75.4360876], [13.63278047, 75.43615388], [13.63272249, 75.43630635]];
+const EDGE_LBLS = [];
+const MIDS      = [[13.633533114999999, 75.43603788], [13.633439705, 75.43579814], [13.63330013, 75.435539615], [13.633090765, 75.43548548], [13.6329791, 75.43549210500001], [13.632968365, 75.435494315], [13.63278799, 75.435547345], [13.632680619999999, 75.43574842], [13.63282127, 75.436001425], [13.632837375000001, 75.43612074], [13.63275148, 75.436230115], [13.633156255, 75.43620139000001]];
+
+const map = L.map('map', { zoomControl: true }).setView(CENTER, 17);
+map.on('zoomend', () => document.getElementById('zoom-lbl').textContent = map.getZoom());
+
+const LAYERS = {
+  street: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors', maxZoom: 18
+  }),
+  satellite: L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    { attribution: '© Esri World Imagery', maxZoom: 18 }
+  ),
+  topo: L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenTopoMap', maxZoom: 18
+  }),
+  cadastral: L.tileLayer.wms(
+    'https://kgis.ksrsac.in/kgis/services/cadastral/MapServer/WMSServer',
+    { layers:'0', format:'image/png', transparent:true, opacity:0.7,
+       attribution:'© KSRSAC K-GIS' }
+  ),
+};
+
+LAYERS.satellite.addTo(map);
+let activeLayerKey = 'satellite';
+let cadastralOverlay = null;
+
+window.setLayer = function(key, btn) {
+  document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  if (key === 'cadastral') {
+    if (!cadastralOverlay) {
+      cadastralOverlay = LAYERS.cadastral;
+      cadastralOverlay.addTo(map);
+    }
+    return;
+  }
+  if (cadastralOverlay) { map.removeLayer(cadastralOverlay); cadastralOverlay = null; }
+  if (activeLayerKey !== key) {
+    map.removeLayer(LAYERS[activeLayerKey]);
+    LAYERS[key].addTo(map);
+    activeLayerKey = key;
+  }
+};
+
+// ── Polygon ──────────────────────────────────────────────────
+const poly = L.polygon(POLYGON, {
+  color: '#e53935',
+  weight: 2.5,
+  fillColor: '#e53935',
+  fillOpacity: 0.18,
+}).addTo(map);
+
+poly.bindPopup(
+  `<b>Survey No. 7</b><br>
+   Lat: 13.63308°N<br>Lon: 75.43586°E<br>
+   Vertices: 12<br>
+   Area: 5995 m² (1.481 acres)`
+);
+
+// ── Vertex markers removed ──
+
+// ── Edge length labels ───────────────────────────────────────
+if (EDGE_LBLS.length > 0) {
+  MIDS.forEach(([lat,lon], i) => {
+    const lbl = EDGE_LBLS[i] || '';
+    if (!lbl) return;
+    const icon = L.divIcon({
+      html: `<div class="edge-label">${lbl}m</div>`,
+      iconSize: null, className: '', iconAnchor: [20, 10]
+    });
+    L.marker([lat,lon], {icon, interactive:false}).addTo(map);
+  });
+}
+
+// ── Centre marker removed ──
+
+// Map zoom is fixed to 18 via setView
+// map.fitBounds(poly.getBounds(), { padding:[30,30] });
+</script>
+</body>
+</html>

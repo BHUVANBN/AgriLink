@@ -1,0 +1,145 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+enum VerificationStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Supplier {
+  id          String  @id @default(uuid())
+  userId      String  @unique // Auth service user ID
+  companyName String
+  email       String  @unique
+  phone       String
+  upiId       String?
+  gstNumber   String?
+  avatarUrl   String?
+
+  address Json // AddressDto
+
+  businessType      String?
+  yearsInOperation  String?
+  productCategories String[]
+
+  // KYC Documents — stored as Cloudinary/IPFS URLs (BUG-009 fix: no auto-verify)
+  businessCertUrl String?
+  tradeLicenseUrl String?
+  ownerIdProofUrl String?
+  gstCertUrl      String?
+
+  kycStatus          VerificationStatus @default(NOT_STARTED)
+  kycSubmittedAt     DateTime?
+  kycReviewedAt      DateTime?
+  kycReviewedBy      String? // Admin user ID
+  kycRejectionReason String?
+
+  isActive Boolean @default(true)
+
+  products  Product[]
+  orders    SupplierOrder[]
+  analytics DailyAnalytics[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kycStatus])
+  @@index([email])
+}
+
+model Product {
+  id         String   @id @default(uuid())
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  name             String
+  slug             String   @unique
+  sku              String   @unique
+  category         String // ProductCategory enum string
+  description      String   @db.Text
+  price            Int // In paise
+  mrp              Int // Maximum retail price in paise
+  unit             String // "kg", "litre", "piece"
+  stockQuantity    Int      @default(0)
+  reorderThreshold Int      @default(5)
+  images           String[] // Cloudinary URLs
+  tags             String[]
+  status           String   @default("draft") // active | inactive | draft
+
+  specifications Json?
+  weight         Float? // grams
+  rating         Float? @default(0)
+  reviewCount    Int    @default(0)
+
+  inventoryLogs InventoryLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([supplierId])
+  @@index([category])
+  @@index([status])
+  @@index([slug])
+}
+
+model InventoryLog {
+  id         String  @id @default(uuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplierId String
+
+  change        Int // Positive = restock, negative = deduction
+  reason        String // manual | sale | return | restock | adjustment
+  referenceId   String? // Order ID, etc.
+  previousStock Int
+  newStock      Int
+  notes         String?
+
+  createdAt DateTime @default(now())
+
+  @@index([productId, createdAt(sort: Desc)])
+  @@index([supplierId, createdAt(sort: Desc)])
+}
+
+model SupplierOrder {
+  id            String   @id @default(uuid())
+  orderNumber   String   @unique
+  supplierId    String
+  supplier      Supplier @relation(fields: [supplierId], references: [id])
+  farmerId      String // Cross-service ref
+  items         Json // OrderItem[]
+  totalPaise    Int
+  paymentStatus String   @default("pending")
+  orderStatus   String   @default("placed")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([supplierId, createdAt(sort: Desc)])
+  @@index([farmerId])
+}
+
+model DailyAnalytics {
+  id                String   @id @default(uuid())
+  supplierId        String
+  supplier          Supplier @relation(fields: [supplierId], references: [id])
+  date              DateTime @db.Date
+  revenuePaise      Int      @default(0)
+  orderCount        Int      @default(0)
+  unitsSold         Int      @default(0)
+  topProductId      String?
+  categoryBreakdown Json?
+
+  createdAt DateTime @default(now())
+
+  @@unique([supplierId, date])
+  @@index([supplierId, date(sort: Desc)])
+}

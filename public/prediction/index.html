@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriLink - Price Prediction & Market Trends</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-decor blur-1"></div>
+    <div class="background-decor blur-2"></div>
+    
+    <main class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">📡</span>
+                <h1>AgriLink <span>Market AI</span></h1>
+            </div>
+            <p class="subtitle">AI-powered price forecasting and historical market trends for Karnataka.</p>
+        </header>
+
+        <!-- Search Controls -->
+        <section class="controls glass">
+            <div class="grid-form">
+                <div class="input-group">
+                    <label for="group-select">Commodity Group</label>
+                    <select id="group-select" class="custom-select">
+                        <option value="">Select Category</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="commodity-select">Commodity</label>
+                    <select id="commodity-select" class="custom-select" disabled>
+                        <option value="">Select Crop</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="district-select">District</label>
+                    <select id="district-select" class="custom-select">
+                        <option value="">Select District</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="market-select">Market</label>
+                    <select id="market-select" class="custom-select" disabled>
+                        <option value="">Select Market</option>
+                    </select>
+                </div>
+            </div>
+            <button id="predict-btn" class="btn-primary" disabled>
+                <span>🚀 ANALYZE & PREDICT</span>
+            </button>
+        </section>
+
+        <!-- Prediction Summary Section (Hidden initially) -->
+        <div id="results-area" class="hidden">
+            <div class="results-grid">
+                <!-- Data Table Stats -->
+                <div class="stats-card glass">
+                    <h3>Current Trends</h3>
+                    <div class="stats-list">
+                        <div class="stat-item">
+                            <span class="label">Average Market Price</span>
+                            <span class="value" id="current-price">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Predicted Next Month</span>
+                            <span class="value highlight" id="p1-price">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Best Selling Window</span>
+                            <span class="value" id="best-window">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="label">Confidence Score</span>
+                            <span class="value" id="confidence-score">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Curve Graph -->
+                <div class="graph-card glass">
+                    <div class="graph-header">
+                        <h3>Price Forecast (Next 4 Months)</h3>
+                        <div class="legend">
+                            <span class="legend-dot historical"></span> Historical 
+                            <span class="legend-dot forecast"></span> Prediction
+                        </div>
+                    </div>
+                    <div class="canvas-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Historical Table -->
+            <section class="historical-section glass">
+                <div class="table-header">
+                    <h3>Historical Monthly Trends</h3>
+                    <button class="btn-export">Export CSV</button>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Period</th>
+                                <th>Avg. Price (₹/q)</th>
+                                <th>Min Price</th>
+                                <th>Max Price</th>
+                                <th>Confidence</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historical-data">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loader" class="loader-overlay hidden">
+            <div class="loader-content">
+                <div class="spinner"></div>
+                <p>Analyzing 5 years of historical data...</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

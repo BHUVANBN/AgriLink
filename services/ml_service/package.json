@@ -1,0 +1,12 @@
+{
+  "name": "@agrilink/ml-service",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "./venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 4006",
+    "start": "./venv/bin/python -m uvicorn main:app --host 0.0.0.0 --port 4006",
+    "test": "echo \"No tests for ML service currently implemented\" && exit 0",
+    "build": "echo \"Python service, no build step required\" && exit 0",
+    "lint": "echo \"Python service, no lint step required\" && exit 0"
+  }
+}

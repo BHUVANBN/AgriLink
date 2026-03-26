@@ -1,0 +1,59 @@
+
+> @agrilink/web@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.12
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 3.6s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/29) ...
+   Generating static pages (7/29) 
+   Generating static pages (14/29) 
+   Generating static pages (21/29) 
+ ✓ Generating static pages (29/29)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    4.49 kB         150 kB
+├ ○ /_not-found                             1 kB         104 kB
+├ ○ /auth/login                          2.78 kB         153 kB
+├ ○ /auth/register                       4.22 kB         155 kB
+├ ○ /dashboard/admin                     4.85 kB         160 kB
+├ ○ /dashboard/admin/kyc                  7.4 kB         163 kB
+├ ○ /dashboard/admin/orders              4.02 kB         155 kB
+├ ○ /dashboard/admin/schemes             8.07 kB         164 kB
+├ ○ /dashboard/admin/users               4.08 kB         160 kB
+├ ○ /dashboard/farmer                    8.67 kB         164 kB
+├ ○ /dashboard/farmer/integration        9.57 kB         165 kB
+├ ○ /dashboard/farmer/kyc                8.79 kB         164 kB
+├ ○ /dashboard/farmer/land               6.85 kB         166 kB
+├ ○ /dashboard/farmer/notifications      4.26 kB         160 kB
+├ ○ /dashboard/farmer/prices              110 kB         266 kB
+├ ○ /dashboard/farmer/schemes            5.63 kB         165 kB
+├ ○ /dashboard/farmer/settings           4.96 kB         161 kB
+├ ○ /dashboard/supplier                  5.45 kB         161 kB
+├ ○ /dashboard/supplier/analytics        4.38 kB         160 kB
+├ ○ /dashboard/supplier/orders           4.92 kB         161 kB
+├ ○ /dashboard/supplier/products         6.08 kB         162 kB
+├ ○ /dashboard/supplier/products/new     5.42 kB         161 kB
+├ ○ /dashboard/supplier/settings         7.15 kB         163 kB
+├ ○ /marketplace                         6.45 kB         162 kB
+├ ○ /marketplace/cart                     3.4 kB         159 kB
+├ ○ /marketplace/checkout                7.87 kB         163 kB
+├ ○ /marketplace/orders                  3.73 kB         154 kB
+├ ƒ /marketplace/orders/[id]             4.87 kB         155 kB
+└ ƒ /marketplace/products/[id]           7.25 kB         163 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/8e6518bb-41b37ae15f2f5c04.js  54.2 kB
+  ├ chunks/9743-9e655addfb40fdf2.js      45.9 kB
+  └ other shared chunks (total)          2.53 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

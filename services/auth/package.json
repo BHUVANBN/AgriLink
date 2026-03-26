@@ -1,0 +1,48 @@
+{
+  "name": "@agrilink/auth",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --tsconfig tsconfig.json src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@agrilink/types": "workspace:*",
+    "@fastify/cookie": "^11.0.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/helmet": "^13.0.0",
+    "@fastify/jwt": "^9.0.0",
+    "@fastify/rate-limit": "^10.2.0",
+    "@fastify/swagger": "^9.7.0",
+    "@fastify/swagger-ui": "^5.2.5",
+    "@prisma/client": "^6.5.0",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.0",
+    "fastify": "^5.3.0",
+    "ioredis": "^5.6.0",
+    "jsonwebtoken": "^9.0.3",
+    "kafkajs": "^2.2.4",
+    "nodemailer": "^7.0.11",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.17.0",
+    "@types/nodemailer": "^7.0.4",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "pino-pretty": "^13.0.0",
+    "prisma": "^6.5.0",
+    "supertest": "^7.2.2",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.0"
+  }
+}

@@ -1,0 +1,24 @@
+
+> @agrilink/web@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.12
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 3.4s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/dashboard/supplier/products/page.tsx:203:199
+Type error: Cannot find name 'ArrowRight'.
+
+[0m [90m 201 |[39m            {pagination [33m&&[39m pagination[33m.[39mpages [33m>[39m [35m1[39m [33m&&[39m (
+ [90m 202 |[39m               [33m<[39m[33mdiv[39m className[33m=[39m[32m"mt-20 border-t border-white/5 pt-12 flex items-center justify-center gap-3"[39m[33m>[39m
+[31m[1m>[22m[39m[90m 203 |[39m                  [33m<[39m[33mbutton[39m disabled[33m=[39m{[33m![39mpagination[33m.[39mhasPrev} onClick[33m=[39m{() [33m=>[39m setPage(p [33m=>[39m p [33m-[39m [35m1[39m)} className[33m=[39m[32m"p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all disabled:opacity-20"[39m[33m>[39m[33m<[39m[33mArrowRight[39m className[33m=[39m[32m"w-5 h-5 rotate-180"[39m [33m/[39m[33m>[39m[33m<[39m[33m/[39m[33mbutton[39m[33m>[39m
+ [90m     |[39m                                                                                                                                                                                                       [31m[1m^[22m[39m
+ [90m 204 |[39m                  [33m<[39m[33mspan[39m className[33m=[39m[32m"text-[10px] font-black text-slate-600 uppercase tracking-widest px-6"[39m[33m>[39m[33mVector[39m {pagination[33m.[39mpage} [36mof[39m {pagination[33m.[39mpages}[33m<[39m[33m/[39m[33mspan[39m[33m>[39m
+ [90m 205 |[39m                  [33m<[39m[33mbutton[39m disabled[33m=[39m{[33m![39mpagination[33m.[39mhasNext} onClick[33m=[39m{() [33m=>[39m setPage(p [33m=>[39m p [33m+[39m [35m1[39m)} className[33m=[39m[32m"p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all disabled:opacity-20"[39m[33m>[39m[33m<[39m[33mArrowRight[39m className[33m=[39m[32m"w-5 h-5"[39m [33m/[39m[33m>[39m[33m<[39m[33m/[39m[33mbutton[39m[33m>[39m
+ [90m 206 |[39m               [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null

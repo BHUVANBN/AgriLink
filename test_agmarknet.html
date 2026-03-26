@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agmarknet Data Test</title>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Agmarknet Data Test</h1>
+    <button onclick="fetchData()">Fetch Data</button>
+    <div id="result"></div>
+
+    <script>
+        async function fetchData() {
+            const url = 'https://api.agmarknet.gov.in/v1/all-type-report/all-type-report?type=3&from_date=2024-03-01&to_date=2026-03-19&msp=0&period=date&group=%5B1%5D&commodity=%5B30%5D&state=%5B16%5D&district=%5B261%5D&market=%5B%5D&page=1&options=2&limit=10';
+            
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.rows) {
+                    let table = '<table><thead><tr>';
+                    table += '<th>Date</th><th>Commodity</th><th>District</th><th>Modal Price</th><th>Min Price</th><th>Max Price</th>';
+                    table += '</tr></thead><tbody>';
+                    
+                    data.rows.forEach(row => {
+                        table += `<tr>
+                            <td>${row.rep_date}</td>
+                            <td>${row.cmdt_name}</td>
+                            <td>${row.district_name}</td>
+                            <td>₹${row.model_price_wt}</td>
+                            <td>₹${row.min_price_wt || 'N/A'}</td>
+                            <td>₹${row.max_price_wt || 'N/A'}</td>
+                        </tr>`;
+                    });
+                    
+                    table += '</tbody></table>';
+                    document.getElementById('result').innerHTML = table;
+                } else {
+                    document.getElementById('result').innerHTML = 'No data found';
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = 'Error: ' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+
+> @agrilink/web@1.0.0 build
+> next build
+
+   ▲ Next.js 15.5.12
+   - Experiments (use with caution):
+     · serverActions
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 3.7s
+   Linting and checking validity of types ...
+Failed to compile.
+
+./app/marketplace/products/[id]/page.tsx:277:26
+Type error: Cannot find name 'ArrowRight'.
+
+[0m [90m 275 |[39m                            [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m 276 |[39m                         [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+[31m[1m>[22m[39m[90m 277 |[39m                         [33m<[39m[33mArrowRight[39m className[33m=[39m[32m"w-5 h-5 text-slate-800 group-hover:text-white transition-colors"[39m [33m/[39m[33m>[39m
+ [90m     |[39m                          [31m[1m^[22m[39m
+ [90m 278 |[39m                      [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m
+ [90m 279 |[39m                   )}
+ [90m 280 |[39m                [33m<[39m[33m/[39m[33mdiv[39m[33m>[39m[0m
+Next.js build worker exited with code: 1 and signal: null

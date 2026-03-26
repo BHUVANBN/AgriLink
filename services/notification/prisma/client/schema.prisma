@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model NotificationLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  topic        String
+  channel      String
+  recipient    String
+  subject      String?
+  status       String
+  errorMessage String?
+  retryCount   Int      @default(0)
+  messageId    String?
+  createdAt    DateTime @default(now())
+
+  @@index([userId])
+  @@index([topic, status])
+  @@map("notification_logs")
+}

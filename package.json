@@ -1,0 +1,35 @@
+{
+  "name": "agrilink-v2",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "scripts": {
+    "predev": "fuser -k 3000/tcp 4001/tcp 4002/tcp 4003/tcp 4004/tcp 4005/tcp 4006/tcp 4007/tcp 8080/tcp || true",
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "test:e2e": "pnpm vitest run -c vitest.config.e2e.ts",
+    "db:generate": "turbo run db:generate",
+    "start:auth": "pnpm --filter @agrilink/auth dev",
+    "start:farmer": "pnpm --filter @agrilink/farmer dev",
+    "start:supplier": "pnpm --filter @agrilink/supplier dev",
+    "start:marketplace": "pnpm --filter @agrilink/marketplace dev",
+    "start:notification": "pnpm --filter @agrilink/notification dev",
+    "start:ml": "pnpm --filter @agrilink/ml-service dev",
+    "start:blockchain": "pnpm --filter @agrilink/blockchain dev",
+    "start:web": "pnpm --filter @agrilink/web dev"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/supertest": "^7.2.0",
+    "@vitest/coverage-v8": "^4.1.0",
+    "axios": "^1.13.6",
+    "eslint": "^9.0.0",
+    "prettier": "^3.5.0",
+    "supertest": "^7.2.2",
+    "turbo": "^2.5.0",
+    "typescript": "^5.8.0",
+    "vitest": "^4.1.0"
+  }
+}

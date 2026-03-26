@@ -1,0 +1,42 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/batman/AgriLink_v2/services/blockchain/contracts/LandAgreementRegistry.sol": {
+      "lastModificationDate": 1773351303333,
+      "contentHash": "bf607b8779e16d5cf8c054a3e67fe66a",
+      "sourceName": "contracts/LandAgreementRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.24",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "evmVersion": "paris",
+          "viaIR": true,
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "LandAgreementRegistry"
+      ]
+    }
+  }
+}
