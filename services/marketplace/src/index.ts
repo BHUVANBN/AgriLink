@@ -11,6 +11,7 @@ import { productRoutes } from './routes/products.js';
 import { cartRoutes } from './routes/cart.js';
 import { orderRoutes } from './routes/orders.js';
 import { inquiryRoutes } from './routes/inquiries.js';
+import { reviewRoutes } from './routes/reviews.js';
 import { startConsumer } from './services/kafka.js';
 import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
@@ -125,6 +126,7 @@ await fastify.register(async (app) => {
   await app.register(orderRoutes, { prefix: '/orders' });
   await app.register(cartRoutes, { prefix: '/cart' });
   await app.register(inquiryRoutes, { prefix: '/inquiries' });
+  await app.register(reviewRoutes, { prefix: '/reviews' });
 }, { prefix: '/marketplace' });
 
 // Start Kafka

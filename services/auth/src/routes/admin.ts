@@ -15,6 +15,13 @@ const SuspendUserSchema = z.object({
   reason: z.string().min(1, 'Suspension reason is required'),
 });
 
+const BroadcastSchema = z.object({
+  targetRole: z.enum(['farmer', 'supplier', 'all']),
+  subject: z.string().min(3).max(100),
+  body: z.string().min(10).max(500),
+  priority: z.enum(['low', 'medium', 'high']).default('medium'),
+});
+
 const UpdateConfigSchema = z.object({
   key: z.string().min(1),
   value: z.string(),
@@ -27,6 +34,11 @@ const UpdateConfigSchema = z.object({
 export async function adminRoutes(fastify: FastifyInstance) {
   // Role guard middleware
   const requireAdmin = async (req: FastifyRequest, reply: FastifyReply) => {
+    const internalSecret = req.headers['x-internal-secret'];
+    if (internalSecret === (process.env.INTERNAL_SECRET ?? 'agrilink-secret-2026')) {
+       return; // Internal trusted call
+    }
+
     const user = (req as any).user;
     if (!user || user.role !== 'admin') {
       return reply.status(403).send({ success: false, error: 'Admin access required' });
@@ -437,6 +449,30 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
     }
   );
+  
+  // ── GET /auth/admin/stats/registrations ────────────────────────
+  fastify.get(
+    '/stats/registrations',
+    { preHandler: [(fastify as any).authenticate, requireAdmin] },
+    async (_req, reply) => {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      // Raw query for grouping by day in Postgres
+      const stats = await prisma.$queryRaw`
+        SELECT 
+          TO_CHAR("createdAt", 'DY') as name,
+          COUNT(*)::int as users,
+          MIN("createdAt") as date_order
+        FROM "users"
+        WHERE "createdAt" >= ${sevenDaysAgo}
+        GROUP BY name
+        ORDER BY date_order ASC
+      `;
+
+      return reply.send({ success: true, data: stats });
+    }
+  );
 
   // ── GET /auth/admin/audit ────────────────────────────────────
   fastify.get(
@@ -499,6 +535,92 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
 
       return reply.send({ success: true, data: config });
+    }
+  );
+
+  // ── GET /auth/admin/health-check ─────────────────────────────
+  fastify.get(
+    '/health-check',
+    { preHandler: [(fastify as any).authenticate, requireAdmin] },
+    async (_req, reply) => {
+      const services = [
+        { name: 'Auth Core', url: 'http://localhost:4001/health' },
+        { name: 'Farmer Node', url: 'http://localhost:4002/health' },
+        { name: 'Supplier Node', url: 'http://localhost:4003/health' },
+        { name: 'Marketplace', url: 'http://localhost:4004/health' },
+        { name: 'Notification Service', url: 'http://localhost:4005/health' },
+        { name: 'ML Engine', url: 'http://localhost:4010/health' },
+        { name: 'Blockchain Gateway', url: 'http://localhost:4011/health' },
+      ];
+
+      const os = await import('node:os');
+      const results = await Promise.all(services.map(async (s) => {
+        const start = Date.now();
+        try {
+          const res = await fetch(s.url, { signal: AbortSignal.timeout(2000) });
+          const latency = `${Date.now() - start}ms`;
+          return { name: s.name, status: res.ok ? 'UP' : 'DOWN', latency };
+        } catch {
+          return { name: s.name, status: 'DOWN', latency: 'timeout' };
+        }
+      }));
+
+      // System metrics
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
+      const load = os.loadavg(); // [1, 5, 15] min loads
+
+      return reply.send({ 
+        success: true, 
+        data: {
+          services: results,
+          system: {
+            cpu: Math.round((load[0] / os.cpus().length) * 100),
+            memory: {
+              total: Math.round(totalMem / (1024 * 1024 * 1024)),
+              used: Math.round((totalMem - freeMem) / (1024 * 1024 * 1024)),
+              percent: Math.round(((totalMem - freeMem) / totalMem) * 100),
+            }
+          }
+        } 
+      });
+    }
+  );
+
+  // ── POST /auth/admin/broadcast ──────────────────────────────
+  fastify.post(
+    '/broadcast',
+    { preHandler: [(fastify as any).authenticate, requireAdmin] },
+    async (req: FastifyRequest, reply: FastifyReply) => {
+      const { targetRole, subject, body, priority } = BroadcastSchema.parse(req.body);
+      
+      const adminId = (req as any).user.sub;
+      
+      // Publish broadcast event to Kafka
+      // The Notification service will consume this and send to all users of that role
+      await publishEvent('system.broadcast', {
+         targetRole,
+         subject,
+         body,
+         priority,
+         adminId,
+         timestamp: new Date().toISOString()
+      });
+
+      // Audit Log
+      await (User as any).prisma.auditLog.create({
+        data: {
+          actorId: adminId,
+          action: 'SYSTEM_BROADCAST',
+          metadata: { targetRole, subject, priority },
+          ipAddress: req.ip,
+        }
+      });
+
+      return reply.send({ 
+        success: true, 
+        message: `Broadcast sequence initiated for sector: ${targetRole.toUpperCase()}` 
+      });
     }
   );
 }

@@ -30,6 +30,7 @@ import { withRetry } from './utils/retry.js';
 import { getTemplate } from './templates/email.templates.js';
 import { getSmsText } from './templates/sms.templates.js';
 import { NotificationLog } from './models/NotificationLog.js';
+import { getUsersForBroadcast } from './services/auth.js';
 import fastifyIO from 'fastify-socket.io';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
@@ -135,6 +136,7 @@ const TOPICS = [
   'land.agreement.signed',
   'notification.send',
   'user.registered',
+  'system.broadcast',
 ] as const;
 
 const FROM_EMAIL = process.env.SMTP_FROM ?? 'AgriLink <noreply@agrilink.app>';
@@ -364,9 +366,27 @@ async function startKafkaConsumer(): Promise<void> {
           '[kafka] Processing event'
         );
 
-        await dispatch(topic, event.data ?? event).catch((err: any) => {
-          fastify.log.error({ topic, err: err.message }, '[kafka] dispatch error');
-        });
+        if (topic === 'system.broadcast') {
+          const { targetRole, subject, body, priority } = event.data;
+          const users = await getUsersForBroadcast(targetRole);
+          fastify.log.info({ targetRole, userCount: users.length }, '[broadcast] Resolved target segment');
+          
+          await Promise.allSettled(users.map(u => 
+            dispatch('notification.send', {
+               userId: u.id,
+               email: u.email,
+               phone: u.phone,
+               subject,
+               body,
+               channels: ['email', 'web'], // Standard broadcast channels
+               priority
+            })
+          ));
+        } else {
+          await dispatch(topic, event.data ?? event).catch((err: any) => {
+            fastify.log.error({ topic, err: err.message }, '[kafka] dispatch error');
+          });
+        }
       },
     });
 

@@ -305,7 +305,11 @@ export type KafkaTopic =
   | 'land.agreement.created'
   | 'land.agreement.signed'
   | 'notification.send'
-  | 'user.registered';
+  | 'user.registered'
+  | 'system.broadcast'
+  | 'review.created'
+  | 'inquiry.created'
+  | 'inquiry.replied';
 
 export interface KafkaEvent<T = unknown> {
   eventId: string;             // UUID
