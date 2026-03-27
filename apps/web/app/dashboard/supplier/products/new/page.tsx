@@ -100,7 +100,7 @@ export default function NewProductPage() {
       <main className="lg:ml-72 p-6 lg:p-8">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-8">
-              <Link href="/dashboard/supplier/products" className="text-text-muted hover:text-white">
+              <Link href="/dashboard/supplier/products" className="text-text-muted hover:text-text-dark transition-colors">
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
@@ -121,13 +121,13 @@ export default function NewProductPage() {
                   <div>
                     <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Category *</label>
                     <select className="input-field" value={form.category} onChange={e => change('category', e.target.value)}>
-                      {CATEGORIES.map(c => <option key={c} value={c} className="capitalize bg-slate-900">{c}</option>)}
+                      {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Unit *</label>
                     <select className="input-field" value={form.unit} onChange={e => change('unit', e.target.value)}>
-                      {UNITS.map(u => <option key={u} value={u} className="bg-slate-900">{u}</option>)}
+                      {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
                 </div>
@@ -161,7 +161,7 @@ export default function NewProductPage() {
                   </div>
                 </div>
                 {form.price && form.mrp && Number(form.price) < Number(form.mrp) && (
-                  <p className="text-green-400 text-xs">✓ {Math.round(((Number(form.mrp) - Number(form.price)) / Number(form.mrp)) * 100)}% discount from MRP</p>
+                  <p className="text-brand-green text-xs font-bold">✓ {Math.round(((Number(form.mrp) - Number(form.price)) / Number(form.mrp)) * 100)}% discount from MRP realization</p>
                 )}
               </div>
 
@@ -190,9 +190,9 @@ export default function NewProductPage() {
                 </button>
               ) : (
                 <div className="space-y-4">
-                  <div className="bg-white rounded-2xl border border-[#eae6de] shadow-sm p-4 border border-green-500/30 bg-green-500/10 flex items-center gap-3">
-                    <Package className="w-5 h-5 text-green-400" />
-                    <p className="text-green-300 text-sm font-medium">Product created! Add images below.</p>
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-3">
+                    <Package className="w-5 h-5 text-emerald-600" />
+                    <p className="text-emerald-700 text-sm font-bold">Product protocol initialized! Attach visual assets below.</p>
                   </div>
 
                   {/* Image Upload */}
@@ -204,9 +204,9 @@ export default function NewProductPage() {
                           <img src={url} alt={`Product ${i+1}`} className="w-full h-full object-cover" />
                         </div>
                       ))}
-                      <label className={`w-24 h-24 rounded-xl border-2 border-dashed border-white/15 hover:border-white/30 flex flex-col items-center justify-center cursor-pointer transition-all ${uploadingImage ? 'opacity-50' : ''}`}>
-                        <Upload className="w-5 h-5 text-slate-500 mb-1" />
-                        <span className="text-slate-500 text-xs">{uploadingImage ? 'Uploading...' : 'Add image'}</span>
+                      <label className={`w-28 h-28 rounded-2xl border-2 border-dashed border-[#eae6de] hover:border-brand-green/30 hover:bg-[#f8f7f4] flex flex-col items-center justify-center cursor-pointer transition-all ${uploadingImage ? 'opacity-50' : ''}`}>
+                        <Upload className="w-6 h-6 text-slate-300 mb-2" />
+                        <span className="text-text-muted text-[10px] font-black uppercase tracking-widest">{uploadingImage ? 'Uploading...' : 'Add Image'}</span>
                         <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" disabled={uploadingImage}
                           onChange={e => e.target.files?.[0] && uploadImage(e.target.files[0])} />
                       </label>

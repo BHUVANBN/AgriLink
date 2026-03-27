@@ -2,15 +2,20 @@
 
 import useSWR from 'swr';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Package, ShoppingCart, DollarSign, Store, Bell, Settings,
   TrendingUp, TrendingDown, ChevronRight, Upload, List,
-  AlertTriangle, CheckCircle, Clock, FileCheck, LogOut, Menu, X, User, ArrowUpRight
+  AlertTriangle, CheckCircle, Clock, FileCheck, LogOut, Menu, X, User, ArrowUpRight,
+  BarChart3, History, PieChart, Activity, ShieldCheck
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import SupplierSidebar from '@/components/SupplierSidebar';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell
+} from 'recharts';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -40,16 +45,16 @@ function KycBanner({ profile }: { profile: any }) {
     <motion.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={`${c.bg} ${c.border} border p-4 rounded-2xl flex items-center gap-4 mb-8 shadow-sm`}
+      className={`${c.bg} ${c.border} border p-5 rounded-[2rem] flex items-center gap-4 mb-8 shadow-sm`}
     >
-      <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm ${c.text}`}>
+      <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm ${c.text}`}>
         <c.icon className="w-5 h-5" />
       </div>
       <div className="flex-1">
-        <p className={`${c.text} text-sm font-bold`}>{c.msg}</p>
+        <p className={`${c.text} text-sm font-bold font-serif`}>{c.msg}</p>
       </div>
       {c.action && c.href && (
-        <Link href={c.href} className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-black uppercase text-slate-700 hover:bg-slate-50 transition-colors">
+        <Link href={c.href} className="px-5 py-2.5 bg-white border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-colors shadow-sm active:scale-95">
           {c.action}
         </Link>
       )}
@@ -67,22 +72,23 @@ function StatCard({ label, value, subtext, icon: Icon, color, delta }: any) {
   }
 
   return (
-    <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-all group">
-      <div className="flex justify-between items-start mb-4">
+    <div className="bg-white rounded-[2rem] p-6 border border-[#eae6de] shadow-sm hover:shadow-soft transition-all group relative overflow-hidden">
+      <div className="flex justify-between items-start mb-6 relative z-10">
         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${colors[color] || colors.slate}`}>
           <Icon className="w-6 h-6" />
         </div>
         {delta && (
-          <div className="flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-black italic">
+          <div className="flex items-center gap-0.5 px-3 py-1 rounded-full bg-brand-green/10 text-brand-green text-[9px] font-black uppercase tracking-tighter">
             +{delta}% <ArrowUpRight className="w-3 h-3" />
           </div>
         )}
       </div>
-      <div>
-        <h4 className="text-text-dark font-serif font-bold mb-1">{label}</h4>
-        <p className="text-2xl font-black text-text-dark font-serif font-bold">{value}</p>
-        <p className="text-xs font-medium text-slate-500 mt-1">{subtext}</p>
+      <div className="relative z-10">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-text-muted mb-1 italic">{label}</h4>
+        <p className="text-3xl font-bold text-text-dark font-serif tracking-tighter">{value}</p>
+        <p className="text-[10px] font-medium text-slate-400 mt-2 uppercase tracking-widest italic">{subtext}</p>
       </div>
+      <div className="absolute bottom-0 right-0 w-24 h-24 bg-[#f8f7f4] rounded-full blur-3xl -translate-y-8 translate-x-8 opacity-50" />
     </div>
   );
 }
@@ -93,29 +99,23 @@ export default function SupplierDashboard() {
   const { data: stats, isLoading: statsLoading } = useSWR(`${API}/supplier/stats`, fetcher);
 
   useEffect(() => {
-    // Only redirect if SWR explicitly returns a 401 Unauthorized error
-    if (!isLoading && error?.status === 401) {
-      router.push('/auth/login');
-    }
+    if (!isLoading && error?.status === 401) router.push('/auth/login');
   }, [isLoading, error, router]);
 
-  if (isLoading) return <div className="min-h-screen bg-brand-bg flex items-center justify-center"><div className="animate-pulse text-brand-green font-bold text-center">Opening Business Hub...<br/><span className="text-[10px] uppercase opacity-50 font-sans tracking-widest">Supplier Portal V2.0</span></div></div>;
+  if (isLoading) return <div className="min-h-screen bg-brand-bg flex items-center justify-center"><div className="animate-pulse text-brand-green font-bold text-center">Configuring Operations Hub...<br/><span className="text-[10px] uppercase opacity-50 font-sans tracking-widest">Supplier V2 Enterprise</span></div></div>;
 
   if (error && error.status !== 401) {
     return (
       <div className="min-h-screen bg-brand-bg flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center mb-6">
-          <Store className="w-8 h-8" />
+        <div className="w-20 h-20 bg-red-100 text-red-600 rounded-[2rem] flex items-center justify-center mb-8 shadow-xl shadow-red-200/20">
+          <Store className="w-10 h-10" />
         </div>
-        <h1 className="text-2xl font-bold text-text-dark font-serif mb-2">Supplier Service Unavailable</h1>
-        <p className="text-text-muted text-sm max-w-xs mb-8">
-          We encountered an error connecting to the supplier gateway (Error {error.status}).
+        <h1 className="text-3xl font-bold text-text-dark font-serif mb-3 tracking-tighter">Gateway Synchronization Offline</h1>
+        <p className="text-text-muted text-sm max-w-xs mb-10 leading-relaxed font-medium italic">
+          We encountered a cross-service error connecting to the supplier core (Error {error.status}). Check system infrastructure.
         </p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="btn-primary"
-        >
-          Retry Connection
+        <button onClick={() => window.location.reload()} className="px-8 py-3 bg-brand-green text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-brand-green/20 hover:scale-105 active:scale-95 transition-all">
+          Retry Logic
         </button>
       </div>
     );
@@ -123,60 +123,75 @@ export default function SupplierDashboard() {
 
   if (!profile) return null;
 
+  // Transform daily analytics for the chart
+  const chartData = stats?.dailyAnalytics?.map((d: any) => ({
+    date: new Date(d.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+    revenue: d.revenuePaise / 100,
+    orders: d.orderCount
+  })).reverse() || [];
+
   return (
     <div className="min-h-screen bg-brand-bg font-sans">
-      <SupplierSidebar pageTitle="Business Overview" />
+      <SupplierSidebar pageTitle="Business Ledger" />
       
-      <main className="lg:ml-72 p-6 lg:p-8">
-        {/* Verification Alert */}
+      <main className="lg:ml-72 p-6 lg:p-12">
         <KycBanner profile={{ kycStatus: stats?.kycStatus, kycRejectionReason: profile?.kycRejectionReason }} />
 
-        {/* Welcome Block */}
-        <div className="mb-10">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h2 className="text-3xl font-bold text-text-dark font-serif">
-              Welcome back, {profile?.name?.split(' ')[0] || 'Partner'} 📦
+        {/* Welcome Section */}
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <motion.div initial={{ opacity: 0, x: -25 }} animate={{ opacity: 1, x: 0 }}>
+            <h2 className="text-5xl font-bold text-text-dark font-serif tracking-tighter">
+              Acknowledge, {profile?.name?.split(' ')[0] || 'Partner'} 👋
             </h2>
-            <p className="text-text-muted font-medium text-sm mt-1 uppercase tracking-wider text-[10px]">
-              Managing supply logistics for your agriculture hub
+            <p className="text-brand-orange font-black text-[10px] mt-2 uppercase tracking-[0.2em] italic">
+              Centralizing supply logistics for your agriculture hub // V2.0 Stable
             </p>
           </motion.div>
+          
+          <div className="flex items-center gap-4 bg-white p-2 rounded-2xl border border-[#eae6de] shadow-sm">
+             <div className="w-10 h-10 rounded-xl bg-[#f8f7f4] flex items-center justify-center text-text-muted">
+                <Clock className="w-5 h-5" />
+             </div>
+             <div>
+                <p className="text-[9px] text-text-muted font-black uppercase tracking-widest leading-none mb-1">Last Data Sync</p>
+                <p className="text-xs font-bold text-text-dark">Just now</p>
+             </div>
+          </div>
         </div>
 
-        {/* Core Business Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        {/* Core KPI Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {statsLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-44 bg-white rounded-2xl border border-[#eae6de] animate-pulse" />
+              <div key={i} className="h-44 bg-white rounded-[2rem] border border-[#eae6de] animate-pulse" />
             ))
           ) : (
             <>
               <StatCard
-                label="Total Revenue"
-                value={stats?.totalRevenue ? `₹${stats.totalRevenue.toLocaleString()}` : '₹0'}
-                subtext="All-time verified sales"
+                label="Aggregate Revenue"
+                value={`₹${(stats?.totalRevenue ?? 0).toLocaleString()}`}
+                subtext="Total verified sales volume"
                 icon={DollarSign}
                 color="green"
-                delta={12}
               />
               <StatCard
-                label="Active Stock"
+                label="Asset Density"
                 value={stats?.activeProducts ?? '0'}
-                subtext="Listed in marketplace"
+                subtext="Items active in market"
                 icon={Package}
                 color="blue"
               />
               <StatCard
-                label="New Orders"
+                label="Pipeline Queue"
                 value={stats?.pendingOrders ?? '0'}
-                subtext="Requires fulfillment"
+                subtext="Awaiting fulfillment"
                 icon={ShoppingCart}
                 color="amber"
               />
               <StatCard
-                label="Partner Tier"
+                label="Business Tier"
                 value={stats?.kycStatus === 'approved' ? 'Gold' : 'Basic'}
-                subtext={stats?.kycStatus === 'approved' ? 'Verified Seller' : 'Upgrade Business Profile'}
+                subtext={stats?.kycStatus === 'approved' ? 'Verified Partner' : 'Identity Incomplete'}
                 icon={CheckCircle}
                 color={stats?.kycStatus === 'approved' ? 'green' : 'slate'}
               />
@@ -184,54 +199,147 @@ export default function SupplierDashboard() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-10">
-          {/* Recent Operations */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-[#eae6de] shadow-sm overflow-hidden flex flex-col">
-            <div className="p-6 border-b border-[#f8f7f4] flex items-center justify-between">
-              <h3 className="text-lg font-bold text-text-dark font-serif">Fulfillment Queue</h3>
-              <Link href="/dashboard/supplier/orders" className="text-xs font-bold uppercase text-brand-green hover:text-brand-green-hover tracking-wider">
-                Full Queue →
-              </Link>
-            </div>
-            
-            <div className="p-8 flex flex-col items-center justify-center text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-[#f8f7f4] flex items-center justify-center text-text-muted">
-                <ShoppingCart className="w-8 h-8" />
-              </div>
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start mb-12">
+          {/* Market Performance Visualizer */}
+          <div className="lg:col-span-3 bg-white rounded-[2.5rem] p-8 border border-[#eae6de] shadow-soft">
+            <div className="flex items-center justify-between mb-10">
               <div>
-                <p className="text-text-dark font-bold">No Pending Fulfillments</p>
-                <p className="text-text-muted text-xs mt-1 italic font-medium">New orders from farmers will appear here automatically.</p>
+                <h3 className="text-2xl font-bold text-text-dark font-serif tracking-tighter">Market Velocity</h3>
+                <p className="text-[10px] text-text-muted font-black uppercase tracking-widest mt-1 italic">Real-time revenue & order influx tracking</p>
+              </div>
+              <div className="flex items-center gap-3 bg-[#f8f7f4] p-1 rounded-xl border border-[#eae6de]">
+                 <button className="px-4 py-1.5 bg-white rounded-lg text-[9px] font-black uppercase tracking-widest text-text-dark shadow-sm">7D</button>
+                 <button className="px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest text-text-muted hover:text-text-dark transition-colors">30D</button>
               </div>
             </div>
 
-            <div className="px-6 py-4 bg-[#f8f7f4] border-t border-[#eae6de] flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-              <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider">Live Monitoring Active</span>
+            <div className="h-[300px] w-full mt-6 relative">
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData}>
+                    <defs>
+                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#345243" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#345243" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0efed" />
+                    <XAxis 
+                      dataKey="date" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 9, fontWeight: 700, fill: '#69665f' }} 
+                      dy={10}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 9, fontWeight: 700, fill: '#69665f' }} 
+                    />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 40px rgba(0,0,0,0.05)', fontSize: '10px' }}
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="revenue" 
+                      stroke="#345243" 
+                      strokeWidth={4} 
+                      fillOpacity={1} 
+                      fill="url(#colorRevenue)" 
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center bg-[#f8f7f4]/40 rounded-3xl border border-dashed border-[#eae6de]">
+                   <BarChart3 className="w-10 h-10 text-slate-200 mb-4" />
+                   <p className="text-[10px] font-black uppercase tracking-widest text-[#929285] italic">No Market Velocity Data Recorded</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Business Tools */}
-          <div className="space-y-6">
-            <h3 className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-1">Rapid Tools</h3>
-            <div className="space-y-4">
-              {[
-                { icon: Package, label: 'Add Product', desc: 'Sync new inventory items', href: '/dashboard/supplier/products/new', color: 'blue' },
-                { icon: ShoppingCart, label: 'Order Hub', desc: 'Process bulk orders', href: '/dashboard/supplier/orders', color: 'amber' },
-                { icon: List, label: 'Inventory', desc: 'Update stock & pricing', href: '/dashboard/supplier/products', color: 'green' },
-                { icon: User, label: 'Business Profile', desc: 'Legal & Bank updates', href: '/dashboard/supplier/settings', color: 'purple' },
-              ].map(a => (
-                <Link key={a.href} href={a.href} className="flex items-center gap-4 p-4 rounded-2xl bg-white border border-[#eae6de] hover:border-brand-green/30 hover:shadow-lg hover:shadow-brand-green/5 transition-all group">
-                  <div className={`w-10 h-10 rounded-xl bg-[#f8f7f4] flex items-center justify-center text-text-muted group-hover:bg-brand-green group-hover:text-white transition-all`}>
-                    <a.icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-text-dark text-sm font-bold group-hover:text-brand-green">{a.label}</p>
-                    <p className="text-text-muted text-[10px] font-medium italic">{a.desc}</p>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-text-muted group-hover:text-brand-green transition-all translate-x-[-4px] group-hover:translate-x-0" />
+          {/* Operational Radar / Tools */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="bg-white rounded-[2.5rem] p-8 border border-[#eae6de] shadow-soft">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-text-dark font-serif tracking-tighter">Business Assets</h3>
+                <Link href="/dashboard/supplier/products" className="p-3 bg-[#f8f7f4] rounded-xl text-text-muted hover:text-text-dark transition-all">
+                  <ArrowUpRight className="w-4 h-4" />
                 </Link>
-              ))}
+              </div>
+              
+              <div className="space-y-4">
+                {[
+                  { icon: Package, label: 'Asset Intake', desc: 'Sync new inventory items', href: '/dashboard/supplier/products/new', color: 'blue' },
+                  { icon: History, label: 'Audit Ledger', desc: 'View inventory fluctuations', href: '/dashboard/supplier/products/logs', color: 'purple' },
+                  { icon: List, label: 'Operational Hub', desc: 'Process bulk requirements', href: '/dashboard/supplier/orders', color: 'amber' },
+                  { icon: ShieldCheck, label: 'Compliance', desc: 'Manage legal certifications', href: '/dashboard/supplier/kyc', color: 'green' },
+                ].map(a => (
+                  <Link key={a.href} href={a.href} className="flex items-center gap-4 p-4 rounded-2xl bg-[#f8f7f4] hover:bg-white hover:shadow-xl hover:shadow-brand-green/5 transition-all group border border-transparent hover:border-[#eae6de]">
+                    <div className="w-11 h-11 rounded-xl bg-white border border-[#eae6de] flex items-center justify-center text-text-muted group-hover:bg-brand-green group-hover:text-white group-hover:border-transparent transition-all">
+                      <a.icon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-text-dark text-[11px] font-black uppercase tracking-widest">{a.label}</p>
+                      <p className="text-text-muted text-[10px] italic font-medium truncate">{a.desc}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-brand-green transition-all" />
+                  </Link>
+                ))}
+              </div>
             </div>
+
+            {/* Depletion Alert List (New - BPFIS inspired) */}
+            <div className="bg-brand-orange/5 border border-brand-orange/10 rounded-[2rem] p-6">
+               <div className="flex items-center gap-3 mb-4">
+                  <AlertTriangle className="w-5 h-5 text-brand-orange" />
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-orange">Depletion Warnings</h4>
+               </div>
+               <div className="space-y-2">
+                  {stats?.lowStockCount > 0 ? (
+                    <p className="text-xs font-bold text-text-dark">{stats.lowStockCount} items require immediate restocking to prevent market dropout.</p>
+                  ) : (
+                    <p className="text-xs font-medium text-text-muted italic">All operational pipelines are stable.</p>
+                  )}
+               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Fulfillment Queue Block */}
+        <div className="bg-white rounded-[2.5rem] border border-[#eae6de] shadow-soft overflow-hidden">
+          <div className="p-8 border-b border-[#f8f7f4] flex items-center justify-between">
+            <div className="flex items-center gap-4">
+               <div className="w-11 h-11 rounded-xl bg-[#f8f7f4] flex items-center justify-center">
+                  <Activity className="w-5 h-5 text-brand-green" />
+               </div>
+               <div>
+                  <h3 className="text-xl font-bold text-text-dark font-serif tracking-tighter">Fulfillment Pipeline</h3>
+                  <p className="text-[9px] text-text-muted font-black uppercase tracking-[0.2em] italic">Live order processing stream</p>
+               </div>
+            </div>
+            <Link href="/dashboard/supplier/orders" className="px-6 py-2.5 bg-[#f8f7f4] rounded-xl text-[10px] font-black uppercase tracking-widest text-text-dark hover:bg-[#eae6de] transition-colors shadow-sm">
+              Process All Orders →
+            </Link>
+          </div>
+          
+          <div className="p-16 flex flex-col items-center justify-center text-center space-y-6">
+            <div className="w-24 h-24 rounded-[2rem] bg-[#f8f7f4] flex items-center justify-center relative">
+              <ShoppingCart className="w-10 h-10 text-slate-300" />
+              <div className="absolute top-0 right-0 w-8 h-8 bg-brand-green/10 rounded-full blur-xl" />
+            </div>
+            <div>
+              <p className="text-text-dark font-serif text-xl font-bold tracking-tight">Queue Synchronized</p>
+              <p className="text-text-muted text-xs mt-1 italic font-medium max-w-xs mx-auto">No pending requirements detected in your sector. New farmer requests will materialize here automatically.</p>
+            </div>
+          </div>
+
+          <div className="px-8 py-5 bg-[#f8f7f4] border-t border-[#eae6de] flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+              <span className="text-[10px] text-text-muted font-black uppercase tracking-widest">Global Discovery Matrix Active</span>
+            </div>
+            <p className="text-[10px] text-slate-400 font-bold italic tracking-tighter">Encrypted by AgriLink Protocol V2</p>
           </div>
         </div>
       </main>

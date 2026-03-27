@@ -46,6 +46,21 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
 
+// ── Kafka Configuration ──────────────────────────────────────
+
+const kafka = new Kafka({
+  clientId: 'supplier-service',
+  brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(','),
+});
+
+const producer = kafka.producer();
+const consumer = kafka.consumer({ groupId: 'supplier-group' });
+
+async function startKafka() {
+  await Promise.all([producer.connect(), consumer.connect()]);
+  console.log('✅ Kafka Connected');
+}
+
 // ── Plugins ───────────────────────────────────────────────────
 
 await fastify.register(FastifyCors, {
@@ -191,6 +206,8 @@ await fastify.register(async (app) => {
       businessType: z.string().max(100).optional(),
       yearsInOperation: z.string().max(10).optional(),
       productCategories: z.array(z.string()).optional(),
+      taxRate: z.number().min(0).max(1).optional(),
+      taxInclusive: z.boolean().optional(),
     });
     const result = ProfileUpdateSchema.safeParse(req.body);
     if (!result.success) {
@@ -198,7 +215,11 @@ await fastify.register(async (app) => {
     }
     const updated = await prisma.supplier.update({
       where: { userId: req.user.sub },
-      data: result.data,
+      data: {
+        ...result.data,
+        taxRate: result.data.taxRate ?? 0.18, // Default 18% GST if not set
+        taxInclusive: result.data.taxInclusive ?? true,
+      },
     });
     return reply.send({ success: true, data: updated });
   });
@@ -286,9 +307,24 @@ await fastify.register(async (app) => {
     if (!product) return reply.status(404).send({ success: false, error: 'Product not found' });
     const supplierInfo = await prisma.supplier.findUnique({
       where: { id: product.supplierId },
-      select: { id: true, companyName: true, kycStatus: true, address: true, businessType: true },
+      select: { 
+        id: true, companyName: true, kycStatus: true, address: true, 
+        businessType: true, taxRate: true, taxInclusive: true 
+      },
     });
     return reply.send({ success: true, data: { ...product, supplier: supplierInfo } });
+  });
+
+  app.get('/public/supplier/:id', async (req: any, reply) => {
+     const supplier = await prisma.supplier.findUnique({
+        where: { id: req.params.id },
+        select: { 
+          id: true, companyName: true, kycStatus: true, address: true, 
+          businessType: true, taxRate: true, taxInclusive: true 
+        },
+     });
+     if (!supplier) return reply.status(404).send({ success: false, error: 'Supplier not found' });
+     return reply.send({ success: true, data: supplier });
   });
 
   // ─ Products ───────────────────────────────────────────────
@@ -447,9 +483,35 @@ await fastify.register(async (app) => {
     return reply.send({ success: true, data: { url: uploadResult.secure_url, images: newImages } });
   });
 
-  // ─ Analytics ─────────────────────────────────────────────
+  app.delete('/products/:id/images', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
+    const { id } = req.params;
+    const { imageUrl } = req.body as { imageUrl: string };
+    
+    const supplier = await prisma.supplier.findUnique({ where: { userId: req.user.sub } });
+    if (!supplier) return reply.status(404).send({ success: false, error: 'Profile not found' });
 
-  app.get('/analytics/summary', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
+    const product = await prisma.product.findFirst({ where: { id, supplierId: supplier.id } });
+    if (!product) return reply.status(404).send({ success: false, error: 'Product not found' });
+
+    const newImages = product.images.filter((url: string) => url !== imageUrl);
+    await prisma.product.update({ where: { id }, data: { images: newImages } });
+
+    // Try to delete from Cloudinary if it's our link
+    if (imageUrl.includes('cloudinary.com')) {
+       try {
+          const parts = imageUrl.split('/');
+          const filename = parts[parts.length - 1].split('.')[0];
+          const folder = parts.slice(parts.indexOf('agrilink'), parts.length - 1).join('/');
+          await cloudinary.uploader.destroy(`${folder}/${filename}`);
+       } catch (err) { fastify.log.error(err, 'Cloudinary delete failed'); }
+    }
+
+    return reply.send({ success: true, data: { images: newImages } });
+  });
+
+  // ─ Analytics & Stats ─────────────────────────────────────────
+
+  app.get('/stats', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
     const supplier = await prisma.supplier.findUnique({ where: { userId: req.user.sub } });
     if (!supplier) return reply.status(404).send({ success: false, error: 'Profile not found' });
 
@@ -457,19 +519,21 @@ await fastify.register(async (app) => {
     today.setHours(0, 0, 0, 0);
     const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    const [analytics, productCount, lowStockCount] = await Promise.all([
+    // Fix: Prisma doesn't support comparing two columns directly in 'where' query
+    // We fetch and filter or use a more specific count logic
+    const activeProducts = await prisma.product.findMany({
+      where: { supplierId: supplier.id, status: 'active' }
+    });
+    const lowStockCount = activeProducts.filter(p => p.stockQuantity <= p.reorderThreshold).length;
+
+    const [analytics, pendingOrdersCount] = await Promise.all([
       prisma.dailyAnalytics.findMany({
         where: { supplierId: supplier.id, date: { gte: thirtyDaysAgo } },
         orderBy: { date: 'desc' },
       }),
-      prisma.product.count({ where: { supplierId: supplier.id, status: 'active' } }),
-      prisma.product.count({
-        where: {
-          supplierId: supplier.id,
-          status: 'active',
-          stockQuantity: { lte: prisma.product.fields.reorderThreshold },
-        },
-      }),
+      prisma.supplierOrder.count({
+        where: { supplierId: supplier.id, orderStatus: 'PLACED' } // Fixed case
+      })
     ]);
 
     const totalRevenue = analytics.reduce((sum, a) => sum + a.revenuePaise, 0);
@@ -478,13 +542,66 @@ await fastify.register(async (app) => {
     return reply.send({
       success: true,
       data: {
+        totalRevenue: totalRevenue / 100, // Return In Rupees for frontend
+        activeProducts: activeProducts.length,
+        pendingOrders: pendingOrdersCount,
+        kycStatus: supplier.kycStatus.toLowerCase(),
+        lowStockCount: lowStockCount,
         thirtyDayRevenuePaise: totalRevenue,
         thirtyDayOrders: totalOrders,
-        activeProductCount: productCount,
-        lowStockProductCount: lowStockCount,
         dailyAnalytics: analytics,
       },
     });
+  });
+
+  // ─ Orders ─────────────────────────────────────────────────
+
+  app.get('/orders', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
+    const supplier = await prisma.supplier.findUnique({ where: { userId: req.user.sub } });
+    if (!supplier) return reply.status(404).send({ success: false, error: 'Profile not found' });
+
+    const orders = await prisma.supplierOrder.findMany({
+      where: { supplierId: supplier.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reply.send({ success: true, data: orders });
+  });
+
+  app.patch('/orders/:id', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
+    const { id } = req.params;
+    const { orderStatus } = req.body as { orderStatus: string };
+    
+    const supplier = await prisma.supplier.findUnique({ where: { userId: req.user.sub } });
+    if (!supplier) return reply.status(404).send({ success: false, error: 'Profile not found' });
+
+    const order = await prisma.supplierOrder.findFirst({
+      where: { id, supplierId: supplier.id }
+    });
+    if (!order) return reply.status(404).send({ success: false, error: 'Order not found' });
+
+    const updated = await prisma.supplierOrder.update({
+      where: { id },
+      data: { orderStatus: orderStatus.toUpperCase() } // Force consistency
+    });
+
+    // ─ Publish Status Update to Kafka ────────────────────────
+    await producer.send({
+      topic: 'order.status.updated',
+      messages: [{ 
+        value: JSON.stringify({
+          topic: 'order.status.updated',
+          data: {
+            orderId: updated.orderNumber, // Use orderNumber for matching
+            newStatus: orderStatus,
+            supplierId: supplier.id,
+            updatedAt: updated.updatedAt,
+          }
+        })
+      }]
+    });
+
+    return reply.send({ success: true, data: updated });
   });
 
   // ─ KYC Document Upload ───────────────────────────────────
@@ -535,26 +652,61 @@ await fastify.register(async (app) => {
 
 }, { prefix: '/supplier' });
 
-// ── Kafka Consumer ───────────────────────────────────────────
-
-const kafka = new Kafka({
-  clientId: 'supplier-service',
-  brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(','),
-});
-
-const consumer = kafka.consumer({ groupId: 'supplier-group' });
-
 async function startKafkaConsumer() {
-  await consumer.connect();
   await consumer.subscribe({ topic: 'order.placed', fromBeginning: false });
 
   await consumer.run({
     eachMessage: async ({ message }) => {
       const event = JSON.parse(message.value?.toString() ?? '{}');
       if (event.topic === 'order.placed') {
-        const { items, supplierId } = event.data;
+        const { id: orderId, orderNumber, items, supplierId, farmerId, totalAmount, shippingAddress } = event.data;
         
-        // Process only if this supplier is involved
+        // Find if any products belong to a supplier in this service
+        // (In this microservice, we only care about if the supplier matches our records)
+        const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
+        if (!supplier) return;
+
+        // 1. Record the order in our service's DB
+        const existingOrder = await prisma.supplierOrder.findUnique({ where: { orderNumber } });
+        if (!existingOrder) {
+          await prisma.supplierOrder.create({
+            data: {
+              orderNumber,
+              supplierId,
+              farmerId,
+              items,
+              totalPaise: totalAmount,
+              paymentStatus: 'PENDING',
+              orderStatus: 'PLACED',
+              shippingAddress,
+            }
+          });
+        }
+
+        // 2. Update Daily Analytics (Upsert for the current date)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        await prisma.dailyAnalytics.upsert({
+          where: {
+            supplierId_date: {
+              supplierId,
+              date: today,
+            }
+          },
+          update: {
+            revenuePaise: { increment: totalAmount },
+            orderCount: { increment: 1 },
+          },
+          create: {
+            supplierId,
+            date: today,
+            revenuePaise: totalAmount,
+            orderCount: 1,
+          }
+        });
+        
+        // 3. Decrement stock
         for (const item of items) {
           try {
             const product = await prisma.product.findUnique({ where: { id: item.productId } });
@@ -575,7 +727,7 @@ async function startKafkaConsumer() {
                   reason: 'order',
                   previousStock: product.stockQuantity,
                   newStock,
-                  notes: `Auto-decremented for order ${event.data.orderNumber}`
+                  notes: `Auto-decremented for order ${orderNumber}`
                 }
               })
             ]);
@@ -591,7 +743,7 @@ async function startKafkaConsumer() {
 }
 
 async function stopKafka() {
-  await consumer.disconnect();
+  await Promise.all([producer.disconnect(), consumer.disconnect()]);
 }
 
 
@@ -601,7 +753,8 @@ const PORT = Number(process.env.SUPPLIER_PORT ?? 4003);
 await fastify.listen({ port: PORT, host: '0.0.0.0' });
 console.log(`🏪 Supplier service running on http://0.0.0.0:${PORT}`);
 
-// Start consumer
+// Start Kafka
+await startKafka();
 startKafkaConsumer().catch(err => fastify.log.error(err, 'Kafka consumer failed'));
 
 // Graceful shutdown

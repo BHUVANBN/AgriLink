@@ -112,3 +112,45 @@ model Review {
   @@index([supplierId])
   @@index([farmerId])
 }
+
+// ── Inquiries & Pre-sale Comm ─────────────────────────────────
+
+enum InquiryStatus {
+  OPEN
+  RESPONDED
+  RESOLVED
+  CLOSED
+}
+
+model Inquiry {
+  id            String        @id @default(uuid())
+  productId     String? // Optional: query about a specific product
+  farmerId      String
+  supplierId    String
+  subject       String
+  body          String        @db.Text
+  status        InquiryStatus @default(OPEN)
+  lastMessageAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  replies InquiryReply[]
+
+  @@index([farmerId])
+  @@index([supplierId])
+  @@index([productId])
+  @@index([status])
+}
+
+model InquiryReply {
+  id         String   @id @default(uuid())
+  inquiryId  String
+  senderId   String // userId
+  senderRole String // farmer / supplier
+  message    String   @db.Text
+  createdAt  DateTime @default(now())
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@index([inquiryId])
+}

@@ -175,6 +175,28 @@ exports.Prisma.ReviewScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.InquiryScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  farmerId: 'farmerId',
+  supplierId: 'supplierId',
+  subject: 'subject',
+  body: 'body',
+  status: 'status',
+  lastMessageAt: 'lastMessageAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.InquiryReplyScalarFieldEnum = {
+  id: 'id',
+  inquiryId: 'inquiryId',
+  senderId: 'senderId',
+  senderRole: 'senderRole',
+  message: 'message',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -221,10 +243,19 @@ exports.OrderStatus = exports.$Enums.OrderStatus = {
   CANCELLED: 'CANCELLED'
 };
 
+exports.InquiryStatus = exports.$Enums.InquiryStatus = {
+  OPEN: 'OPEN',
+  RESPONDED: 'RESPONDED',
+  RESOLVED: 'RESOLVED',
+  CLOSED: 'CLOSED'
+};
+
 exports.Prisma.ModelName = {
   Order: 'Order',
   CartItem: 'CartItem',
-  Review: 'Review'
+  Review: 'Review',
+  Inquiry: 'Inquiry',
+  InquiryReply: 'InquiryReply'
 };
 
 /**

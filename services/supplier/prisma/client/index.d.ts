@@ -1329,8 +1329,18 @@ export namespace Prisma {
 
   export type AggregateSupplier = {
     _count: SupplierCountAggregateOutputType | null
+    _avg: SupplierAvgAggregateOutputType | null
+    _sum: SupplierSumAggregateOutputType | null
     _min: SupplierMinAggregateOutputType | null
     _max: SupplierMaxAggregateOutputType | null
+  }
+
+  export type SupplierAvgAggregateOutputType = {
+    taxRate: number | null
+  }
+
+  export type SupplierSumAggregateOutputType = {
+    taxRate: number | null
   }
 
   export type SupplierMinAggregateOutputType = {
@@ -1352,6 +1362,8 @@ export namespace Prisma {
     kycSubmittedAt: Date | null
     kycReviewedAt: Date | null
     kycReviewedBy: string | null
+    taxRate: number | null
+    taxInclusive: boolean | null
     kycRejectionReason: string | null
     isActive: boolean | null
     createdAt: Date | null
@@ -1377,6 +1389,8 @@ export namespace Prisma {
     kycSubmittedAt: Date | null
     kycReviewedAt: Date | null
     kycReviewedBy: string | null
+    taxRate: number | null
+    taxInclusive: boolean | null
     kycRejectionReason: string | null
     isActive: boolean | null
     createdAt: Date | null
@@ -1404,6 +1418,8 @@ export namespace Prisma {
     kycSubmittedAt: number
     kycReviewedAt: number
     kycReviewedBy: number
+    taxRate: number
+    taxInclusive: number
     kycRejectionReason: number
     isActive: number
     createdAt: number
@@ -1411,6 +1427,14 @@ export namespace Prisma {
     _all: number
   }
 
+
+  export type SupplierAvgAggregateInputType = {
+    taxRate?: true
+  }
+
+  export type SupplierSumAggregateInputType = {
+    taxRate?: true
+  }
 
   export type SupplierMinAggregateInputType = {
     id?: true
@@ -1431,6 +1455,8 @@ export namespace Prisma {
     kycSubmittedAt?: true
     kycReviewedAt?: true
     kycReviewedBy?: true
+    taxRate?: true
+    taxInclusive?: true
     kycRejectionReason?: true
     isActive?: true
     createdAt?: true
@@ -1456,6 +1482,8 @@ export namespace Prisma {
     kycSubmittedAt?: true
     kycReviewedAt?: true
     kycReviewedBy?: true
+    taxRate?: true
+    taxInclusive?: true
     kycRejectionReason?: true
     isActive?: true
     createdAt?: true
@@ -1483,6 +1511,8 @@ export namespace Prisma {
     kycSubmittedAt?: true
     kycReviewedAt?: true
     kycReviewedBy?: true
+    taxRate?: true
+    taxInclusive?: true
     kycRejectionReason?: true
     isActive?: true
     createdAt?: true
@@ -1528,6 +1558,18 @@ export namespace Prisma {
     /**
      * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
      * 
+     * Select which fields to average
+    **/
+    _avg?: SupplierAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SupplierSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
      * Select which fields to find the minimum value
     **/
     _min?: SupplierMinAggregateInputType
@@ -1558,6 +1600,8 @@ export namespace Prisma {
     take?: number
     skip?: number
     _count?: SupplierCountAggregateInputType | true
+    _avg?: SupplierAvgAggregateInputType
+    _sum?: SupplierSumAggregateInputType
     _min?: SupplierMinAggregateInputType
     _max?: SupplierMaxAggregateInputType
   }
@@ -1583,11 +1627,15 @@ export namespace Prisma {
     kycSubmittedAt: Date | null
     kycReviewedAt: Date | null
     kycReviewedBy: string | null
+    taxRate: number | null
+    taxInclusive: boolean
     kycRejectionReason: string | null
     isActive: boolean
     createdAt: Date
     updatedAt: Date
     _count: SupplierCountAggregateOutputType | null
+    _avg: SupplierAvgAggregateOutputType | null
+    _sum: SupplierSumAggregateOutputType | null
     _min: SupplierMinAggregateOutputType | null
     _max: SupplierMaxAggregateOutputType | null
   }
@@ -1627,6 +1675,8 @@ export namespace Prisma {
     kycSubmittedAt?: boolean
     kycReviewedAt?: boolean
     kycReviewedBy?: boolean
+    taxRate?: boolean
+    taxInclusive?: boolean
     kycRejectionReason?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -1658,6 +1708,8 @@ export namespace Prisma {
     kycSubmittedAt?: boolean
     kycReviewedAt?: boolean
     kycReviewedBy?: boolean
+    taxRate?: boolean
+    taxInclusive?: boolean
     kycRejectionReason?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -1685,6 +1737,8 @@ export namespace Prisma {
     kycSubmittedAt?: boolean
     kycReviewedAt?: boolean
     kycReviewedBy?: boolean
+    taxRate?: boolean
+    taxInclusive?: boolean
     kycRejectionReason?: boolean
     isActive?: boolean
     createdAt?: boolean
@@ -1712,13 +1766,15 @@ export namespace Prisma {
     kycSubmittedAt?: boolean
     kycReviewedAt?: boolean
     kycReviewedBy?: boolean
+    taxRate?: boolean
+    taxInclusive?: boolean
     kycRejectionReason?: boolean
     isActive?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SupplierOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "companyName" | "email" | "phone" | "upiId" | "gstNumber" | "avatarUrl" | "address" | "businessType" | "yearsInOperation" | "productCategories" | "businessCertUrl" | "tradeLicenseUrl" | "ownerIdProofUrl" | "gstCertUrl" | "kycStatus" | "kycSubmittedAt" | "kycReviewedAt" | "kycReviewedBy" | "kycRejectionReason" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["supplier"]>
+  export type SupplierOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "userId" | "companyName" | "email" | "phone" | "upiId" | "gstNumber" | "avatarUrl" | "address" | "businessType" | "yearsInOperation" | "productCategories" | "businessCertUrl" | "tradeLicenseUrl" | "ownerIdProofUrl" | "gstCertUrl" | "kycStatus" | "kycSubmittedAt" | "kycReviewedAt" | "kycReviewedBy" | "taxRate" | "taxInclusive" | "kycRejectionReason" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["supplier"]>
   export type SupplierInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     products?: boolean | Supplier$productsArgs<ExtArgs>
     orders?: boolean | Supplier$ordersArgs<ExtArgs>
@@ -1756,6 +1812,8 @@ export namespace Prisma {
       kycSubmittedAt: Date | null
       kycReviewedAt: Date | null
       kycReviewedBy: string | null
+      taxRate: number | null
+      taxInclusive: boolean
       kycRejectionReason: string | null
       isActive: boolean
       createdAt: Date
@@ -2206,6 +2264,8 @@ export namespace Prisma {
     readonly kycSubmittedAt: FieldRef<"Supplier", 'DateTime'>
     readonly kycReviewedAt: FieldRef<"Supplier", 'DateTime'>
     readonly kycReviewedBy: FieldRef<"Supplier", 'String'>
+    readonly taxRate: FieldRef<"Supplier", 'Float'>
+    readonly taxInclusive: FieldRef<"Supplier", 'Boolean'>
     readonly kycRejectionReason: FieldRef<"Supplier", 'String'>
     readonly isActive: FieldRef<"Supplier", 'Boolean'>
     readonly createdAt: FieldRef<"Supplier", 'DateTime'>
@@ -5248,6 +5308,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus: number
     orderStatus: number
+    shippingAddress: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -5295,6 +5356,7 @@ export namespace Prisma {
     totalPaise?: true
     paymentStatus?: true
     orderStatus?: true
+    shippingAddress?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -5395,6 +5457,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus: string
     orderStatus: string
+    shippingAddress: JsonValue | null
     createdAt: Date
     updatedAt: Date
     _count: SupplierOrderCountAggregateOutputType | null
@@ -5427,6 +5490,7 @@ export namespace Prisma {
     totalPaise?: boolean
     paymentStatus?: boolean
     orderStatus?: boolean
+    shippingAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -5441,6 +5505,7 @@ export namespace Prisma {
     totalPaise?: boolean
     paymentStatus?: boolean
     orderStatus?: boolean
+    shippingAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -5455,6 +5520,7 @@ export namespace Prisma {
     totalPaise?: boolean
     paymentStatus?: boolean
     orderStatus?: boolean
+    shippingAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
@@ -5469,11 +5535,12 @@ export namespace Prisma {
     totalPaise?: boolean
     paymentStatus?: boolean
     orderStatus?: boolean
+    shippingAddress?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type SupplierOrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderNumber" | "supplierId" | "farmerId" | "items" | "totalPaise" | "paymentStatus" | "orderStatus" | "createdAt" | "updatedAt", ExtArgs["result"]["supplierOrder"]>
+  export type SupplierOrderOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "orderNumber" | "supplierId" | "farmerId" | "items" | "totalPaise" | "paymentStatus" | "orderStatus" | "shippingAddress" | "createdAt" | "updatedAt", ExtArgs["result"]["supplierOrder"]>
   export type SupplierOrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     supplier?: boolean | SupplierDefaultArgs<ExtArgs>
   }
@@ -5498,6 +5565,7 @@ export namespace Prisma {
       totalPaise: number
       paymentStatus: string
       orderStatus: string
+      shippingAddress: Prisma.JsonValue | null
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["supplierOrder"]>
@@ -5932,6 +6000,7 @@ export namespace Prisma {
     readonly totalPaise: FieldRef<"SupplierOrder", 'Int'>
     readonly paymentStatus: FieldRef<"SupplierOrder", 'String'>
     readonly orderStatus: FieldRef<"SupplierOrder", 'String'>
+    readonly shippingAddress: FieldRef<"SupplierOrder", 'Json'>
     readonly createdAt: FieldRef<"SupplierOrder", 'DateTime'>
     readonly updatedAt: FieldRef<"SupplierOrder", 'DateTime'>
   }
@@ -7531,6 +7600,8 @@ export namespace Prisma {
     kycSubmittedAt: 'kycSubmittedAt',
     kycReviewedAt: 'kycReviewedAt',
     kycReviewedBy: 'kycReviewedBy',
+    taxRate: 'taxRate',
+    taxInclusive: 'taxInclusive',
     kycRejectionReason: 'kycRejectionReason',
     isActive: 'isActive',
     createdAt: 'createdAt',
@@ -7592,6 +7663,7 @@ export namespace Prisma {
     totalPaise: 'totalPaise',
     paymentStatus: 'paymentStatus',
     orderStatus: 'orderStatus',
+    shippingAddress: 'shippingAddress',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -7724,6 +7796,20 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
+   * Reference to a field of type 'Float[]'
+   */
+  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
+
+  /**
    * Reference to a field of type 'Boolean'
    */
   export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
@@ -7741,20 +7827,6 @@ export namespace Prisma {
    * Reference to a field of type 'Int[]'
    */
   export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float'
-   */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float[]'
-   */
-  export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
     
   /**
    * Deep Input Types
@@ -7785,6 +7857,8 @@ export namespace Prisma {
     kycSubmittedAt?: DateTimeNullableFilter<"Supplier"> | Date | string | null
     kycReviewedAt?: DateTimeNullableFilter<"Supplier"> | Date | string | null
     kycReviewedBy?: StringNullableFilter<"Supplier"> | string | null
+    taxRate?: FloatNullableFilter<"Supplier"> | number | null
+    taxInclusive?: BoolFilter<"Supplier"> | boolean
     kycRejectionReason?: StringNullableFilter<"Supplier"> | string | null
     isActive?: BoolFilter<"Supplier"> | boolean
     createdAt?: DateTimeFilter<"Supplier"> | Date | string
@@ -7815,6 +7889,8 @@ export namespace Prisma {
     kycSubmittedAt?: SortOrderInput | SortOrder
     kycReviewedAt?: SortOrderInput | SortOrder
     kycReviewedBy?: SortOrderInput | SortOrder
+    taxRate?: SortOrderInput | SortOrder
+    taxInclusive?: SortOrder
     kycRejectionReason?: SortOrderInput | SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -7848,6 +7924,8 @@ export namespace Prisma {
     kycSubmittedAt?: DateTimeNullableFilter<"Supplier"> | Date | string | null
     kycReviewedAt?: DateTimeNullableFilter<"Supplier"> | Date | string | null
     kycReviewedBy?: StringNullableFilter<"Supplier"> | string | null
+    taxRate?: FloatNullableFilter<"Supplier"> | number | null
+    taxInclusive?: BoolFilter<"Supplier"> | boolean
     kycRejectionReason?: StringNullableFilter<"Supplier"> | string | null
     isActive?: BoolFilter<"Supplier"> | boolean
     createdAt?: DateTimeFilter<"Supplier"> | Date | string
@@ -7878,13 +7956,17 @@ export namespace Prisma {
     kycSubmittedAt?: SortOrderInput | SortOrder
     kycReviewedAt?: SortOrderInput | SortOrder
     kycReviewedBy?: SortOrderInput | SortOrder
+    taxRate?: SortOrderInput | SortOrder
+    taxInclusive?: SortOrder
     kycRejectionReason?: SortOrderInput | SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: SupplierCountOrderByAggregateInput
+    _avg?: SupplierAvgOrderByAggregateInput
     _max?: SupplierMaxOrderByAggregateInput
     _min?: SupplierMinOrderByAggregateInput
+    _sum?: SupplierSumOrderByAggregateInput
   }
 
   export type SupplierScalarWhereWithAggregatesInput = {
@@ -7911,6 +7993,8 @@ export namespace Prisma {
     kycSubmittedAt?: DateTimeNullableWithAggregatesFilter<"Supplier"> | Date | string | null
     kycReviewedAt?: DateTimeNullableWithAggregatesFilter<"Supplier"> | Date | string | null
     kycReviewedBy?: StringNullableWithAggregatesFilter<"Supplier"> | string | null
+    taxRate?: FloatNullableWithAggregatesFilter<"Supplier"> | number | null
+    taxInclusive?: BoolWithAggregatesFilter<"Supplier"> | boolean
     kycRejectionReason?: StringNullableWithAggregatesFilter<"Supplier"> | string | null
     isActive?: BoolWithAggregatesFilter<"Supplier"> | boolean
     createdAt?: DateTimeWithAggregatesFilter<"Supplier"> | Date | string
@@ -8151,6 +8235,7 @@ export namespace Prisma {
     totalPaise?: IntFilter<"SupplierOrder"> | number
     paymentStatus?: StringFilter<"SupplierOrder"> | string
     orderStatus?: StringFilter<"SupplierOrder"> | string
+    shippingAddress?: JsonNullableFilter<"SupplierOrder">
     createdAt?: DateTimeFilter<"SupplierOrder"> | Date | string
     updatedAt?: DateTimeFilter<"SupplierOrder"> | Date | string
     supplier?: XOR<SupplierScalarRelationFilter, SupplierWhereInput>
@@ -8165,6 +8250,7 @@ export namespace Prisma {
     totalPaise?: SortOrder
     paymentStatus?: SortOrder
     orderStatus?: SortOrder
+    shippingAddress?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     supplier?: SupplierOrderByWithRelationInput
@@ -8182,6 +8268,7 @@ export namespace Prisma {
     totalPaise?: IntFilter<"SupplierOrder"> | number
     paymentStatus?: StringFilter<"SupplierOrder"> | string
     orderStatus?: StringFilter<"SupplierOrder"> | string
+    shippingAddress?: JsonNullableFilter<"SupplierOrder">
     createdAt?: DateTimeFilter<"SupplierOrder"> | Date | string
     updatedAt?: DateTimeFilter<"SupplierOrder"> | Date | string
     supplier?: XOR<SupplierScalarRelationFilter, SupplierWhereInput>
@@ -8196,6 +8283,7 @@ export namespace Prisma {
     totalPaise?: SortOrder
     paymentStatus?: SortOrder
     orderStatus?: SortOrder
+    shippingAddress?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: SupplierOrderCountOrderByAggregateInput
@@ -8217,6 +8305,7 @@ export namespace Prisma {
     totalPaise?: IntWithAggregatesFilter<"SupplierOrder"> | number
     paymentStatus?: StringWithAggregatesFilter<"SupplierOrder"> | string
     orderStatus?: StringWithAggregatesFilter<"SupplierOrder"> | string
+    shippingAddress?: JsonNullableWithAggregatesFilter<"SupplierOrder">
     createdAt?: DateTimeWithAggregatesFilter<"SupplierOrder"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"SupplierOrder"> | Date | string
   }
@@ -8320,6 +8409,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -8350,6 +8441,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -8380,6 +8473,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8410,6 +8505,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8440,6 +8537,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -8467,6 +8566,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8494,6 +8595,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -8769,6 +8872,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus?: string
     orderStatus?: string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
     supplier: SupplierCreateNestedOneWithoutOrdersInput
@@ -8783,6 +8887,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus?: string
     orderStatus?: string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8795,6 +8900,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     supplier?: SupplierUpdateOneRequiredWithoutOrdersNestedInput
@@ -8809,6 +8915,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8822,6 +8929,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus?: string
     orderStatus?: string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -8834,6 +8942,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -8847,6 +8956,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -9013,6 +9123,17 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type FloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -9085,10 +9206,16 @@ export namespace Prisma {
     kycSubmittedAt?: SortOrder
     kycReviewedAt?: SortOrder
     kycReviewedBy?: SortOrder
+    taxRate?: SortOrder
+    taxInclusive?: SortOrder
     kycRejectionReason?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type SupplierAvgOrderByAggregateInput = {
+    taxRate?: SortOrder
   }
 
   export type SupplierMaxOrderByAggregateInput = {
@@ -9110,6 +9237,8 @@ export namespace Prisma {
     kycSubmittedAt?: SortOrder
     kycReviewedAt?: SortOrder
     kycReviewedBy?: SortOrder
+    taxRate?: SortOrder
+    taxInclusive?: SortOrder
     kycRejectionReason?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
@@ -9135,10 +9264,16 @@ export namespace Prisma {
     kycSubmittedAt?: SortOrder
     kycReviewedAt?: SortOrder
     kycReviewedBy?: SortOrder
+    taxRate?: SortOrder
+    taxInclusive?: SortOrder
     kycRejectionReason?: SortOrder
     isActive?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+  }
+
+  export type SupplierSumOrderByAggregateInput = {
+    taxRate?: SortOrder
   }
 
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
@@ -9227,6 +9362,22 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
+  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
   export type BoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
@@ -9281,17 +9432,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type FloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
   export type SupplierScalarRelationFilter = {
@@ -9437,22 +9577,6 @@ export namespace Prisma {
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
-  export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedFloatNullableFilter<$PrismaModel>
-    _min?: NestedFloatNullableFilter<$PrismaModel>
-    _max?: NestedFloatNullableFilter<$PrismaModel>
-  }
-
   export type ProductScalarRelationFilter = {
     is?: ProductWhereInput
     isNot?: ProductWhereInput
@@ -9518,6 +9642,7 @@ export namespace Prisma {
     totalPaise?: SortOrder
     paymentStatus?: SortOrder
     orderStatus?: SortOrder
+    shippingAddress?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -9672,6 +9797,14 @@ export namespace Prisma {
     set?: Date | string | null
   }
 
+  export type NullableFloatFieldUpdateOperationsInput = {
+    set?: number | null
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
+  }
+
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
   }
@@ -9810,14 +9943,6 @@ export namespace Prisma {
     push?: string | string[]
   }
 
-  export type NullableFloatFieldUpdateOperationsInput = {
-    set?: number | null
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
-  }
-
   export type SupplierUpdateOneRequiredWithoutProductsNestedInput = {
     create?: XOR<SupplierCreateWithoutProductsInput, SupplierUncheckedCreateWithoutProductsInput>
     connectOrCreate?: SupplierCreateOrConnectWithoutProductsInput
@@ -9942,6 +10067,17 @@ export namespace Prisma {
     not?: NestedDateTimeNullableFilter<$PrismaModel> | Date | string | null
   }
 
+  export type NestedFloatNullableFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
+  }
+
   export type NestedBoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
@@ -10061,6 +10197,22 @@ export namespace Prisma {
     _max?: NestedDateTimeNullableFilter<$PrismaModel>
   }
 
+  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel> | null
+    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _avg?: NestedFloatNullableFilter<$PrismaModel>
+    _sum?: NestedFloatNullableFilter<$PrismaModel>
+    _min?: NestedFloatNullableFilter<$PrismaModel>
+    _max?: NestedFloatNullableFilter<$PrismaModel>
+  }
+
   export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
@@ -10081,17 +10233,6 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedDateTimeFilter<$PrismaModel>
     _max?: NestedDateTimeFilter<$PrismaModel>
-  }
-
-  export type NestedFloatNullableFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableFilter<$PrismaModel> | number | null
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -10142,22 +10283,6 @@ export namespace Prisma {
     gt?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     gte?: InputJsonValue | JsonFieldRefInput<$PrismaModel>
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
-
-  export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | FloatFieldRefInput<$PrismaModel> | null
-    in?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    notIn?: number[] | ListFloatFieldRefInput<$PrismaModel> | null
-    lt?: number | FloatFieldRefInput<$PrismaModel>
-    lte?: number | FloatFieldRefInput<$PrismaModel>
-    gt?: number | FloatFieldRefInput<$PrismaModel>
-    gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatNullableWithAggregatesFilter<$PrismaModel> | number | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _avg?: NestedFloatNullableFilter<$PrismaModel>
-    _sum?: NestedFloatNullableFilter<$PrismaModel>
-    _min?: NestedFloatNullableFilter<$PrismaModel>
-    _max?: NestedFloatNullableFilter<$PrismaModel>
   }
 
   export type ProductCreateWithoutSupplierInput = {
@@ -10226,6 +10351,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus?: string
     orderStatus?: string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -10238,6 +10364,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus?: string
     orderStatus?: string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -10355,6 +10482,7 @@ export namespace Prisma {
     totalPaise?: IntFilter<"SupplierOrder"> | number
     paymentStatus?: StringFilter<"SupplierOrder"> | string
     orderStatus?: StringFilter<"SupplierOrder"> | string
+    shippingAddress?: JsonNullableFilter<"SupplierOrder">
     createdAt?: DateTimeFilter<"SupplierOrder"> | Date | string
     updatedAt?: DateTimeFilter<"SupplierOrder"> | Date | string
   }
@@ -10411,6 +10539,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -10440,6 +10570,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -10519,6 +10651,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10548,6 +10682,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10721,6 +10857,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -10750,6 +10888,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -10795,6 +10935,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10824,6 +10966,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10853,6 +10997,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -10882,6 +11028,8 @@ export namespace Prisma {
     kycSubmittedAt?: Date | string | null
     kycReviewedAt?: Date | string | null
     kycReviewedBy?: string | null
+    taxRate?: number | null
+    taxInclusive?: boolean
     kycRejectionReason?: string | null
     isActive?: boolean
     createdAt?: Date | string
@@ -10927,6 +11075,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10956,6 +11106,8 @@ export namespace Prisma {
     kycSubmittedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     kycReviewedBy?: NullableStringFieldUpdateOperationsInput | string | null
+    taxRate?: NullableFloatFieldUpdateOperationsInput | number | null
+    taxInclusive?: BoolFieldUpdateOperationsInput | boolean
     kycRejectionReason?: NullableStringFieldUpdateOperationsInput | string | null
     isActive?: BoolFieldUpdateOperationsInput | boolean
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -10995,6 +11147,7 @@ export namespace Prisma {
     totalPaise: number
     paymentStatus?: string
     orderStatus?: string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -11089,6 +11242,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -11101,6 +11255,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -11113,6 +11268,7 @@ export namespace Prisma {
     totalPaise?: IntFieldUpdateOperationsInput | number
     paymentStatus?: StringFieldUpdateOperationsInput | string
     orderStatus?: StringFieldUpdateOperationsInput | string
+    shippingAddress?: NullableJsonNullValueInput | InputJsonValue
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }

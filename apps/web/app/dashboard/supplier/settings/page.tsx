@@ -4,7 +4,7 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Save, Building2, Phone, FileText, CreditCard,
-  Upload, CheckCircle, Clock, AlertTriangle, Shield
+  Upload, CheckCircle, Clock, AlertTriangle, Shield, TrendingUp
 } from 'lucide-react';
 import useSWR from 'swr';
 import toast from 'react-hot-toast';
@@ -63,7 +63,7 @@ function DocUploadRow({
   return (
     <div className="flex items-center justify-between py-3 border-b border-white/8 last:border-0 gap-4">
       <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-medium">{doc.label}</p>
+        <p className="text-text-dark text-sm font-medium">{doc.label}</p>
         <p className="text-slate-500 text-xs mt-0.5">{doc.hint}</p>
         {currentUrl && (
           <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 text-xs hover:underline">View uploaded ↗</a>
@@ -190,7 +190,7 @@ export default function SupplierSettingsPage() {
               <div className="bg-white rounded-2xl border border-[#eae6de] shadow-sm p-6 space-y-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Building2 className="w-4 h-4 text-text-muted" />
-                  <h3 className="text-white font-semibold">Business Information</h3>
+                  <h3 className="text-text-dark font-semibold">Business Information</h3>
                 </div>
                 <div>
                   <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Company Name</label>
@@ -200,8 +200,8 @@ export default function SupplierSettingsPage() {
                   <div>
                     <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Business Type</label>
                     <select className="input-field" value={merged.businessType ?? ''} onChange={e => change('businessType', e.target.value)}>
-                      <option value="" className="bg-slate-900">Select type</option>
-                      {BUSINESS_TYPES.map(t => <option key={t} value={t} className="bg-slate-900">{t}</option>)}
+                      <option value="">Select type</option>
+                      {BUSINESS_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                   <div>
@@ -219,7 +219,7 @@ export default function SupplierSettingsPage() {
               <div className="bg-white rounded-2xl border border-[#eae6de] shadow-sm p-6 space-y-4">
                 <div className="flex items-center gap-3 mb-2">
                   <Phone className="w-4 h-4 text-text-muted" />
-                  <h3 className="text-white font-semibold">Contact & Address</h3>
+                  <h3 className="text-text-dark font-semibold">Contact & Address</h3>
                 </div>
                 <div>
                   <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Phone</label>
@@ -235,7 +235,7 @@ export default function SupplierSettingsPage() {
               <div className="bg-white rounded-2xl border border-[#eae6de] shadow-sm p-6 space-y-4">
                 <div className="flex items-center gap-3 mb-2">
                   <FileText className="w-4 h-4 text-text-muted" />
-                  <h3 className="text-white font-semibold">Compliance</h3>
+                  <h3 className="text-text-dark font-semibold">Compliance</h3>
                 </div>
                 <div>
                   <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">GST Number</label>
@@ -247,12 +247,44 @@ export default function SupplierSettingsPage() {
               <div className="bg-white rounded-2xl border border-[#eae6de] shadow-sm p-6 space-y-4">
                 <div className="flex items-center gap-3 mb-2">
                   <CreditCard className="w-4 h-4 text-text-muted" />
-                  <h3 className="text-white font-semibold">Payment Details</h3>
+                  <h3 className="text-text-dark font-semibold">Payment Details</h3>
                 </div>
                 <div>
                   <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">UPI ID (for payouts)</label>
                   <input className="input-field" value={merged.upiId ?? ''} onChange={e => change('upiId', e.target.value)} placeholder="yourname@upi" />
                 </div>
+              </div>
+
+              {/* Taxation & Economics (NEW - BPFIS inspired) */}
+              <div className="bg-white rounded-2xl border border-[#eae6de] shadow-sm p-6 space-y-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp className="w-4 h-4 text-brand-orange" />
+                  <h3 className="text-text-dark font-semibold">Taxation & Economics</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-6">
+                   <div>
+                      <label className="text-text-muted text-xs uppercase tracking-wider mb-2 block">GST Rate (%)</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        className="input-field" 
+                        value={(merged.taxRate ?? 0.18) * 100} 
+                        onChange={e => change('taxRate', String(parseFloat(e.target.value) / 100))} 
+                        placeholder="18" 
+                      />
+                   </div>
+                   <div className="flex items-center gap-3 pt-6">
+                      <input 
+                        type="checkbox" 
+                        id="taxInclusive"
+                        className="w-5 h-5 accent-brand-green"
+                        checked={merged.taxInclusive ?? true} 
+                        onChange={e => change('taxInclusive', String(e.target.checked))} 
+                      />
+                      <label htmlFor="taxInclusive" className="text-xs font-bold text-text-dark uppercase tracking-tight">Prices are Tax-Inclusive</label>
+                   </div>
+                </div>
+                <p className="text-[10px] text-text-muted italic">This rate will be used to calculate the tax subtotal on farmer receipts.</p>
               </div>
 
               <button type="submit" disabled={saving || Object.keys(form).length === 0} className="btn-primary w-full justify-center py-3.5">
@@ -265,7 +297,7 @@ export default function SupplierSettingsPage() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
                   <Shield className="w-4 h-4 text-text-muted" />
-                  <h3 className="text-white font-semibold">KYC Verification</h3>
+                  <h3 className="text-text-dark font-semibold">KYC Verification</h3>
                 </div>
                 <span className={`${kycCfg.cls} text-xs flex items-center gap-1`}>
                   <kycCfg.icon className="w-3 h-3" /> {kycCfg.label}

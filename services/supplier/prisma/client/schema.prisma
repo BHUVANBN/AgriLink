@@ -41,6 +41,8 @@ model Supplier {
   kycSubmittedAt     DateTime?
   kycReviewedAt      DateTime?
   kycReviewedBy      String? // Admin user ID
+  taxRate            Float?             @default(0.18) // GST decimal (0.18 = 18%)
+  taxInclusive       Boolean            @default(true)
   kycRejectionReason String?
 
   isActive Boolean @default(true)
@@ -111,17 +113,18 @@ model InventoryLog {
 }
 
 model SupplierOrder {
-  id            String   @id @default(uuid())
-  orderNumber   String   @unique
-  supplierId    String
-  supplier      Supplier @relation(fields: [supplierId], references: [id])
-  farmerId      String // Cross-service ref
-  items         Json // OrderItem[]
-  totalPaise    Int
-  paymentStatus String   @default("pending")
-  orderStatus   String   @default("placed")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  orderNumber     String   @unique
+  supplierId      String
+  supplier        Supplier @relation(fields: [supplierId], references: [id])
+  farmerId        String // Cross-service ref
+  items           Json // OrderItem[]
+  totalPaise      Int
+  paymentStatus   String   @default("pending")
+  orderStatus     String   @default("placed")
+  shippingAddress Json?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([supplierId, createdAt(sort: Desc)])
   @@index([farmerId])

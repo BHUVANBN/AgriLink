@@ -142,6 +142,8 @@ exports.Prisma.SupplierScalarFieldEnum = {
   kycSubmittedAt: 'kycSubmittedAt',
   kycReviewedAt: 'kycReviewedAt',
   kycReviewedBy: 'kycReviewedBy',
+  taxRate: 'taxRate',
+  taxInclusive: 'taxInclusive',
   kycRejectionReason: 'kycRejectionReason',
   isActive: 'isActive',
   createdAt: 'createdAt',
@@ -194,6 +196,7 @@ exports.Prisma.SupplierOrderScalarFieldEnum = {
   totalPaise: 'totalPaise',
   paymentStatus: 'paymentStatus',
   orderStatus: 'orderStatus',
+  shippingAddress: 'shippingAddress',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { publishEvent } from '../services/kafka.js';
 import { calculateOrderTotals } from '../utils/calculations.js';
+import { getSupplierTaxConfig } from '../services/supplier.js';
 
 const UpdateOrderStatusSchema = z.object({
   orderStatus: z.enum(['CONFIRMED', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED', 'RETURNED']),
@@ -32,7 +33,10 @@ export async function orderRoutes(fastify: FastifyInstance) {
     const createdOrders = [];
 
     for (const [supplierId, supplierItems] of supplierMap.entries()) {
-      const { subtotalPaise, taxPaise, shippingPaise, totalPaise } = calculateOrderTotals(supplierItems);
+      // 🛡️ Fetch real tax preference from supplier service
+      const { taxRate, taxInclusive } = await getSupplierTaxConfig(supplierId);
+      
+      const { subtotalPaise, taxPaise, shippingPaise, totalPaise } = calculateOrderTotals(supplierItems, taxRate, taxInclusive);
 
       // BUG-007 fix: UUID-based order number prevents collisions
       const orderNumber = `ORD-${randomUUID().slice(0, 8).toUpperCase()}`;

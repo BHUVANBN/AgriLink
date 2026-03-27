@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Store, Package, ShoppingCart, BarChart3, Settings, LogOut, Menu, X, Bell, User, Search, ChevronRight } from 'lucide-react';
 import useSWR from 'swr';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -12,12 +11,37 @@ const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const fetcher = (url: string) =>
   fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => d.data);
 
+import { 
+  Store, 
+  Package, 
+  ShoppingCart, 
+  Settings, 
+  LogOut, 
+  Menu, 
+  X, 
+  Bell, 
+  User, 
+  Search, 
+  ChevronRight, 
+  ShieldCheck, 
+  MessageSquare, 
+  Star, 
+  History,
+  LayoutDashboard,
+  BarChart3,
+  BookOpen
+} from 'lucide-react';
+
 const NAV = [
-  { icon: BarChart3,    label: 'Overview',   href: '/dashboard/supplier' },
-  { icon: Package,      label: 'Inventory',  href: '/dashboard/supplier/products' },
-  { icon: ShoppingCart, label: 'Incoming Orders',     href: '/dashboard/supplier/orders' },
-  { icon: BarChart3,    label: 'Sales Insight',  href: '/dashboard/supplier/analytics' },
-  { icon: Settings,     label: 'Settings',   href: '/dashboard/supplier/settings' },
+  { icon: LayoutDashboard, label: 'Control Center',  href: '/dashboard/supplier' },
+  { icon: BarChart3,       label: 'Intelligence',    href: '/dashboard/supplier/analytics' },
+  { icon: Package,         label: 'Asset Gallery',   href: '/dashboard/supplier/products' },
+  { icon: History,         label: 'Audit Ledger',    href: '/dashboard/supplier/products/logs' },
+  { icon: ShoppingCart,    label: 'Order Pipeline',  href: '/dashboard/supplier/orders' },
+  { icon: MessageSquare,   label: 'Inquiry Matrix',  href: '/dashboard/supplier/inquiries' },
+  { icon: Star,            label: 'Feedback Engine', href: '/dashboard/supplier/reviews' },
+  { icon: ShieldCheck,     label: 'KYC & Compliance', href: '/dashboard/supplier/kyc' },
+  { icon: Settings,        label: 'System Config',   href: '/dashboard/supplier/settings' },
 ];
 
 export default function SupplierSidebar({ pageTitle }: { pageTitle?: string }) {

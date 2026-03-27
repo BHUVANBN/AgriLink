@@ -7,9 +7,11 @@ import './config.js';
 import Fastify from 'fastify';
 import FastifyCors from '@fastify/cors';
 import { paymentRoutes } from './routes/payment.js';
-import { orderRoutes } from './routes/orders.js';
-import { cartRoutes } from './routes/cart.js';
 import { productRoutes } from './routes/products.js';
+import { cartRoutes } from './routes/cart.js';
+import { orderRoutes } from './routes/orders.js';
+import { inquiryRoutes } from './routes/inquiries.js';
+import { startConsumer } from './services/kafka.js';
 import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
 import { makeAuthMiddleware } from '@agrilink/auth-middleware';
@@ -122,7 +124,11 @@ await fastify.register(async (app) => {
   await app.register(paymentRoutes, { prefix: '/payment' });
   await app.register(orderRoutes, { prefix: '/orders' });
   await app.register(cartRoutes, { prefix: '/cart' });
+  await app.register(inquiryRoutes, { prefix: '/inquiries' });
 }, { prefix: '/marketplace' });
+
+// Start Kafka
+await startConsumer(prisma).catch(err => console.error('Kafka consumer failed', err));
 
 const PORT = Number(process.env.MARKETPLACE_PORT ?? 4004);
 await fastify.listen({ port: PORT, host: '0.0.0.0' });
