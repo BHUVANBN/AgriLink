@@ -11,34 +11,39 @@ export async function profileRoutes(fastify: FastifyInstance) {
     '/me',
     { preHandler: [(fastify as any).authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const userId = (req as any).user.sub;
+      try {
+        const userId = (req as any).user.sub;
+        const user = await User.findUnique({ where: { id: userId } }) as any;
 
-      const user = await User.findUnique({ where: { id: userId } }) as any;
+        if (!user) {
+          return reply.status(404).send({ success: false, error: 'User not found' });
+        }
+        if (!user.isActive) {
+          return reply.status(403).send({ success: false, error: 'Account suspended', code: 'SUSPENDED' });
+        }
 
-      if (!user) {
-        return reply.status(404).send({ success: false, error: 'User not found' });
+        return reply.send({
+          success: true,
+          data: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            fullName: user.fullName,
+            companyName: user.companyName,
+            displayName: user.fullName ?? user.companyName ?? user.email,
+            emailVerified: user.emailVerified,
+            kycStatus: user.kycStatus,
+            isActive: user.isActive,
+            createdAt: user.createdAt,
+          },
+        });
+      } catch (err: any) {
+        console.error('[PROFILE] Error fetching profile:', err);
+        return reply.status(500).send({ success: false, error: 'Internal Server Error during profile fetch', details: err.message });
       }
-      if (!user.isActive) {
-        return reply.status(403).send({ success: false, error: 'Account suspended', code: 'SUSPENDED' });
-      }
-
-      return reply.send({
-        success: true,
-        data: {
-          id: user.id,
-          email: user.email,
-          phone: user.phone,
-          role: user.role,
-          fullName: user.fullName,
-          companyName: user.companyName,
-          displayName: user.fullName ?? user.companyName ?? user.email,
-          emailVerified: user.emailVerified,
-          kycStatus: user.kycStatus,
-          isActive: user.isActive,
-          createdAt: user.createdAt,
-        },
-      });
     }
+
   );
 
   // ── GET /auth/introspect ─────────────────────────────────────

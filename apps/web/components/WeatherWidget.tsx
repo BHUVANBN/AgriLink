@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Cloud, 
@@ -42,6 +42,12 @@ const WEATHER_MAP: Record<number, { label: string; icon: any; color: string; bg:
 
 export default function WeatherWidget({ weather, isLoading }: { weather: any; isLoading: boolean }) {
   const [view, setView] = useState<'forecast' | 'history'>('forecast');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   if (isLoading) {
     return <div className="bg-white rounded-[3rem] h-full p-8 border border-[#eae6de] animate-pulse shadow-sm min-h-[500px]" />;
@@ -160,29 +166,42 @@ export default function WeatherWidget({ weather, isLoading }: { weather: any; is
                exit={{ opacity: 0, x: view === 'forecast' ? -20 : 20 }}
                className="space-y-4"
             >
-               {(view === 'forecast' ? daily : history).time.slice(0, 7).map((time: string, i: number) => {
+               {((view === 'forecast' ? daily : history).time || []).slice(0, 7).map((time: string, i: number) => {
                   const weatherCode = view === 'forecast' ? (daily.weather_code?.[i] || 0) : 0;
                   const dayConfig = WEATHER_MAP[weatherCode || 0] || { icon: Cloud, color: view === 'history' ? 'text-slate-400' : 'text-text-muted' };
                   const date = new Date(time);
-                  const isToday = new Date().toDateString() === date.toDateString();
-                  const dayLabel = isToday ? 'TODAY' : date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
                   
+                  // Hydration-safe date labels
+                  let dayLabel = '---';
+                  let isToday = false;
+                  if (mounted) {
+                    try {
+                      isToday = new Date().toDateString() === date.toDateString();
+                      dayLabel = isToday ? 'TODAY' : date.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+                    } catch {
+                      dayLabel = 'ERR';
+                    }
+                  }
+
                   const targetDaily = view === 'forecast' ? daily : history;
+                  const tempMax = targetDaily.temperature_2m_max?.[i];
+                  const tempMin = targetDaily.temperature_2m_min?.[i];
 
                   return (
                     <div key={time} className={`flex items-center justify-between text-xs py-1.5 ${isToday ? 'bg-brand-green/[0.03] -mx-4 px-4 rounded-lg' : ''}`}>
                        <span className={`w-20 font-black tracking-widest text-[10px] ${isToday ? 'text-brand-green' : 'text-text-muted'}`}>{dayLabel}</span>
                        <dayConfig.icon className={`w-4 h-4 ${dayConfig.color}`} />
                        <div className="flex items-center gap-4 w-28 justify-end text-right">
-                          <span className="text-text-dark font-serif font-bold text-sm min-w-[32px]">{Math.round(targetDaily.temperature_2m_max[i] || 0)}°</span>
-                          <span className="text-text-muted font-bold min-w-[32px]">{Math.round(targetDaily.temperature_2m_min[i] || 0)}°</span>
+                          <span className="text-text-dark font-serif font-bold text-sm min-w-[32px]">{Math.round(tempMax || 0)}°</span>
+                          <span className="text-text-muted font-bold min-w-[32px]">{Math.round(tempMin || 0)}°</span>
                           <div className="w-12 text-[9px] font-black text-blue-500 uppercase tracking-tighter">
-                             {targetDaily.precipitation_sum?.[i] > 0 ? `${targetDaily.precipitation_sum[i]}mm` : 'Dry'}
+                             {(targetDaily.precipitation_sum?.[i] || 0) > 0 ? `${targetDaily.precipitation_sum[i]}mm` : 'Dry'}
                           </div>
                        </div>
                     </div>
                   );
                })}
+
             </motion.div>
          </AnimatePresence>
          

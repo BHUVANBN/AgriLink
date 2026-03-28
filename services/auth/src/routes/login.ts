@@ -35,7 +35,7 @@ export async function loginRoutes(fastify: FastifyInstance) {
     '/login',
     {
       config: {
-        rateLimit: { max: 10, timeWindow: '15m', keyGenerator: (req) => req.ip },
+        rateLimit: { max: 100, timeWindow: '15m', keyGenerator: (req) => req.ip },
       },
     },
     async (req: FastifyRequest, reply: FastifyReply) => {

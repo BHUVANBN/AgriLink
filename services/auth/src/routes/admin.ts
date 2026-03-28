@@ -152,54 +152,53 @@ export async function adminRoutes(fastify: FastifyInstance) {
     '/kyc-queue',
     { preHandler: [(fastify as any).authenticate, requireAdmin] },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const { page = 1, limit = 20 } = req.query as any;
-      
-      const skip = (Number(page) - 1) * Number(limit);
-      
-      const [users, total] = await Promise.all([
-        User.findMany({
-          where: { 
-            kycStatus: 'pending',
-            emailVerified: true,
-            isActive: true,
-          },
-          skip,
-          take: Number(limit),
-          orderBy: { kycSubmittedAt: 'asc' },
-          select: {
-            id: true,
-            email: true,
-            phone: true,
-            role: true,
-            fullName: true,
-            companyName: true,
-            kycSubmittedAt: true,
-            createdAt: true,
-          },
-        }),
-        User.count({ 
-          where: { 
-            kycStatus: 'pending',
-            emailVerified: true,
-            isActive: true,
-          },
-        }),
-      ]);
+      try {
+        const { page = 1, limit = 20 } = req.query as any;
+        
+        const skip = (Number(page) - 1) * Number(limit);
+        
+        const [users, total] = await Promise.all([
+          User.findMany({
+            where: { 
+              kycStatus: 'pending',
+              emailVerified: true,
+              isActive: true,
+            },
+            skip,
+            take: Number(limit),
+            orderBy: { kycSubmittedAt: 'asc' },
+            select: {
+              id: true,
+              email: true,
+              phone: true,
+              role: true,
+              fullName: true,
+              companyName: true,
+              kycSubmittedAt: true,
+              createdAt: true,
+            },
+          }),
+          User.count({ 
+            where: { 
+              kycStatus: 'pending',
+              emailVerified: true,
+              isActive: true,
+            } 
+          }),
+        ]);
 
-      return reply.send({
-        success: true,
-        data: {
-          users,
-          pagination: {
-            page: Number(page),
-            limit: Number(limit),
+        return reply.send({
+          success: true,
+          data: {
+            users,
             total,
             pages: Math.ceil(total / Number(limit)),
-            hasNext: skip + Number(limit) < total,
-            hasPrev: Number(page) > 1,
           },
-        },
-      });
+        });
+      } catch (err: any) {
+        console.error('[KYC-QUEUE] Error fetching queue:', err);
+        return reply.status(500).send({ success: false, error: 'Internal Server Error during KYC queue fetch', details: err.message });
+      }
     }
   );
 
@@ -464,11 +463,13 @@ export async function adminRoutes(fastify: FastifyInstance) {
           TO_CHAR("createdAt", 'DY') as name,
           COUNT(*)::int as users,
           MIN("createdAt") as date_order
-        FROM "users"
+        FROM "auth"."users"
         WHERE "createdAt" >= ${sevenDaysAgo}
         GROUP BY name
         ORDER BY date_order ASC
       `;
+
+
 
       return reply.send({ success: true, data: stats });
     }
@@ -486,14 +487,15 @@ export async function adminRoutes(fastify: FastifyInstance) {
       if (actorId) where.actorId = actorId;
 
       const [logs, total] = await Promise.all([
-        (User as any).prisma.auditLog.findMany({
+        prisma.auditLog.findMany({
           where,
           skip,
           take: Number(limit),
           orderBy: { createdAt: 'desc' },
         }),
-        (User as any).prisma.auditLog.count({ where }),
+        prisma.auditLog.count({ where }),
       ]);
+
 
       return reply.send({ success: true, data: { items: logs, total, pages: Math.ceil(total / Number(limit)) } });
     }
@@ -608,7 +610,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
 
       // Audit Log
-      await (User as any).prisma.auditLog.create({
+      await prisma.auditLog.create({
         data: {
           actorId: adminId,
           action: 'SYSTEM_BROADCAST',
@@ -616,6 +618,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
           ipAddress: req.ip,
         }
       });
+
 
       return reply.send({ 
         success: true, 

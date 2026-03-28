@@ -42,15 +42,18 @@ export default function LoginPage() {
       }
 
       // ─ Fix for "double login" bug ───────────────────────────
-      // Tell SWR to re-fetch /auth/me globally so dashboard doesn't use cached 401
-      await mutate(`${API}/auth/me`);
+      // Proactively seed the SWR cache with user data from login response
+      // This prevents the dashboard from seeing an old 401/cached-out state
+      await mutate(`${API}/auth/me`, { success: true, data: data.data.user }, false);
 
       const role = data.data.user.role;
+
       toast.success(`Welcome back, ${data.data.user.displayName}!`);
 
-      if (role === 'farmer') router.push('/dashboard/farmer');
-      else if (role === 'supplier') router.push('/dashboard/supplier');
-      else if (role === 'admin') router.push('/admin');
+      const userRole = role?.toLowerCase();
+      if (userRole === 'farmer') router.push('/dashboard/farmer');
+      else if (userRole === 'supplier') router.push('/dashboard/supplier');
+      else if (userRole === 'admin') router.push('/dashboard/admin');
       else router.push('/');
     } catch {
       toast.error('Network error — please try again');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { 
@@ -9,12 +9,16 @@ import {
   Clock, 
   Eye, 
   User, 
+  Users, 
   AlertTriangle, 
   FileCheck,
   X,
-  ArrowRight,
   ShieldCheck,
-  ShieldAlert
+  ShieldAlert,
+  Loader2,
+  Package,
+  Search,
+  AlertCircle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminLayout from '@/components/AdminLayout';
@@ -23,14 +27,33 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => d.data);
 
+function StatCard({ label, value, sub, icon: Icon, color }: any) {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 relative overflow-hidden group hover:border-red-600/30 transition-all">
+       <div className="flex justify-between items-start mb-6">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-${color}-600/10 text-${color}-600 shadow-xl group-hover:scale-110 transition-transform`}>
+             <Icon className="w-7 h-7" />
+          </div>
+          <div className="p-3 bg-white/5 rounded-xl text-[9px] font-bold uppercase tracking-widest text-white/40 italic">Telemetry</div>
+       </div>
+       <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">{label}</h3>
+       <div className="flex items-end gap-3">
+          <p className="text-4xl font-bold text-white font-serif tracking-tighter">{value}</p>
+          <p className={`text-[10px] font-bold uppercase tracking-widest text-${color}-600 mb-1.5`}>{sub}</p>
+       </div>
+       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[80px] -translate-y-16 translate-x-16 opacity-30 group-hover:scale-125 transition-transform" />
+    </div>
+  );
+}
+
 function DecideModal({ user, onDecide, onClose }: { user: any; onDecide: (id: string, decision: string, reason?: string) => void; onClose: () => void }) {
   const [reason, setReason] = useState('');
   const confidence = Math.round((user.nameMatchConfidence ?? 0) * 100);
   const matchStatus = user.nameMatchStatus ?? 'pending';
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/80 backdrop-blur-md" />
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }} 
         animate={{ opacity: 1, scale: 1, y: 0 }} 
@@ -78,7 +101,7 @@ function DecideModal({ user, onDecide, onClose }: { user: any; onDecide: (id: st
              <textarea 
                value={reason}
                onChange={e => setReason(e.target.value)}
-               className="input-field h-24 text-sm" 
+               className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white text-sm focus:ring-1 focus:ring-red-500 outline-none h-24" 
                placeholder="Why are you approving/rejecting this user? (Visible to staff only)" 
              />
           </div>
@@ -106,10 +129,48 @@ function DecideModal({ user, onDecide, onClose }: { user: any; onDecide: (id: st
 export default function KYCReviewQueue() {
   useRequireAuth('admin');
   const { data: queue, mutate, isLoading } = useSWR(`${API}/auth/admin/kyc-queue`, fetcher);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  
+  const [search, setSearch] = useState('');
+  const [role, setRole] = useState('ALL');
+  const [inspectingUser, setInspectingUser] = useState<any>(null);
+  const [manifest, setManifest] = useState<any>(null);
+  const [manifestLoading, setManifestLoading] = useState(false);
   const [decidingUser, setDecidingUser] = useState<any>(null);
 
-  async function handleDecision(userId: string, decision: string, reason?: string) {
+  const filteredUsers = useMemo(() => {
+    if (!queue?.users) return [];
+    return queue.users.filter((u: any) => {
+      const matchesRole = role === 'ALL' || u.role === role;
+      const matchesSearch = u.fullName?.toLowerCase().includes(search.toLowerCase()) || 
+                          u.email.toLowerCase().includes(search.toLowerCase());
+      return matchesRole && matchesSearch;
+    });
+  }, [queue, role, search]);
+  
+  const isPdf = (url: string) => url?.toLowerCase().endsWith('.pdf');
+
+
+  const handleInspect = async (user: any) => {
+    setInspectingUser(user);
+    setManifestLoading(true);
+    try {
+      const res = await fetch(`${API}/${user.role === 'farmer' ? 'farmer' : 'supplier'}/${user.id}/kyc`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setManifest(data.data);
+      } else {
+        toast.error('Failed to retrieve security artifacts');
+      }
+    } catch (err) {
+      toast.error('Protocol failure during manifest retrieval');
+    } finally {
+      setManifestLoading(false);
+    }
+  };
+
+  const handleAction = async (userId: string, decision: string, reason?: string) => {
     try {
       const res = await fetch(`${API}/auth/admin/kyc/${userId}/decide`, {
         method: 'POST',
@@ -124,118 +185,264 @@ export default function KYCReviewQueue() {
     } catch (err: any) {
       toast.error(err.message);
     }
-  }
-
-  const pending = queue?.users || [];
+  };
 
   return (
-    <AdminLayout pageTitle="KYC Access Verification">
-      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-        
-        <div className="flex items-center justify-between mb-10">
-           <div>
-              <h2 className="text-2xl font-black text-white">Review Queue 📁</h2>
-              <p className="text-slate-500 text-sm mt-1 italic">Background check & Identity verification for new participants</p>
-           </div>
-           <div className="flex items-center gap-3 bg-white/5 p-2 rounded-2xl border border-white/8">
-              <span className="badge-red text-[10px] font-black">{pending.length} STALE</span>
-              <span className="text-[10px] text-slate-500 uppercase font-black px-2 border-l border-white/10">Average Latency: 14m</span>
-           </div>
-        </div>
+    <AdminLayout pageTitle="Forensic Audit Queue">
+      <div className="max-w-7xl mx-auto space-y-12">
+         {/* Controls Header */}
+         <div className="flex flex-col md:flex-row gap-8 justify-between items-start md:items-end mb-16">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+               <h3 className="text-3xl font-bold text-white font-serif tracking-tight uppercase">KYC Decision Hub</h3>
+               <p className="text-red-500 font-bold text-[10px] uppercase tracking-[0.25em] mt-2 italic">Awaiting Forensic Verification Output</p>
+            </motion.div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto p-4 bg-white/5 rounded-3xl border border-white/10">
+               <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-5 py-3 min-w-[300px] group focus-within:border-white/20 transition-all">
+                  <Search className="w-4 h-4 text-white/20 group-focus-within:text-red-500" />
+                  <input 
+                    className="bg-transparent border-none text-[11px] font-bold text-white focus:ring-0 w-full placeholder:text-white/20 outline-none" 
+                    placeholder="Search Auditor's Database..." 
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+               </div>
+               <div className="flex items-center gap-2 p-1.5 bg-black/40 rounded-2xl border border-white/10">
+                  {['ALL', 'farmer', 'supplier'].map((r) => (
+                    <button 
+                      key={r}
+                      onClick={() => setRole(r)}
+                      className={`
+                        px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all
+                        ${role === r ? 'bg-red-600 text-white shadow-xl shadow-red-900/40' : 'text-white/40 hover:text-white'}
+                      `}
+                    >
+                      {r === 'ALL' ? 'Total nodes' : r}
+                    </button>
+                  ))}
+               </div>
+            </div>
+         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-64 skeleton rounded-3xl" />)}
-          </div>
-        ) : pending.length === 0 ? (
-          <div className="glass-card p-24 text-center border-white/5 bg-gradient-to-b from-white/[0.03] to-transparent">
-             <CheckCircle className="w-16 h-16 text-slate-700 mx-auto mb-6" />
-             <h3 className="text-white font-black text-xl">Queue is Empty</h3>
-             <p className="text-slate-500 text-sm mt-2 font-medium italic">No pending identity checks at the moment. All set!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pending.map((user: any) => (
-              <motion.div 
-                key={user.id} 
-                className="stat-card p-0 overflow-hidden flex flex-col group hover:border-red-500/30 transition-all"
-                layoutId={user.id}
-              >
-                <div className="p-6 border-b border-white/5">
-                   <div className="flex items-start justify-between">
-                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white font-bold text-lg group-hover:bg-red-500 group-hover:text-white transition-all shadow-inner">
-                         {(user.fullName ?? user.email)?.[0]?.toUpperCase()}
-                      </div>
-                      <span className={`text-[10px] font-black uppercase px-2 py-1 rounded bg-white/5 border border-white/10 ${user.role === 'farmer' ? 'text-green-400' : 'text-blue-400'}`}>
-                         {user.role}
-                      </span>
-                   </div>
-                   <div className="mt-4">
-                      <p className="text-white font-black text-lg truncate">{user.fullName || 'Profile Incomplete'}</p>
-                      <p className="text-slate-500 text-[10px] truncate max-w-[200px] mb-4 uppercase tracking-tighter">{user.email}</p>
-                   </div>
-                   
-                   <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                      <div className="flex items-center gap-2">
-                         <ShieldAlert className={`w-3.5 h-3.5 ${user.nameMatchStatus === 'matched' ? 'text-green-500' : 'text-amber-500'}`} />
-                         <span className="text-[10px] text-slate-400 font-black">AI SIMILARITY: {Math.round((user.nameMatchConfidence || 0)*100)}%</span>
-                      </div>
-                      <Clock className="w-3.5 h-3.5 text-slate-600" />
-                   </div>
-                </div>
+         {/* Statistical Telemetry Grid */}
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <StatCard label="Total Nodes" value={queue?.total || 0} sub="Pending Analysis" icon={Users} color="blue" />
+            <StatCard label="Farmer Submissions" value={queue?.users?.filter((u: any) => u.role === 'farmer').length || 0} sub="Awaiting Cross-Check" icon={ShieldCheck} color="emerald" />
+            <StatCard label="Business Nodes" value={queue?.users?.filter((u: any) => u.role === 'supplier').length || 0} sub="Manual Cert Scan Ready" icon={Package} color="amber" />
+            <StatCard label="Avg Turnaround" value="1.2h" sub="System Optimization: High" icon={Clock} color="red" />
+         </div>
 
-                <div className="p-4 bg-white/[0.02] flex gap-2">
-                   <button 
-                     onClick={() => setSelectedUser(user)}
-                     className="flex-1 py-3 rounded-xl bg-white/5 text-slate-300 text-[10px] font-black uppercase tracking-widest hover:text-white hover:bg-white/10 transition-all flex items-center justify-center gap-2"
-                   >
-                      <Eye className="w-3 h-3" /> View Artifacts
-                   </button>
-                   <button 
-                     onClick={() => setDecidingUser(user)}
-                     className="px-4 py-3 rounded-xl bg-red-500 text-white shadow-lg shadow-red-500/20 active:scale-95 transition-all flex items-center justify-center"
-                   >
-                      <ArrowRight className="w-4 h-4" />
-                   </button>
-                </div>
-              </motion.div>
-            ))}
+         {/* Result Matrix */}
+         <div className="bg-white/5 border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-10 pb-6 border-b border-white/5 relative z-10">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/5 text-white/40 rounded-xl flex items-center justify-center border border-white/10 italic font-serif">A</div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white font-serif">KYC Transaction Logs</h3>
+                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest italic">Encrypted // Verified Platform Source</p>
+                  </div>
+               </div>
+               <div className="flex items-center gap-4">
+                  <button onClick={() => mutate()} className="p-3 bg-white/5 hover:bg-white/10 text-white/40 rounded-xl transition-all"><Loader2 className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} /></button>
+               </div>
+            </div>
+
+            <div className="overflow-x-auto relative z-10 custom-scrollbar">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left border-b border-white/5">
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Identity Node</th>
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Role</th>
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Submission Interval</th>
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 text-right">Operational Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filteredUsers?.length > 0 ? (
+                    filteredUsers.map((user: any) => (
+                      <motion.tr key={user.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group hover:bg-white/[0.02] transition-colors">
+                        <td className="py-6 pr-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-white italic font-serif group-hover:scale-110 transition-transform">
+                              {user.fullName?.[0] || 'U'}
+                            </div>
+                            <div>
+                              <p className="text-[14px] font-bold text-white font-serif truncate max-w-[200px] italic">{user.fullName || 'Identity Pending'}</p>
+                              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest truncate max-w-[200px] mt-1 italic">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-6">
+                          <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                            user.role === 'farmer' 
+                              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                              : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="py-6">
+                           <div className="flex items-center gap-2 text-white/40 group-hover:text-white/60 transition-colors">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span className="text-[11px] font-bold italic">{new Date(user.kycSubmittedAt || Date.now()).toLocaleString()}</span>
+                           </div>
+                        </td>
+                        <td className="py-6 text-right">
+                          <div className="flex items-center justify-end gap-3 opacity-40 group-hover:opacity-100 transition-all">
+                             <button 
+                               onClick={() => handleInspect(user)}
+                               className="px-6 py-2.5 bg-white/5 hover:bg-white text-white/60 hover:text-black rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 flex items-center gap-2"
+                             >
+                                <Eye className="w-3.5 h-3.5" /> View Artifacts
+                             </button>
+                             <button 
+                               onClick={() => setDecidingUser(user)}
+                               className="w-10 h-10 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-500 hover:text-white rounded-xl flex items-center justify-center transition-all border border-emerald-500/20"
+                             >
+                                <CheckCircle className="w-5 h-5" />
+                             </button>
+                             <button 
+                               onClick={() => setDecidingUser(user)}
+                               className="w-10 h-10 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white rounded-xl flex items-center justify-center transition-all border border-rose-500/20"
+                             >
+                                <XCircle className="w-5 h-5" />
+                             </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-20 text-center">
+                        <div className="flex flex-col items-center justify-center opacity-20">
+                           <ShieldAlert className="w-20 h-20 mb-6 shrink-0" />
+                           <p className="text-[12px] font-black uppercase tracking-[0.3em] font-serif italic">Identity Ledger Clear // No Records Detected</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-600 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 opacity-5 pointer-events-none" />
+         </div>
+      </div>
+
+      <AnimatePresence>
+        {inspectingUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
+            <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               onClick={() => setInspectingUser(null)}
+               className="absolute inset-0 bg-black/80 backdrop-blur-sm shadow-[0_0_100px_rgba(255,0,0,0.1)]"
+            />
+            
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0c0c0c] w-full max-w-5xl max-h-[90vh] rounded-[3rem] border border-white/10 shadow-3xl overflow-hidden flex flex-col relative z-10"
+            >
+              <div className="p-10 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                 <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-xl shadow-red-900/20">
+                       <User className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                       <h3 className="text-3xl font-bold text-white font-serif italic truncate">{inspectingUser.email}</h3>
+                       <div className="flex items-center gap-3 mt-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-red-500 italic bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">Role: {inspectingUser.role}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white/30 italic">ID: {inspectingUser.id}</span>
+                       </div>
+                    </div>
+                 </div>
+                 <button onClick={() => setInspectingUser(null)} className="w-14 h-14 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-2xl flex items-center justify-center border border-white/10 transition-all"><X className="w-6 h-6" /></button>
+              </div>
+
+              <div className="p-12 overflow-y-auto custom-scrollbar flex-1 bg-black/40">
+                {manifestLoading ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-6">
+                     <Loader2 className="w-10 h-10 text-red-600 animate-spin" />
+                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 italic">Extracting Forensic Profiles...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-12">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                       {[
+                         { id: 'aadhaar', label: 'Aadhaar Card', url: manifest?.aadhaarCloudUrl, icon: ShieldCheck, color: 'emerald' },
+                         { id: 'rtc', label: 'RTC / Land Record', url: manifest?.rtcCloudUrl, icon: FileCheck, color: 'amber' },
+                         { id: 'sketch', label: 'Land Sketch', url: manifest?.landSketchUrl, icon: Package, color: 'blue' },
+                         { id: 'idProof', label: 'Owner ID Proof', url: manifest?.ownerIdProofUrl, icon: ShieldCheck, color: 'emerald' },
+                         { id: 'trade', label: 'Trade License', url: manifest?.tradeLicenseUrl, icon: FileCheck, color: 'amber' },
+                         { id: 'business', label: 'Business Cert', url: manifest?.businessCertUrl, icon: Package, color: 'blue' },
+                         { id: 'gst', label: 'GST Certificate', url: manifest?.gstCertUrl, icon: CheckCircle, color: 'purple' }
+                       ].filter(doc => doc.url).map((doc) => (
+                         <div key={doc.id} className="space-y-4">
+                            <div className="flex items-center justify-between">
+                               <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 bg-${doc.color}-600/10 text-${doc.color}-600 rounded-lg flex items-center justify-center border border-${doc.color}-600/20`}><doc.icon className="w-4 h-4" /></div>
+                                  <span className="text-[11px] font-bold text-white font-serif italic uppercase underline underline-offset-4 decoration-white/10">{doc.label}</span>
+                               </div>
+                               <a 
+                                 href={doc.url} 
+                                 target="_blank" 
+                                 rel="noreferrer" 
+                                 className="text-[9px] font-black text-white/40 hover:text-white flex items-center gap-1 uppercase tracking-widest transition-colors"
+                               >
+                                  Open <Eye className="w-3 h-3" />
+                               </a>
+                            </div>
+                            <a 
+                              href={doc.url} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="block aspect-[1.4/1] bg-white/5 rounded-3xl overflow-hidden border border-white/10 shadow-xl relative group/img cursor-pointer"
+                            >
+                               {isPdf(doc.url) ? (
+                                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-blue-600/5 group-hover/img:bg-blue-600/10 transition-colors">
+                                     <FileCheck className="w-10 h-10 text-blue-500/40" />
+                                     <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">PDF Artifact</p>
+                                  </div>
+                               ) : (
+                                  <img src={doc.url} alt={doc.label} className="w-full h-full object-cover group-hover/img:scale-105 transition-transform duration-700" />
+                               )}
+                               <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+                                  <div className="px-5 py-2 bg-white text-black font-black text-[9px] rounded-full uppercase tracking-widest shadow-2xl">Open Original</div>
+                               </div>
+                            </a>
+
+                         </div>
+                       ))}
+                    </div>
+
+                     <div className="md:col-span-2 mt-8 p-10 bg-red-600/[0.03] border border-red-600/10 rounded-[3rem] shadow-inner relative overflow-hidden group">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative z-10">
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-red-500 tracking-widest mb-3 italic">Confidence Matrix</p>
+                              <div className="flex items-center gap-4">
+                                 <div className="text-3xl font-bold text-white font-serif">{manifest?.nameMatchConfidence ? (manifest.nameMatchConfidence * 100).toFixed(1) : 'N/A'}%</div>
+                                 <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
+                                    <div className="h-full bg-red-600" style={{ width: `${(manifest?.nameMatchConfidence ?? 0) * 100}%` }} />
+                                 </div>
+                              </div>
+                              <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest mt-3 italic font-serif">Verified via Deep-Matching Engine</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] font-black uppercase text-white/30 tracking-widest mb-3 italic">Audit Node History</p>
+                              <p className="text-[13px] font-bold text-white font-serif italic mb-1">Total Submissions: {manifest?.kycSubmittedAt ? '01' : '00'}</p>
+                              <p className="text-[13px] font-bold text-white font-serif italic">Status: {manifest?.kycStatus?.toUpperCase()}</p>
+                           </div>
+                        </div>
+                     </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-10 border-t border-white/5 bg-white/[0.02] flex items-center justify-end gap-6">
+                 <button onClick={() => setInspectingUser(null)} className="px-8 py-4 bg-white/5 hover:bg-white text-white/40 hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Abort Audit</button>
+                 <button onClick={() => { setDecidingUser(inspectingUser); setInspectingUser(null); }} className="px-10 py-5 bg-emerald-600 hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all">Execute Full Approval</button>
+              </div>
+            </motion.div>
           </div>
         )}
-      </motion.div>
-
-      {/* Artifact Viewer Modal */}
-      <AnimatePresence>
-         {selectedUser && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/90 backdrop-blur-xl">
-              <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                 <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-2xl font-black text-white italic">Artifact Inspector // {selectedUser.fullName || selectedUser.email}</h3>
-                    <button onClick={() => setSelectedUser(null)} className="p-3 bg-white/5 rounded-full hover:bg-red-500 text-white transition-all">
-                       <X className="w-6 h-6" />
-                    </button>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pb-10">
-                    <div className="space-y-4">
-                       <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest border-b border-white/10 pb-2">Primary ID (Aadhaar/PAN)</p>
-                       <div className="aspect-[3/4] rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                          {selectedUser.aadhaarUrl ? (
-                             <img src={selectedUser.aadhaarUrl} alt="Aadhaar" className="w-full h-full object-contain" />
-                          ) : <p className="text-slate-600 text-sm">No Primary ID Uploaded</p>}
-                       </div>
-                    </div>
-                    <div className="space-y-4">
-                       <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest border-b border-white/10 pb-2">Secondary Proof (RTC/License)</p>
-                       <div className="aspect-[3/4] rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden">
-                          {selectedUser.rtcUrl ? (
-                             <img src={selectedUser.rtcUrl} alt="RTC" className="w-full h-full object-contain" />
-                          ) : <p className="text-slate-600 text-sm">No secondary proof uploaded</p>}
-                       </div>
-                    </div>
-                 </div>
-              </div>
-           </div>
-         )}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -243,11 +450,17 @@ export default function KYCReviewQueue() {
            <DecideModal 
              user={decidingUser} 
              onClose={() => setDecidingUser(null)} 
-             onDecide={handleDecision} 
+             onDecide={handleAction} 
            />
          )}
       </AnimatePresence>
 
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ffffff10; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ffffff20; }
+      `}</style>
     </AdminLayout>
   );
 }

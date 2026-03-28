@@ -26,15 +26,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ADMIN_STRINGS, ADMIN_CONFIG } from '@/config/admin.constants';
 
 const API = ADMIN_CONFIG.API_URL;
-const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => d.data);
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json());
+
 
 const NAV = [
   { icon: LayoutDashboard, label: ADMIN_STRINGS.SIDEBAR.NAV.CONTROL_CENTER, href: '/dashboard/admin' },
-  { icon: ShieldCheck,     label: ADMIN_STRINGS.SIDEBAR.NAV.KYC_HUB, href: '/dashboard/admin/users' },
+  { icon: ShieldCheck,     label: 'KYC Operations',     href: '/dashboard/admin/kyc' },
+  { icon: Users,           label: ADMIN_STRINGS.SIDEBAR.NAV.KYC_HUB, href: '/dashboard/admin/users' },
   { icon: MessageSquare,   label: ADMIN_STRINGS.SIDEBAR.NAV.MODERATION,   href: '/dashboard/admin/moderation' },
   { icon: CreditCard,      label: ADMIN_STRINGS.SIDEBAR.NAV.FINANCIAL, href: '/dashboard/admin/transactions' },
   { icon: Zap,             label: ADMIN_STRINGS.SIDEBAR.NAV.BROADCAST, href: '/dashboard/admin/broadcast' },
-  { icon: Activity,        label: ADMIN_STRINGS.SIDEBAR.NAV.INFRASTRUCTURE,  href: '/dashboard/admin/config' },
   { icon: FileText,        label: ADMIN_STRINGS.SIDEBAR.NAV.AUDIT,    href: '/dashboard/admin/audit' },
 ];
 
@@ -42,14 +43,31 @@ export default function AdminSidebar({ pageTitle }: { pageTitle?: string }) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const { data: profile, isLoading } = useSWR(`${API}/auth/me`, fetcher);
+  const { data: profile, isLoading, error } = useSWR(`${API}/auth/me`, fetcher);
 
   useEffect(() => {
-    if (!isLoading && profile && profile.role !== 'admin') {
-      toast.error('Privileged Access Protocol: User node rejected');
-      router.push('/dashboard'); 
+    // SECURITY: Ensure node is authorized for administrative console
+    if (!isLoading && profile) {
+      // SWR Cache Polarity Check: Identify normalized user role from varying response shapes
+      const node = profile.data || profile.user || profile;
+      const userRole = (node.role || profile.role)?.toLowerCase()?.trim();
+      
+      if (userRole !== 'admin') {
+        toast.error(`Privileged Access Protocol: User node [${userRole || 'UNKNOWN'}] rejected`);
+        
+        // Context-aware fallback navigation
+        if (userRole === 'farmer') router.push('/dashboard/farmer');
+        else if (userRole === 'supplier') router.push('/dashboard/supplier');
+        else router.push('/auth/login');
+      }
+    } else if (!isLoading && (error || !profile)) {
+      // Not authenticated or profile fetch failed
+      router.push('/auth/login');
     }
-  }, [profile, isLoading, router]);
+  }, [profile, isLoading, error, router]);
+
+
+
 
   async function logout() {
     try {

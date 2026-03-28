@@ -192,8 +192,10 @@ await fastify.register(async (app) => {
     const supplier = await prisma.supplier.findUnique({
       where: { userId: req.user.sub },
     });
-    if (!supplier) return reply.status(404).send({ success: false, error: 'Supplier profile not found' });
-    return reply.send({ success: true, data: supplier });
+    return reply.send({ 
+      success: true, 
+      data: supplier ?? { userId: req.user.sub, kycStatus: 'NOT_STARTED', companyName: req.user.companyName ?? 'New Supplier' } 
+    });
   });
 
   app.put('/profile', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
@@ -233,8 +235,19 @@ await fastify.register(async (app) => {
       return reply.status(400).send({ success: false, error: result.error.flatten() });
     }
 
-    const supplier = await prisma.supplier.findUnique({ where: { userId: req.user.sub } });
-    if (!supplier) return reply.status(404).send({ success: false, error: 'Profile not found' });
+    // Lazy initialization of supplier profile if Kafka was slow or failed
+    const supplier = await prisma.supplier.upsert({
+      where: { userId: req.user.sub },
+      update: {},
+      create: {
+        userId: req.user.sub,
+        companyName: req.user.companyName ?? result.data.businessType ?? 'New Supplier',
+        email: req.user.email ?? `${req.user.sub.slice(0, 8)}@agrilink.internal`,
+        phone: req.user.phone ?? '0000000000',
+        address: { text: "Pending full entry" },
+        kycStatus: 'NOT_STARTED'
+      }
+    });
 
     if (supplier.kycStatus === 'APPROVED') {
       return reply.status(400).send({ success: false, error: 'KYC already approved' });
@@ -249,13 +262,61 @@ await fastify.register(async (app) => {
       },
     });
 
+    // Publish event so Auth service can update roles and Admin can see manifest
+    try {
+      await producer.send({
+        topic: 'kyc.submitted',
+        messages: [{
+          value: JSON.stringify({
+            eventId: `${Date.now()}`,
+            topic: 'kyc.submitted',
+            source: 'supplier-service',
+            timestamp: new Date().toISOString(),
+            data: {
+              userId: req.user.sub,
+              email: req.user.email,
+              role: 'supplier',
+              status: 'pending',
+              submittedAt: new Date().toISOString(),
+              businessCertUrl: updated.businessCertUrl,
+              tradeLicenseUrl: updated.tradeLicenseUrl,
+              ownerIdProofUrl: updated.ownerIdProofUrl,
+              gstCertUrl: updated.gstCertUrl,
+            },
+          }),
+        }],
+      });
+    } catch (err: any) {
+      fastify.log.warn(`[kafka] kyc.submitted event failed (non-fatal):`, err.message);
+    }
+
     return reply.send({
       success: true,
       data: {
         kycStatus: updated.kycStatus,
-        message: 'KYC documents submitted. Admin will review within 2-3 business days.',
+        message: 'KYC documents submitted successfully. Admin review pending.',
       },
     });
+  });
+
+  // Admin/Internal: Fetch specific user KYC details
+  app.get('/:userId/kyc', { preHandler: [fastify.authenticate] }, async (req: any, reply) => {
+    const { userId } = req.params as { userId: string };
+    
+    // Authorization: Admin or the user themselves
+    if (req.user.role !== 'admin' && req.user.sub !== userId) {
+      return reply.status(403).send({ success: false, error: 'Unauthorized manifest access' });
+    }
+
+    const supplier = await prisma.supplier.findUnique({
+      where: { userId },
+    });
+
+    if (!supplier) {
+      return reply.status(404).send({ success: false, error: 'Supplier node not found' });
+    }
+
+    return reply.send({ success: true, data: supplier });
   });
 
   // ─ Public Product Catalog (no auth required) ─────────────
@@ -625,11 +686,13 @@ await fastify.register(async (app) => {
     }
 
     try {
+      const ext = file.filename.split('.').pop() || (file.mimetype === 'application/pdf' ? 'pdf' : 'jpg');
       const uploadResult = await new Promise<any>((resolve, reject) => {
         cloudinary.uploader.upload_stream(
           {
             folder: `agrilink/kyc/suppliers/${req.user.sub}`,
             resource_type: file.mimetype === 'application/pdf' ? 'raw' : 'image',
+            public_id: `${file.filename.split('.')[0]}_${Date.now()}.${ext}`,
             quality: 'auto',
           },
           (err, result) => err ? reject(err) : resolve(result)
@@ -650,16 +713,60 @@ await fastify.register(async (app) => {
     }
   });
 
+
 }, { prefix: '/supplier' });
 
 async function startKafkaConsumer() {
-  await consumer.subscribe({ topic: 'order.placed', fromBeginning: false });
+  await consumer.subscribe({ 
+    topics: ['order.placed', 'user.registered', 'kyc.approved', 'kyc.rejected'], 
+    fromBeginning: false 
+  });
 
   await consumer.run({
-    eachMessage: async ({ message }) => {
-      const event = JSON.parse(message.value?.toString() ?? '{}');
-      if (event.topic === 'order.placed') {
-        const { id: orderId, orderNumber, items, supplierId, farmerId, totalAmount, shippingAddress } = event.data;
+    eachMessage: async ({ topic, message }) => {
+      const payload = message.value?.toString();
+      if (!payload) return;
+      const event = JSON.parse(payload);
+      
+      // 1. Consumer: User Identity Lifecycle
+      if (topic === 'user.registered' && (event.role === 'supplier' || event.data?.role === 'supplier')) {
+        const data = event.data || event;
+        fastify.log.info({ userId: data.userId }, 'Syncing new supplier identity');
+        await prisma.supplier.upsert({
+          where: { userId: data.userId },
+          update: {},
+          create: {
+            userId: data.userId,
+            companyName: data.displayName || 'Unnamed Supplier',
+            email: data.email,
+            phone: data.phone || '0000000000',
+            address: { text: "Pending profile completion" },
+            kycStatus: 'NOT_STARTED'
+          }
+        });
+        return;
+      }
+
+      // 2. Consumer: KYC Governance Loop
+      if (topic === 'kyc.approved' || topic === 'kyc.rejected') {
+        const data = event.data || event;
+        if (data.role !== 'supplier') return;
+        
+        fastify.log.info({ userId: data.userId, status: topic }, 'Syncing KYC decision from Auth');
+        await prisma.supplier.updateMany({
+          where: { userId: data.userId },
+          data: {
+            kycStatus: topic === 'kyc.approved' ? 'APPROVED' : 'REJECTED',
+            kycReviewedAt: new Date()
+          }
+        });
+        return;
+      }
+
+      // 3. Consumer: Marketplace Transaction Loop
+      if (topic === 'order.placed' || event.topic === 'order.placed') {
+        const data = event.data || event;
+        const { orderNumber, items, supplierId, farmerId, totalAmount, shippingAddress } = data;
         
         // Find if any products belong to a supplier in this service
         // (In this microservice, we only care about if the supplier matches our records)

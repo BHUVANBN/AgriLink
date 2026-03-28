@@ -36,10 +36,57 @@ cloudinary.config({
 
 const kafka = new Kafka({ brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',') });
 const producer = kafka.producer();
-// Connect producer with error handling but don't block startup
-producer.connect().catch(err => {
-  console.error('[kafka] Farmer producer failed to connect (non-fatal):', err.message);
-});
+const consumer = kafka.consumer({ groupId: 'farmer-service-group' });
+
+// Kafka Startup Engine
+async function startKafka() {
+  await Promise.all([producer.connect(), consumer.connect()]);
+  fastify.log.info('✅ Kafka Connected (Farmer)');
+}
+
+async function startKafkaConsumer() {
+  await consumer.subscribe({ 
+    topics: ['user.registered', 'kyc.approved', 'kyc.rejected'], 
+    fromBeginning: false 
+  });
+
+  await consumer.run({
+    eachMessage: async ({ topic, message }) => {
+      const payload = message.value?.toString();
+      if (!payload) return;
+      const event = JSON.parse(payload);
+      
+      // 1. Sync: Identity Creation
+      if (topic === 'user.registered' && (event.role === 'farmer' || event.data?.role === 'farmer')) {
+        const data = event.data || event;
+        fastify.log.info({ userId: data.userId }, 'Syncing new farmer identity');
+        await prisma.farmerProfile.upsert({
+          where: { userId: data.userId },
+          update: {},
+          create: {
+            userId: data.userId,
+            nameDisplay: data.displayName || 'Unnamed Farmer',
+            kycStatus: 'not_started',
+            village: 'Pending entry'
+          }
+        });
+      }
+
+      // 2. Sync: Governance Status
+      if ((topic === 'kyc.approved' || topic === 'kyc.rejected') && (event.role === 'farmer' || event.data?.role === 'farmer')) {
+        const data = event.data || event;
+        fastify.log.info({ userId: data.userId, status: topic }, 'Syncing KYC decision from Auth');
+        await prisma.farmerProfile.updateMany({
+          where: { userId: data.userId },
+          data: {
+            kycStatus: topic === 'kyc.approved' ? 'approved' : 'rejected',
+            kycApprovedAt: topic === 'kyc.approved' ? new Date() : undefined
+          }
+        });
+      }
+    }
+  });
+}
 
 // ── Plugins ───────────────────────────────────────────────────
 await fastify.register(FastifyCors, {
@@ -164,7 +211,13 @@ async function uploadToCloudinary(buffer: Buffer, folder: string, filename: stri
   console.log(`[Cloudinary] Uploading to agrilink/${folder}/${filename}...`);
   return new Promise((resolve, reject) => {
     cloudinary.uploader.upload_stream(
-      { folder: `agrilink/${folder}`, resource_type: 'auto', public_id: filename },
+      { 
+        folder: `agrilink/${folder}`, 
+        resource_type: 'auto', 
+        public_id: filename,
+        use_filename: true,
+        unique_filename: false 
+      },
       (err, result) => {
         if (err) {
           console.error(`[Cloudinary] Upload failed:`, err);
@@ -186,11 +239,17 @@ await fastify.register(async (app) => {
 
   // BUG-028 fix: returns real data, no hardcoded stats
   app.get('/profile', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
-    const profile = await prisma.farmerProfile.findUnique({ where: { userId: req.user.sub } });
-    return reply.send({
-      success: true,
-      data: profile ?? { userId: req.user.sub, kycStatus: 'not_started' },
+    // Upsert on read to handle any missed Kafka events (Lazy Init)
+    const profile = await prisma.farmerProfile.upsert({
+       where: { userId: req.user.sub },
+       update: {},
+       create: {
+          userId: req.user.sub,
+          nameDisplay: req.user.fullName ?? 'New Farmer',
+          kycStatus: 'not_started'
+       }
     });
+    return reply.send({ success: true, data: profile });
   });
 
   app.get('/weather', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
@@ -241,8 +300,9 @@ await fastify.register(async (app) => {
         success: true,
         data: {
           current: forecastData.current || { temperature_2m: 28, relative_humidity_2m: 65, weather_code: 0 },
-          forecast: forecastData.daily || { weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
-          history: historyData.daily || { temperature_2m_max: [29], temperature_2m_min: [19] },
+          forecast: forecastData.daily || { time: [], weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
+          history: historyData.daily || { time: [], temperature_2m_max: [29], temperature_2m_min: [19] },
+
           location: profile?.village || 'Region Default',
           isMapped
         }
@@ -252,8 +312,8 @@ await fastify.register(async (app) => {
          success: true,
          data: {
            current: { temperature_2m: 28, relative_humidity_2m: 65, weather_code: 0 },
-           forecast: { weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
-           history: { temperature_2m_max: [29], temperature_2m_min: [19] },
+           forecast: { time: [], weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
+           history: { time: [], temperature_2m_max: [29], temperature_2m_min: [19] },
            location: profile?.village || 'Central Karnataka',
            isMapped
          }
@@ -337,8 +397,9 @@ await fastify.register(async (app) => {
         return reply.status(400).send({ success: false, error: 'File too large (max 10MB)' });
       }
 
-      // Upload to Cloudinary for admin viewing
-      const cloudUrl = await uploadToCloudinary(buffer, `farmers/${req.user.sub}/aadhaar`, 'aadhaar');
+      // Extract extension for Cloudinary to correctly identify type
+      const ext = file.filename.split('.').pop() || (file.mimetype === 'application/pdf' ? 'pdf' : 'jpg');
+      const cloudUrl = await uploadToCloudinary(buffer, `farmers/${req.user.sub}/aadhaar`, `aadhaar.${ext}`);
 
       // BUG-018/019 fix: OCR via ML service (Google Vision + Gemini)
       const ocrResult: any = await callOcrService(req, 'extract-aadhaar', buffer, file.filename, file.mimetype);
@@ -400,7 +461,8 @@ await fastify.register(async (app) => {
       for await (const chunk of file.file) chunks.push(chunk);
       const buffer = Buffer.concat(chunks);
 
-      const cloudUrl = await uploadToCloudinary(buffer, `farmers/${req.user.sub}/rtc`, 'rtc');
+      const ext = file.filename.split('.').pop() || (file.mimetype === 'application/pdf' ? 'pdf' : 'jpg');
+      const cloudUrl = await uploadToCloudinary(buffer, `farmers/${req.user.sub}/rtc`, `rtc.${ext}`);
       const ocrResult: any = await callOcrService(req, 'extract-rtc', buffer, file.filename, file.mimetype);
 
       let updateData: any = {
@@ -604,13 +666,34 @@ await fastify.register(async (app) => {
 
     return reply.send({
       success: true,
-      data: { 
-        kycStatus,
-        message: autoApprove 
-          ? '🎉 Instant Verification Successful! Your KYC is approved.' 
-          : 'KYC submitted for review. Admin will verify within 2–3 business days.' 
+      data: {
+        kycStatus: updated.kycStatus,
+        confidence: confidence,
+        message: autoApprove
+          ? '🎉 Instant Verification Successful! Your KYC is approved.'
+          : 'KYC submitted for review. Admin will verify within 2–3 business days.'
       },
     });
+  });
+
+  // Admin/Internal: Fetch specific farmer KYC manifest
+  app.get('/:userId/kyc', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
+    const { userId } = req.params as { userId: string };
+    
+    // Authorization: Admin or the user themselves
+    if (req.user.role !== 'admin' && req.user.sub !== userId) {
+      return reply.status(403).send({ success: false, error: 'Unauthorized manifest access' });
+    }
+
+    const profile = await prisma.farmerProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!profile) {
+      return reply.status(404).send({ success: false, error: 'Farmer node not found' });
+    }
+
+    return reply.send({ success: true, data: profile });
   });
 
   // ─ Land Integration ───────────────────────────────────────
@@ -886,14 +969,32 @@ await fastify.register(async (app) => {
 
 // ── DB + Start ─────────────────────────────────────────────────
 
-try {
-  await prisma.$connect();
-  fastify.log.info('[db] Connected to PostgreSQL Farmer');
-} catch (err: any) {
-  fastify.log.error('[db] Failed to connect to PostgreSQL:', err.message || err);
-  process.exit(1);
+async function bootstrap() {
+  try {
+    await prisma.$connect();
+    fastify.log.info('[db] Connected to PostgreSQL Farmer');
+    
+    // Start Kafka Infrastructure
+    await startKafka();
+    startKafkaConsumer().catch(err => fastify.log.error(err, '[kafka] Consumer error'));
+
+    const PORT = Number(process.env.FARMER_PORT ?? 4002);
+    await fastify.listen({ port: PORT, host: '0.0.0.0' });
+    console.log(`🌾 Farmer service running on http://0.0.0.0:${PORT}`);
+  } catch (err: any) {
+    fastify.log.error('[boot] Failed to connect to PostgreSQL:', err.message || err);
+    process.exit(1);
+  }
 }
 
-const PORT = Number(process.env.FARMER_PORT ?? 4002);
-await fastify.listen({ port: PORT, host: '0.0.0.0' });
-console.log(`🌾 Farmer service running on http://0.0.0.0:${PORT}`);
+bootstrap();
+
+// ── Shutdown ──────────────────────────────────────────────────
+const shutdown = async () => {
+  await producer.disconnect();
+  await consumer.disconnect();
+  await prisma.$disconnect();
+  process.exit(0);
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

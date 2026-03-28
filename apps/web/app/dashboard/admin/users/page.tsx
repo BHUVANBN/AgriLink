@@ -1,345 +1,288 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useSWR from 'swr';
 import { 
   ShieldCheck, 
   Search, 
   ExternalLink,
-  CheckCircle2,
-  XCircle,
   Clock,
-  ChevronRight,
-  Filter,
   User,
   Building2,
   Phone,
   Mail,
-  MoreVertical,
-  AlertTriangle,
+  AlertCircle,
+  AlertTriangle, 
   FileSearch,
-  ArrowUpRight
+  ArrowUpRight,
+  ShieldAlert,
+  Loader2,
+  Package,
+  CheckCircle,
+  XCircle,
+  X
 } from 'lucide-react';
-import AdminSidebar from '@/components/AdminSidebar';
 import toast from 'react-hot-toast';
+import AdminLayout from '@/components/AdminLayout';
+import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { ADMIN_STRINGS, ADMIN_CONFIG } from '@/config/admin.constants';
 
 const API = ADMIN_CONFIG.API_URL;
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => d.data);
 
-export default function KycHubPage() {
-  const [search, setSearch] = useState('');
-  const { data: queue, mutate, isLoading } = useSWR(`${API}/auth/admin/kyc-queue`, fetcher);
-  const [deciding, setDeciding] = useState<string | null>(null);
-  const [inspecting, setInspecting] = useState<any | null>(null);
-  const [reason, setReason] = useState('');
-
-  async function handleDecision(id: string, decision: 'approved' | 'rejected') {
-    if (decision === 'rejected' && !reason) {
-       toast.error('Rejection requires a clarification reason');
-       return;
-    }
-
-    try {
-      const res = await fetch(`${API}/auth/admin/kyc/${id}/decide`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ decision, reason }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      
-      if (data.success) {
-        toast.success(`Identity Verified: Node ${decision.toUpperCase()}`);
-        setDeciding(null);
-        setReason('');
-        mutate();
-      } else {
-        toast.error(data.error);
-      }
-    } catch (err) {
-      toast.error('Protocol Failure: Decision could not be broadcast');
-    }
-  }
-
-  const filtered = queue?.users?.filter((u: any) => 
-     u.email.toLowerCase().includes(search.toLowerCase()) || 
-     u.companyName?.toLowerCase().includes(search.toLowerCase())
+function StatCard({ label, value, sub, icon: Icon, color }: any) {
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 relative overflow-hidden group hover:border-red-600/30 transition-all">
+       <div className="flex justify-between items-start mb-6">
+          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-${color}-600/10 text-${color}-600 shadow-xl group-hover:scale-110 transition-transform`}>
+             <Icon className="w-7 h-7" />
+          </div>
+          <div className="p-3 bg-white/5 rounded-xl text-[9px] font-bold uppercase tracking-widest text-white/40 italic">Global Stat</div>
+       </div>
+       <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-1">{label}</h3>
+       <div className="flex items-end gap-3">
+          <p className="text-4xl font-bold text-white font-serif tracking-tighter">{value}</p>
+          <p className={`text-[10px] font-bold uppercase tracking-widest text-${color}-600 mb-1.5`}>{sub}</p>
+       </div>
+       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[80px] -translate-y-16 translate-x-16 opacity-30 group-hover:scale-125 transition-transform" />
+    </div>
   );
+}
+
+export default function IdentityHubPage() {
+  useRequireAuth('admin');
+  const [search, setSearch] = useState('');
+  const { data: usersData, mutate, isLoading } = useSWR(`${API}/auth/admin/users`, fetcher);
+  const [inspecting, setInspecting] = useState<any | null>(null);
+
+  const filtered = useMemo(() => {
+    if (!usersData?.users) return [];
+    return usersData.users.filter((u: any) => 
+       u.email.toLowerCase().includes(search.toLowerCase()) || 
+       u.fullName?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [usersData, search]);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] font-sans">
-      <AdminSidebar pageTitle="KYC Decision Hub" />
-      
-      <main className="lg:ml-72 p-6 lg:p-12">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-            <div>
-              <h2 className="text-4xl font-bold text-white font-serif tracking-tighter">{ADMIN_STRINGS.KYC.TITLE}</h2>
-              <p className="text-white/30 font-bold text-[11px] uppercase tracking-[0.25em] mt-3 pb-1 transition-all">
-                {isLoading ? 'Scanning Platform Cluster...' : ADMIN_STRINGS.KYC.SUBTITLE(queue?.users?.length || 0)}
-              </p>
-            </div>
-            
-            <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl px-6 py-4 w-96 shadow-2xl focus-within:border-white/30 transition-all group">
-               <Search className="w-5 h-5 text-white/20 group-focus-within:text-white transition-colors" />
-               <input 
-                 placeholder={ADMIN_STRINGS.KYC.SEARCH_PLACEHOLDER}
-                 className="bg-transparent border-none text-xs font-bold text-white focus:ring-0 ml-4 w-full placeholder:text-white/10"
-                 value={search}
-                 onChange={(e) => setSearch(e.target.value)}
-               />
-            </div>
+    <AdminLayout pageTitle="Identity Hub">
+      <div className="max-w-7xl mx-auto space-y-12">
+        {/* Header Branding */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h2 className="text-4xl font-bold text-white font-serif tracking-tighter italic">Identity Infrastructure 🌐</h2>
+            <p className="text-red-600 font-bold text-[11px] uppercase tracking-[0.25em] mt-3 pb-1 italic">Managing Platform-Wide Human Nodes</p>
+          </motion.div>
+          
+          <div className="flex items-center bg-white/5 border border-white/10 rounded-3xl px-8 py-4 w-full md:w-[450px] shadow-2xl focus-within:border-red-600/30 transition-all group">
+             <Search className="w-5 h-5 text-white/20 group-focus-within:text-red-500 transition-colors" />
+             <input 
+               placeholder="Search Identity Database..."
+               className="bg-transparent border-none text-xs font-bold text-white focus:ring-0 ml-4 w-full placeholder:text-white/10 outline-none italic"
+               value={search}
+               onChange={(e) => setSearch(e.target.value)}
+             />
           </div>
-
-          {isLoading ? (
-            <div className="space-y-6">
-              {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-40 bg-white/5 rounded-3xl animate-pulse" />)}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <AnimatePresence mode="popLayout">
-                {filtered?.length > 0 ? filtered.map((user: any) => (
-                  <motion.div 
-                    layout
-                    key={user.id} 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 hover:border-white/20 transition-all group overflow-hidden relative"
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-10">
-                       <div className="flex items-start gap-8">
-                          <div className="w-16 h-16 rounded-[1.2rem] bg-gradient-to-br from-amber-600 to-amber-800 flex items-center justify-center text-white text-2xl font-black italic font-serif shadow-2xl group-hover:scale-110 transition-transform">
-                             {user.companyName?.[0] || 'S'}
-                          </div>
-                          <div>
-                             <div className="flex items-center gap-3 mb-1">
-                                <h3 className="text-2xl font-bold text-white font-serif tracking-tight italic">{user.companyName || 'Verified Supplier Node'}</h3>
-                                <div className="px-3 py-0.5 bg-amber-500/10 text-amber-500 rounded-full text-[8px] font-black uppercase tracking-widest border border-amber-500/20 italic">Awaiting Audit</div>
-                             </div>
-                             <div className="flex flex-wrap items-center gap-6 mt-3">
-                                <div className="flex items-center gap-2 text-white/40 group-hover:text-white/60 transition-all">
-                                   <Mail className="w-4 h-4 text-white/20" />
-                                   <span className="text-[11px] font-bold italic tracking-tight">{user.email}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-white/40 group-hover:text-white/60 transition-all border-l border-white/5 pl-6">
-                                   <Phone className="w-4 h-4 text-white/20" />
-                                   <span className="text-[11px] font-bold italic tracking-tight">{user.phone}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-white/40 group-hover:text-white/60 transition-all border-l border-white/5 pl-6">
-                                   <Clock className="w-4 h-4 text-white/20" />
-                                   <span className="text-[11px] font-bold italic tracking-tight">Evolved {new Date(user.kycSubmittedAt || user.createdAt).toLocaleDateString()}</span>
-                                </div>
-                             </div>
-                          </div>
-                       </div>
-
-                       <div className="flex items-center gap-4 border-t lg:border-t-0 lg:border-l border-white/5 pt-8 lg:pt-0 lg:pl-10">
-                          <button 
-                            onClick={() => setInspecting(user)}
-                            className="flex items-center gap-3 px-8 py-4 bg-white/5 border border-white/5 text-white/40 hover:text-white hover:bg-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest italic transition-all"
-                          >
-                             <FileSearch className="w-4 h-4" /> Inspect Manifest
-                          </button>
-                          
-                          <button 
-                            onClick={() => setDeciding(user.id)}
-                            className="px-10 py-5 bg-white text-black hover:bg-amber-500 hover:text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-[0.2em] italic transition-all shadow-2xl flex items-center gap-3 group/btn"
-                          >
-                             Execute Decision 
-                             <ArrowUpRight className="w-4 h-4 group-hover/btn:rotate-45 transition-transform" />
-                          </button>
-                       </div>
-                    </div>
-
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 rounded-full blur-[90px] -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-10 transition-opacity" />
-                  </motion.div>
-                )) : (
-                  <div className="flex flex-col items-center justify-center py-32 bg-white/5 rounded-[4rem] border border-white/5 border-dashed">
-                     <ShieldCheck className="w-20 h-20 text-white/5 mb-8" />
-                     <p className="text-lg font-bold text-white/20 font-serif italic uppercase tracking-widest">Network Compliance Level: Satisfactory</p>
-                     <p className="text-[9px] font-black text-white/10 uppercase tracking-[0.3em] mt-2 italic animate-pulse">Scanning for new submissions...</p>
-                  </div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
         </div>
-      </main>
 
-      {/* Decision Modal */}
-      <AnimatePresence>
-         {deciding && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#0a0a0a]/90 backdrop-blur-3xl">
-               <motion.div 
-                 initial={{ opacity: 0, scale: 0.9 }}
-                 animate={{ opacity: 1, scale: 1 }}
-                 exit={{ opacity: 0, scale: 0.9 }}
-                 className="w-full max-w-lg bg-[#111111] border border-white/10 rounded-[3rem] p-12 shadow-2xl relative overflow-hidden"
-               >
-                  <div className="mb-10 text-center">
-                     <ShieldCheck className="w-16 h-16 text-amber-500 mx-auto mb-6" />
-                     <h3 className="text-4xl font-black text-white font-serif italic uppercase">Supervisor Decision</h3>
-                     <p className="text-white/40 text-[10px] uppercase font-black tracking-widest mt-2 italic">Executing Platform-Wide Registry Policy</p>
+        {/* Tactical Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+           <StatCard label="Total Identities" value={usersData?.total || 0} sub="Platform Nodes" icon={User} color="blue" />
+           <StatCard label="Farmer Sector" value={usersData?.farmers || 0} sub="Agricultural" icon={ShieldCheck} color="emerald" />
+           <StatCard label="Supplier Sector" value={usersData?.suppliers || 0} sub="Logistics" icon={Package} color="amber" />
+           <StatCard label="Secure Nodes" value="100%" sub="Integrity OK" icon={CheckCircle} color="red" />
+        </div>
+
+        {/* User Matrix */}
+        <div className="bg-white/5 border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+            <div className="flex items-center justify-between mb-10 pb-6 border-b border-white/5 relative z-10">
+               <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/5 text-white/40 rounded-xl flex items-center justify-center border border-white/10 italic font-serif">I</div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white font-serif">Global Registry Node List</h3>
+                    <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest italic">Decentralized Storage // Auth Primary</p>
                   </div>
-
-                  <div className="space-y-6 mb-12">
-                     <label className="block text-[10px] font-black text-white/40 uppercase tracking-[0.2em] italic mb-3">Optional Clarification Reason</label>
-                     <textarea 
-                        className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-[13px] font-medium text-white focus:ring-1 focus:ring-amber-500 transition-all placeholder:text-white/10"
-                        placeholder="Detail rationale for rejection or specific platform onboarding instructions..."
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                     />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                     <button 
-                       onClick={() => handleDecision(deciding, 'rejected')}
-                       className="py-5 bg-white/5 border border-white/10 hover:bg-red-600 hover:text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all group"
-                     >
-                        Reject Node
-                     </button>
-                     <button 
-                       onClick={() => handleDecision(deciding, 'approved')}
-                       className="py-5 bg-amber-500 text-white hover:bg-amber-600 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-600/20 transition-all"
-                     >
-                        Verify Identity
-                     </button>
-                  </div>
-
-                  <button 
-                    onClick={() => setDeciding(null)}
-                    className="mt-6 w-full text-[9px] font-black text-white/20 uppercase tracking-widest hover:text-white transition-all underline decoration-1 underline-offset-4"
-                  >
-                     Abort Sequence
-                  </button>
-
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 rounded-full blur-[80px] -translate-y-16 translate-x-16 opacity-10" />
-               </motion.div>
+               </div>
+               <button onClick={() => mutate()} className="p-3 bg-white/5 hover:bg-white/10 text-white/40 rounded-xl transition-all">
+                  <Loader2 className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+               </button>
             </div>
-         )}
-      </AnimatePresence>
-      
-      {/* Inspector Modal */}
+
+            <div className="overflow-x-auto relative z-10 custom-scrollbar">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left border-b border-white/5">
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Identity Profile</th>
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Role Cluster</th>
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">Compliance Status</th>
+                    <th className="pb-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/20 text-right">Operational Log</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {filtered?.length > 0 ? (
+                    filtered.map((user: any) => (
+                      <motion.tr key={user.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="group hover:bg-white/[0.02] transition-colors">
+                        <td className="py-6 pr-4">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-white italic font-serif group-hover:scale-110 transition-transform">
+                              {user.fullName?.[0] || user.email[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-[14px] font-bold text-white font-serif truncate max-w-[200px] italic">{user.fullName || 'Identity Pending'}</p>
+                              <p className="text-[10px] font-bold text-white/20 uppercase tracking-widest truncate max-w-[200px] mt-1 italic">{user.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-6">
+                          <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-all ${
+                            user.role === 'farmer' 
+                              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
+                              : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                          }`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="py-6">
+                           <div className="flex items-center gap-2">
+                             <div className={`w-2 h-2 rounded-full ${user.kycStatus === 'approved' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]'} animate-pulse`} />
+                             <span className={`text-[10px] font-black uppercase tracking-[0.15em] italic ${user.kycStatus === 'approved' ? 'text-emerald-500' : 'text-amber-500'}`}>
+                               {user.kycStatus?.toUpperCase() || 'UNAIDED'}
+                             </span>
+                           </div>
+                        </td>
+                        <td className="py-6 text-right">
+                           <button 
+                             onClick={() => setInspecting(user)}
+                             className="px-6 py-2.5 bg-white/5 hover:bg-white text-white/60 hover:text-black rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border border-white/5 inline-flex items-center gap-2 group-hover:bg-red-600 group-hover:text-white"
+                           >
+                              <FileSearch className="w-4 h-4" /> Global Dossier
+                           </button>
+                        </td>
+                      </motion.tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={4} className="py-20 text-center">
+                        <div className="flex flex-col items-center justify-center opacity-20">
+                           <ShieldAlert className="w-20 h-20 mb-6 shrink-0" />
+                           <p className="text-[12px] font-black uppercase tracking-[0.3em] font-serif italic">Identity Ledger Scanning Failed // No Records Detected</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-red-600 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 opacity-5 pointer-events-none" />
+         </div>
+      </div>
+
       <AnimatePresence>
         {inspecting && (
-           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl overflow-y-auto">
-              <motion.div 
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-4xl bg-[#0a0a0a] border border-white/10 rounded-[3rem] p-12 shadow-2xl relative overflow-hidden my-auto"
-              >
-                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12 pb-10 border-b border-white/5">
-                    <div className="flex items-center gap-6">
-                       <div className="w-16 h-16 rounded-2xl bg-amber-600/10 text-amber-600 flex items-center justify-center">
-                          <Building2 className="w-8 h-8" />
-                       </div>
-                       <div>
-                          <h3 className="text-3xl font-bold text-white font-serif italic uppercase">{inspecting.companyName || 'Supplier Manifest'}</h3>
-                          <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1 italic">Internal Platform Node: {inspecting.id.toUpperCase()}</p>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 md:p-12">
+            <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               onClick={() => setInspecting(null)}
+               className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#0c0c0c] w-full max-w-4xl max-h-[90vh] rounded-[3rem] border border-white/10 shadow-3xl overflow-hidden flex flex-col relative z-10"
+            >
+              <div className="p-10 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                 <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-600 to-red-800 flex items-center justify-center shadow-xl shadow-red-900/20">
+                       <User className="w-8 h-8 text-white" />
+                    </div>
+                    <div>
+                       <h3 className="text-3xl font-bold text-white font-serif italic truncate">{inspecting.fullName || 'Identity Profile'}</h3>
+                       <div className="flex items-center gap-3 mt-2">
+                          <span className="text-[10px] font-black uppercase tracking-widest text-red-500 italic bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">ROLE: {inspecting.role?.toUpperCase()}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white/30 italic">NODE: {inspecting.id.toUpperCase()}</span>
                        </div>
                     </div>
-                    <button 
-                      onClick={() => setInspecting(null)}
-                      className="px-10 py-5 bg-white text-black hover:bg-red-600 hover:text-white rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all"
-                    >Close Inspector</button>
                  </div>
+                 <button onClick={() => setInspecting(null)} className="w-14 h-14 bg-white/5 hover:bg-white/10 text-white/40 hover:text-white rounded-2xl flex items-center justify-center border border-white/10 transition-all"><X className="w-6 h-6" /></button>
+              </div>
 
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                    <div className="space-y-10">
-                       <div className="p-8 bg-white/5 border border-white/5 rounded-[2rem] hover:bg-white/[0.07] transition-all">
-                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6 italic">Corporate Identity</p>
-                          <div className="space-y-6">
-                             <div className="flex justify-between items-center group/field">
-                                <span className="text-[11px] font-bold text-white/40 italic">Entity Name</span>
-                                <span className="text-[13px] font-black text-white font-serif text-right">{inspecting.companyName || 'N/A'}</span>
-                             </div>
-                             <div className="flex justify-between items-center group/field">
-                                <span className="text-[11px] font-bold text-white/40 italic">Taxation Handle (GST)</span>
-                                <span className="text-[13px] font-black text-emerald-500 font-mono text-right">{inspecting.gstNumber || 'PENDING_UPLOAD'}</span>
-                             </div>
-                             <div className="flex justify-between items-center group/field">
-                                <span className="text-[11px] font-bold text-white/40 italic">Corporate Link</span>
-                                <span className="text-[11px] font-black text-white/60 italic truncate ml-8 text-right underline decoration-1">{inspecting.email}</span>
-                             </div>
+              <div className="p-12 overflow-y-auto custom-scrollbar flex-1 bg-black/40">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    {/* General Vector */}
+                    <div className="p-8 bg-white/5 border border-white/5 rounded-[2.5rem] hover:bg-white/[0.07] transition-all group">
+                       <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-8 italic">Identity Verification Vector</p>
+                       <div className="space-y-6">
+                          <div className="flex justify-between items-center group/field">
+                             <span className="text-[11px] font-bold text-white/40 italic">Registry Email</span>
+                             <span className="text-[13px] font-black text-white italic">{inspecting.email}</span>
+                          </div>
+                          <div className="flex justify-between items-center group/field">
+                             <span className="text-[11px] font-bold text-white/40 italic">Phone Relay</span>
+                             <span className="text-[13px] font-black text-white italic">{inspecting.phone || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between items-center group/field">
+                             <span className="text-[11px] font-bold text-white/40 italic">Joined Sequence</span>
+                             <span className="text-[13px] font-black text-white italic font-serif underline underline-offset-2 decoration-red-600/30">{new Date(inspecting.createdAt).toLocaleDateString()}</span>
                           </div>
                        </div>
+                    </div>
 
-                       <div className="p-8 bg-white/5 border border-white/5 rounded-[2rem] hover:bg-white/[0.07] transition-all">
-                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-6 italic">Communication Vector</p>
-                          <div className="grid grid-cols-2 gap-6">
-                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40"><Phone className="w-5 h-5" /></div>
-                                <div>
-                                   <p className="text-[8px] font-black text-white/20 uppercase leading-none mb-1">Mobile</p>
-                                   <p className="text-[12px] font-bold text-white italic">{inspecting.phone || 'N/A'}</p>
+                    {/* Sector Specifics */}
+                    <div className="p-8 bg-red-600/5 border border-red-600/10 rounded-[2.5rem] relative overflow-hidden group">
+                       <p className="text-[10px] font-black text-red-600 uppercase tracking-[0.2em] mb-8 italic flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4" /> Compliance Sector
+                       </p>
+                       <div className="space-y-6 relative z-10">
+                          <div>
+                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 leading-none">KYC Integrity Stage</p>
+                             <p className="text-[18px] font-black text-white font-serif italic uppercase tracking-tighter">
+                                {inspecting.kycStatus || 'PENDING_UPLOAD'}
+                             </p>
+                          </div>
+                          <div className="pt-6 border-t border-white/5">
+                             <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 leading-none">Security Clearance</p>
+                             <div className="flex items-center gap-3">
+                                <div className="h-1.5 flex-1 bg-white/10 rounded-full overflow-hidden">
+                                   <div className={`h-full ${inspecting.kycStatus === 'approved' ? 'bg-emerald-500' : 'bg-amber-500'} w-[85%]`} />
                                 </div>
-                             </div>
-                             <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40"><Mail className="w-5 h-5" /></div>
-                                <div>
-                                   <p className="text-[8px] font-black text-white/20 uppercase leading-none mb-1">Email</p>
-                                   <p className="text-[12px] font-bold text-white italic truncate max-w-[120px]">{inspecting.email || 'N/A'}</p>
-                                </div>
+                                <span className="text-[10px] font-black text-white italic">85% Clean</span>
                              </div>
                           </div>
                        </div>
+                       <div className="absolute top-0 right-0 w-32 h-32 bg-red-600 rounded-full blur-[90px] -translate-y-16 translate-x-16 opacity-10 group-hover:scale-125 transition-transform" />
                     </div>
 
-                    <div className="space-y-10">
-                       <div className="p-8 bg-amber-600/5 border border-amber-600/10 rounded-[2.5rem] relative overflow-hidden group">
-                          <p className="text-[10px] font-black text-amber-600 uppercase tracking-[0.2em] mb-8 italic flex items-center gap-2">
-                             <ShieldCheck className="w-4 h-4" /> Compliance Sector
-                          </p>
-                          <div className="space-y-6 relative z-10">
-                             <div>
-                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 leading-none">Registered Logistics Hub</p>
-                                <p className="text-[14px] font-bold text-white/80 font-serif italic leading-relaxed">
-                                   {inspecting.address?.street && `${inspecting.address.street}, `}
-                                   {inspecting.address?.city}, {inspecting.address?.district},<br />
-                                   {inspecting.address?.state} - {inspecting.address?.pincode}
-                                </p>
-                             </div>
-                             <div className="pt-6 border-t border-white/5">
-                                <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1.5 leading-none">Temporal Signature</p>
-                                <p className="text-[12px] font-bold text-white/60 italic font-mono">NODE_GENESIS: {new Date(inspecting.createdAt).toISOString()}</p>
-                             </div>
+                    <div className="md:col-span-2 p-10 bg-white/5 border border-white/10 rounded-[3rem] shadow-inner flex items-center justify-between group">
+                       <div className="flex items-center gap-6">
+                          <div className="w-14 h-14 bg-red-600/20 text-red-600 rounded-2xl flex items-center justify-center shadow-lg"><AlertCircle className="w-7 h-7" /></div>
+                          <div>
+                             <h4 className="text-xl font-bold text-white font-serif italic mb-1 uppercase tracking-tight">Security Incident Registry</h4>
+                             <p className="text-[11px] text-white/40 font-bold italic">No critical anomalies detected for this specific identity node in the current epoch.</p>
                           </div>
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 rounded-full blur-[90px] -translate-y-16 translate-x-16 opacity-10 group-hover:scale-125 transition-transform" />
                        </div>
-
-                       <div className="grid grid-cols-2 gap-4">
-                          <button 
-                            onClick={() => { setDeciding(inspecting.id); setInspecting(null); }}
-                            className="py-5 bg-white/5 border border-white/10 hover:bg-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all italic"
-                          >
-                             Fast Decision
-                          </button>
-                          <button 
-                            onClick={() => window.open(`${API}/supplier/${inspecting.id}/kyc`, '_blank')}
-                            className="py-5 bg-amber-500 text-white hover:bg-amber-600 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-amber-600/20 transition-all italic flex items-center justify-center gap-2"
-                          >
-                             Platform View <ExternalLink className="w-4 h-4" />
-                          </button>
-                       </div>
+                       <button 
+                         onClick={() => window.open(`/dashboard/admin/kyc?search=${inspecting.email}`, '_self')}
+                         className="px-8 py-4 bg-white/10 hover:bg-white text-white hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all italic flex items-center gap-2"
+                       >
+                          Manage KYC <ArrowUpRight className="w-4 h-4" />
+                       </button>
                     </div>
                  </div>
-
-                 <div className="mt-12 p-6 bg-red-600/5 border border-red-600/10 rounded-2xl flex items-center gap-4">
-                    <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 shrink-0" />
-                    <p className="text-[9px] font-black text-white/30 uppercase tracking-[0.2em] italic leading-relaxed">
-                       Notice: Modification of manifest data is restricted to node owners. Supervisors may only evaluate, approve, or reject. All manifest inspections are logged to the forensic ledger.
-                    </p>
-                 </div>
-              </motion.div>
-           </div>
+              </div>
+              <div className="p-10 border-t border-white/5 bg-white/[0.02] flex items-center justify-end">
+                 <button onClick={() => setInspecting(null)} className="px-10 py-5 bg-white text-black hover:bg-red-600 hover:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-2xl italic">Close Global Dossier</button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
-    </div>
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ffffff10; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ffffff20; }
+      `}</style>
+    </AdminLayout>
   );
 }

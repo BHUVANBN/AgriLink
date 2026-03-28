@@ -23,7 +23,7 @@ export async function connectKafkaConsumer(): Promise<void> {
 
   try {
     await consumer.connect();
-    await consumer.subscribe({ topics: ['kyc.submitted', 'audit.log'], fromBeginning: false });
+    await consumer.subscribe({ topics: ['kyc.submitted', 'kyc.approved', 'audit.log'], fromBeginning: false });
     
     console.log('[kafka-consumer] Auth consumer connected to kyc.submitted, audit.log ✓');
 
@@ -35,23 +35,27 @@ export async function connectKafkaConsumer(): Promise<void> {
           if (!message.value) return;
           const event = JSON.parse(message.value.toString());
 
-          if (topic === 'kyc.submitted') {
-            const { userId, role, aadhaarUrl, rtcUrl, nameMatchStatus, nameMatchConfidence } = event.data;
-            console.log(`${prefix} Processing kyc.submitted for user ${userId} (${role})`);
+          if (topic === 'kyc.submitted' || topic === 'kyc.approved') {
+            const data = event.data || event;
+            const { userId, role, aadhaarUrl, rtcUrl, nameMatchStatus, nameMatchConfidence } = data;
+            const status = topic === 'kyc.approved' ? 'approved' : 'pending';
+            
+            console.log(`${prefix} Processing ${topic} for user ${userId} (${role})`);
 
             if (userId) {
               await prisma.user.update({
                 where: { id: userId },
                 data: {
-                  kycStatus: 'pending',
+                  kycStatus: status,
                   kycSubmittedAt: new Date(),
+                  kycReviewedAt: topic === 'kyc.approved' ? new Date() : undefined,
                   aadhaarUrl,
                   rtcUrl,
                   nameMatchStatus,
                   nameMatchConfidence,
                 },
               });
-              console.log(`${prefix} User ${userId} kycStatus updated to pending ✓`);
+              console.log(`${prefix} User ${userId} kycStatus updated to ${status} ✓`);
             }
           } 
           else if (topic === 'audit.log') {
