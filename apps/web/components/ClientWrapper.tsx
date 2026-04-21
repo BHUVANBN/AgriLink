@@ -1,26 +1,24 @@
 'use client';
 
 import React from 'react';
-import useSWR from 'swr';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 import NotificationProvider from '@/components/NotificationProvider';
 
-const fetcher = (url: string) =>
-  fetch(url, { credentials: 'include' }).then(r => r.json());
-
-export default function ClientWrapper({ children }: { children: React.ReactNode }) {
-  const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
-  
-  // Try to get user data if logged in
-  const { data } = useSWR(`${API}/auth/me`, fetcher, {
-    revalidateOnFocus: false,
-    shouldRetryOnError: false,
-  });
-
-  const userId = data?.data?.id;
-
+function NotificationWrapper({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   return (
-    <NotificationProvider userId={userId}>
+    <NotificationProvider userId={user?.id}>
       {children}
     </NotificationProvider>
+  );
+}
+
+export default function ClientWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider>
+      <NotificationWrapper>
+        {children}
+      </NotificationWrapper>
+    </AuthProvider>
   );
 }

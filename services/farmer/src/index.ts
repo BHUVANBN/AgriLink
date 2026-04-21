@@ -14,7 +14,7 @@ import { PrismaClient } from '../prisma/client/index.js';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
 import type { JwtPayload, KafkaEvent, LandAgreementCreatedEvent } from '@agrilink/types';
-import { computeNameMatchConfidence } from './utils/logic.js';
+import { computeNameMatchConfidence, parseExtentToAcres } from './utils/logic.js';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -430,18 +430,20 @@ await fastify.register(async (app) => {
         create: { userId: req.user.sub, ...updateData }
       });
 
-      // Trigger name-match check if both docs uploaded
-      if (profile?.rtcVerified && ocrResult.nameNormalized && profile.nameNormalized) {
-        const rtcNorm = profile.nameNormalized.toLowerCase();
-        const aadhaarNorm = ocrResult.nameNormalized.toLowerCase();
-        const confidence = computeNameMatchConfidence(rtcNorm, aadhaarNorm);
-        await prisma.farmerProfile.update({
-          where: { userId: req.user.sub },
-          data: {
-            nameMatchConfidence: confidence,
-            nameMatchStatus: confidence >= 0.75 ? 'matched' : 'mismatch',
-          }
-        });
+      // Unified Name Discovery & Match Check (Triggered from both routes)
+      if (profile.aadhaarVerified && profile.rtcVerified) {
+        const aName = profile.nameEnglish || profile.nameNormalized;
+        const rName = profile.rtcOwnerName;
+        if (aName && rName) {
+           const confidence = computeNameMatchConfidence(aName, rName);
+           await prisma.farmerProfile.update({
+             where: { userId: req.user.sub },
+             data: {
+               nameMatchConfidence: confidence,
+               nameMatchStatus: confidence >= 0.85 ? 'matched' : 'mismatch',
+             }
+           });
+        }
       }
 
       return reply.send({ success: true, data: { cloudUrl, extracted: ocrResult } });
@@ -508,6 +510,22 @@ await fastify.register(async (app) => {
         update: updateData,
         create: { userId: req.user.sub, ...updateData }
       });
+
+      // Unified Name Discovery & Match Check (Triggered from both routes)
+      if (profile.aadhaarVerified && profile.rtcVerified) {
+        const aName = profile.nameEnglish || profile.nameNormalized;
+        const rName = profile.rtcOwnerName;
+        if (aName && rName) {
+           const confidence = computeNameMatchConfidence(aName, rName);
+           await prisma.farmerProfile.update({
+             where: { userId: req.user.sub },
+             data: {
+               nameMatchConfidence: confidence,
+               nameMatchStatus: confidence >= 0.85 ? 'matched' : 'mismatch',
+             }
+           });
+        }
+      }
 
       return reply.send({ success: true, data: { cloudUrl, extracted: ocrResult } });
     }
@@ -863,7 +881,7 @@ await fastify.register(async (app) => {
 
       const rtc = json.data;
       const extentStr = rtc.land_details?.total_extent ?? '0.0.0.0';
-      const acres = parseFloat(extentStr.split('.')[0]) + (parseFloat(extentStr.split('.')[1]) / 40);
+      const acres = parseExtentToAcres(extentStr);
 
       // Update farmer profile
       const profile = await prisma.farmerProfile.update({
@@ -907,23 +925,25 @@ await fastify.register(async (app) => {
   });
 
   // GET /farmer/admin/stats (Admin only)
-  fastify.get(
+  app.get(
     '/admin/stats',
     { preHandler: [(fastify as any).authenticate, requireRole('admin')] },
     async (req, reply) => {
       try {
-        const ML_URL = process.env.ML_SERVICE_URL ?? 'http://ml-service:4006';
-        const token = req.headers.authorization ?? (req.cookies?.agrilink_access ? `Bearer ${req.cookies.agrilink_access}` : undefined);
-        const res = await fetch(`${ML_URL}/ml/schemes/add`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': token } : {})
-          },
-          body: JSON.stringify(req.body),
+        const [total, kycApproved, kycPending, rtcVerified] = await Promise.all([
+          prisma.farmerProfile.count(),
+          prisma.farmerProfile.count({ where: { kycStatus: 'approved' } }),
+          prisma.farmerProfile.count({ where: { kycStatus: 'submitted' } }),
+          prisma.farmerProfile.count({ where: { rtcVerified: true } }),
+        ]);
+
+        return reply.send({
+          success: true,
+          data: {
+            counts: { total, kycApproved, kycPending, rtcVerified },
+            timestamp: new Date().toISOString()
+          }
         });
-        const json = await res.json();
-        return reply.send(json);
       } catch (err: any) {
         return reply.status(500).send({ success: false, error: err.message });
       }

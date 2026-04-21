@@ -240,7 +240,7 @@ export default function FarmerDashboard() {
              {[
                { icon: Upload, label: 'RTC Mapping', desc: 'Secure blockchain registry', href: '/dashboard/farmer/kyc' },
                { icon: Leaf, label: 'Incentive Match', desc: 'Govt subsidies hub', href: '/dashboard/farmer/schemes' },
-               { icon: ShoppingBag, label: 'Marketplace', desc: 'Supplier gateway', href: '/marketplace' },
+               { icon: ShoppingBag, label: 'Marketplace', desc: 'Supplier gateway', href: '/dashboard/farmer/marketplace' },
              ].map(a => (
                <Link key={a.href} href={a.href} className="group p-6 rounded-2xl bg-white border border-[#eae6de] hover:border-brand-green/30 hover:shadow-lg hover:shadow-brand-green/5 transition-all relative overflow-hidden flex flex-col">
                   <div className="w-12 h-12 rounded-xl bg-[#f8f7f4] flex items-center justify-center mb-4 group-hover:bg-brand-green group-hover:text-white transition-all text-text-muted">

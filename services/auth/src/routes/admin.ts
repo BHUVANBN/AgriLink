@@ -35,8 +35,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
   // Role guard middleware
   const requireAdmin = async (req: FastifyRequest, reply: FastifyReply) => {
     const internalSecret = req.headers['x-internal-secret'];
-    if (internalSecret === (process.env.INTERNAL_SECRET ?? 'agrilink-secret-2026')) {
-       return; // Internal trusted call
+    if (!internalSecret || internalSecret !== process.env.INTERNAL_SECRET) {
+      return reply.status(403).send({ success: false, error: 'Access denied: Invalid internal secret' });
     }
 
     const user = (req as any).user;

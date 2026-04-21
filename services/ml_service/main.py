@@ -71,9 +71,10 @@ app.include_router(
     dependencies=[Depends(get_current_user)]
 )
 
-# ── Static File Server (Maps) ──────────────────────────────────
+# ── Static File Server (Limited to Assets) ────────────────────
 from fastapi.staticfiles import StaticFiles
-static_dir = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static/assets")
+os.makedirs(static_dir, exist_ok=True)
 app.mount("/ml/static", StaticFiles(directory=static_dir), name="static")
 
 @app.get("/ml/health")

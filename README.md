@@ -1,193 +1,157 @@
-# AgriLink v2 🌾
+# 🌾 AgriLink V2 — Agricultural Intelligence & E-commerce Platform
 
-> **Agricultural Intelligence Platform** — A production-grade microservices application for Karnataka's farmers.
-
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue)](https://typescriptlang.org)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org)
-[![Fastify](https://img.shields.io/badge/Fastify-5.3-green)](https://fastify.dev)
-[![Polygon](https://img.shields.io/badge/Blockchain-Polygon_Amoy-purple)](https://polygon.technology)
+AgriLink V2 is a production-grade, microservices-based platform designed to revolutionize the agricultural ecosystem in India. It leverages AI for land verification, Blockchain for transparent agreements, and an integrated Marketplace for direct farmer-supplier interaction.
 
 ---
 
-## Architecture Overview
+## 🚀 Quick Start Guide
 
-```
-                        ┌─────────────────────────────────┐
-                        │         Nginx API Gateway         │
-                        │         (Port 8080)               │
-                        └──────────────┬──────────────────┘
-                                       │
-         ┌─────────────────────────────┼──────────────────────────────┐
-         │                             │                              │
-    /auth/*                       /farmer/*                     /supplier/*
-         │                             │                              │
-   ┌─────▼──────┐             ┌────────▼───────┐           ┌────────▼───────┐
-   │  Auth Svc  │             │  Farmer Svc    │           │  Supplier Svc  │
-   │  Port 4001 │             │  Port 4002     │           │  Port 4003     │
-   │  MongoDB   │             │  MongoDB       │           │  PostgreSQL    │
-   └────────────┘             └────────────────┘           └────────────────┘
-         │                             │
-    /marketplace/*               /ml/*  /blockchain/*
-         │                             │
-   ┌─────▼──────┐             ┌────────▼───────┐
-   │ Market Svc │             │  ML Service    │  ┌──────────────────┐
-   │  Port 4004 │             │  Port 4006     │  │ Blockchain Svc   │
-   │ PostgreSQL │             │  FastAPI/Python │  │  Port 4007       │
-   │  Razorpay  │             │  Vision AI     │  │  Viem + Pinata   │
-   └─────┬──────┘             │  Selenium      │  │  Polygon Amoy    │
-         │                    └────────────────┘  └──────────────────┘
-         │                  Kafka Events
-         ▼
-   ┌─────────────┐
-   │ Notif. Svc  │  → Email (Nodemailer) + SMS (Fast2SMS)
-   │  Port 4005  │
-   └─────────────┘
-```
-
-## Fixed Bugs (40 total from audit)
-
-| # | Bug | Fix |
-|---|-----|-----|
-| BUG-002 | Two conflicting `User` models | Single canonical model in auth service |
-| BUG-003 | OTP stored as plain text | bcrypt hashed before storage |
-| BUG-004 | No OTP resend endpoint | `/auth/resend-otp` with 60s cooldown |
-| BUG-005 | SMS never actually sent | `sendOtpSms()` called in parallel with email |
-| BUG-006 | TLS disabled in production | `rejectUnauthorized: NODE_ENV === 'production'` |
-| BUG-008 | JWT never expires | 1h access + 7d refresh token architecture |
-| BUG-009 | Supplier auto-verified | `kycStatus: 'not_started'` — admin must approve |
-| BUG-010 | Email verification bypassable | Login always enforces `emailVerified` check |
-| BUG-011 | No payment system | Full Razorpay integration with HMAC verification |
-| BUG-012 | Multiple contract versions | Single `LandAgreementRegistry.sol` |
-| BUG-013 | Permanent dev mode | Real transactions by default |
-| BUG-015 | Web3.Storage deprecated | Pinata IPFS integration |
-| BUG-016 | No deployment script | `services/blockchain/scripts/deploy.ts` |
-| BUG-017 | Float acres in Solidity | `uint32 centiacres` (1 acre = 100 centiacres) |
-| BUG-018 | pdftotext for OCR | pdf2image + Google Vision AI |
-| BUG-019 | Fragile regex extraction | Gemini AI prompts for structured extraction |
-| BUG-020 | `normalizeName` corrupts display | Separate `nameDisplay` vs `nameNormalized` |
-| BUG-022 | Schemes from static Excel | MongoDB + Selenium scrapers for live data |
-| BUG-023 | Manual RTC PDF only | Bhoomi Selenium scraper with CAPTCHA OCR |
-| BUG-025 | Duplicate Product models | Single Prisma model in supplier service |
-| BUG-026 | Legacy FarmerProfile fields | Clean schema — removed all deprecated fields |
-| BUG-027 | OCR text stored inline | IPFS CID + Cloudinary URL stored instead |
-| BUG-028 | Hardcoded dashboard stats | Real API: `/farmer/stats` endpoint |
-| BUG-036 | OTP logged in plain text | Never log OTP value in any environment |
-| BUG-039 | No Hardhat config | Polygon Amoy + Mainnet configured |
-| BUG-040 | ML not accessible via HTTP | FastAPI wrapper at port 4006 |
-| BUG-041 | Prisma client collisions | Isolated `./prisma/client` per service |
-| BUG-042 | Shared DB pool risk | Service-specific `DATABASE_URL_...` isolation |
-| BUG-043 | No predictive monitoring | ML-driven price volatility alerts via Kafka |
-| BUG-044 | Unsecured payment verify | Mandatory JWT + HMAC signature verification |
-
-## Technology Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 15, React 19, Framer Motion, SWR |
-| CSS | Tailwind CSS 4, Custom design system |
-| Auth Service | Fastify 5, MongoDB, bcryptjs, JWT |
-| Farmer Service | Fastify 5, MongoDB, Cloudinary |
-| Supplier Service | Fastify 5, PostgreSQL, Prisma |
-| Marketplace Service | Fastify 5, PostgreSQL, Prisma, Razorpay |
-| Notification Service | Fastify 5, Kafka, Nodemailer, Fast2SMS |
-| ML Service | FastAPI, Google Vision AI, Gemini, Tesseract, Selenium |
-| Blockchain Service | Fastify 5, Viem, Pinata, Hardhat, Polygon |
-| Message Bus | Apache Kafka |
-| Cache | Redis (Valkey) |
-| API Gateway | Nginx |
-| Monitoring | Prometheus + Grafana |
-| Infrastructure | Docker, Docker Compose |
-
-## Quick Start
-
-### 1. One-Command Setup (Local Blockchain + Microservices)
-
-Copy and run this single command to clone the project, install dependencies, spin up the Docker infrastructure, deploy the local Hardhat blockchain, migrate the databases, and start all microservices:
-
+### 1. Clone the Repository
 ```bash
-git clone https://github.com/BHUVANBN/AgriLink.git AgriLink_v2 && cd AgriLink_v2 && cp .env.example .env && pnpm install && docker compose -f infrastructure/docker-compose.yml --env-file .env up -d postgres redis zookeeper kafka prometheus grafana kafka-ui ml-service api-gateway mongodb-auth mongodb-farmer && sleep 10 && make db-migrate db-generate && (cd services/blockchain && npx hardhat node > /dev/null 2>&1 & sleep 5 && npx hardhat run scripts/deploy.ts --network localhost | grep "Contract Address" | awk '{print $3}' | xargs -I {} sed -i "s/^BLOCKCHAIN_CONTRACT_ADDRESS=.*/BLOCKCHAIN_CONTRACT_ADDRESS={}/" ../../.env) && pnpm dev
+git clone https://github.com/your-username/AgriLink_v2.git
+cd AgriLink_v2
 ```
 
-### What this single command does:
-1. Clones the repository and copies `.env.example` to `.env`
-2. Installs all workspace dependencies via `pnpm`
-3. Spins up the Docker compose infrastructure (Postgres, Redis, Kafka, API Gateway, etc.) in the background
-4. Runs Prisma migrations (`make db-migrate db-generate`)
-5. Starts a local Hardhat blockchain node in the background
-6. Deploys the `LandAgreementRegistry` smart contract and automatically updates `.env` with the new address
-7. Boots up all Fastify microservices and the Next.js frontend concurrently via Turborepo (`pnpm dev`)
-
-### 2. Deploying to Polygon Amoy Testnet (Optional)
-
-If you want to test on the real Polygon network instead of the local node:
-
+### 2. Environment Configuration
+Create a `.env` file in the root directory and populate it with the required secrets (refer to `.env.example` if available).
 ```bash
-# Fund your admin wallet with MATIC from: https://faucet.polygon.technology/
-# Edit .env to set BLOCKCHAIN_NETWORK=amoy and BLOCKCHAIN_RPC_URL=https://rpc-amoy.polygon.technology/
-
-pnpm --filter @agrilink/blockchain deploy:amoy
-
-# Verify on PolygonScan:
-npx hardhat verify --network amoy <CONTRACT_ADDRESS>
+cp .env.example .env
+# Open .env and fill in your Cloudinary, Gemini, and Database credentials.
 ```
 
-## Service URLs
-
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3000 |
-| API Gateway | http://localhost:8080 |
-| Auth Service | http://localhost:4001 |
-| Farmer Service | http://localhost:4002 |
-| Supplier Service | http://localhost:4003 |
-| Marketplace Service | http://localhost:4004 |
-| ML Service | http://localhost:4006 |
-| Blockchain Service | http://localhost:4007 |
-| Kafka UI | http://localhost:8090 (dev profile) |
-| Prometheus | http://localhost:9090 |
-| Grafana | http://localhost:3001 |
-
-## Project Structure
-
-```
-AgriLink_v2/
-├── apps/
-│   └── web/                    # Next.js 15 Frontend
-├── services/
-│   ├── auth/                   # Auth, OTP, JWT (Port 4001)
-│   ├── farmer/                 # Farmer profile, KYC, OCR (Port 4002)
-│   ├── supplier/               # Supplier, Products, KYC (Port 4003)
-│   ├── marketplace/            # Orders, Razorpay, Cart (Port 4004)
-│   ├── notification/           # Kafka consumer, Email+SMS (Port 4005)
-│   ├── blockchain/             # Viem, Pinata, Polygon (Port 4007)
-│   └── ml_service/             # FastAPI, Vision AI, Selenium (Port 4006)
-├── packages/
-│   ├── types/                  # Shared TypeScript interfaces
-│   └── tsconfig/               # Shared TypeScript configs
-├── infrastructure/
-│   ├── docker-compose.yml      # 15-container orchestration
-│   ├── nginx/nginx.conf        # API Gateway routing
-│   ├── postgres/               # Multi-DB init script
-│   └── prometheus/             # Metrics config
-├── .env.example                # Template for all env vars
-├── package.json                # Turborepo root
-├── pnpm-workspace.yaml         # pnpm workspaces
-└── turbo.json                  # Build pipeline
+### 3. Initialize Databases & Prisma
+Each service manages its own schema. Generate the Prisma clients for all services:
+```bash
+# In the root directory
+npx prisma generate --schema=services/auth/prisma/schema.prisma
+npx prisma generate --schema=services/farmer/prisma/schema.prisma
+npx prisma generate --schema=services/supplier/prisma/schema.prisma
+npx prisma generate --schema=services/marketplace/prisma/schema.prisma
 ```
 
-## Security Checklist
+### 4. Setup Local Blockchain (Hardhat)
+AgriLink uses smart contracts for land agreements.
+```bash
+cd services/blockchain
+npm install
+npx hardhat node # Starts a local Ethereum-compatible node on port 8545
+```
+In a separate terminal, deploy the contracts:
+```bash
+npx hardhat run scripts/deploy.ts --network localhost
+```
 
-- [x] OTPs hashed with bcrypt before storage
-- [x] JWT: short-lived access (1h) + long refresh (7d) with revocation
-- [x] Passwords: bcrypt with cost factor 12
-- [x] Rate limiting on all auth endpoints
-- [x] File upload: type + size validation
-- [x] Razorpay: HMAC signature verification
-- [x] CORS: whitelist-based
-- [x] Helmet.js security headers
-- [x] Non-root Docker users
-- [x] No secrets committed (all in .env)
+### 5. Launch Infrastructure (Docker)
+AgriLink requires Kafka, Redis, and MongoDB to function.
+```bash
+docker-compose up -d
+```
+This will start:
+- **Nginx Gateway**: Port 8080 (Central entry point)
+- **Kafka / Zookeeper**: For event-driven sync
+- **Redis**: For OTP and caching
+- **MongoDB**: For notification logs
+
+### 6. Run Microservices (Development Mode)
+Open separate terminals for each service and run:
+```bash
+# Auth Service
+cd services/auth && npm run dev
+
+# Farmer Service
+cd services/farmer && npm run dev
+
+# Marketplace Service
+cd services/marketplace && npm run dev
+
+# Notification Service
+cd services/notification && npm run dev
+
+# ML Service (Python)
+cd services/ml_service
+source venv/bin/activate
+uvicorn main:app --port 4006 --reload
+```
+
+### 7. Launch the Web Application
+```bash
+cd apps/web
+npm run dev
+```
+Access the platform at: **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
-Built for **1.2 crore Karnataka farmers** 🌾
+## 🛠️ System Architecture
+
+AgriLink V2 follows a **Decoupled, Event-Driven Microservices Architecture** designed for high availability and modularity.
+
+### 🏗️ High-Level Overview
+```mermaid
+graph TD
+    User((User/Farmer)) -->|HTTPS| Nginx[Nginx API Gateway]
+    
+    subgraph "Microservices Layer"
+        Nginx --> Auth[Auth Service]
+        Nginx --> Farmer[Farmer Service]
+        Nginx --> Supplier[Supplier Service]
+        Nginx --> Marketplace[Marketplace Service]
+        Nginx --> ML[ML Service]
+        Nginx --> Notif[Notification Service]
+        Nginx --> BC[Blockchain Service]
+    end
+
+    subgraph "Messaging & Data"
+        Auth & Farmer & Supplier & Marketplace -->|Events| Kafka(Kafka Message Broker)
+        Kafka -->|Consumer| Notif
+        Auth --> DB_A[(Auth DB)]
+        Farmer --> DB_F[(Farmer DB)]
+        Marketplace --> DB_M[(Marketplace DB)]
+        Notif --> DB_N[(MongoDB)]
+    end
+```
+
+### 📡 Service Breakdown
+- **Nginx API Gateway (Port 8080)**: The single entry point. Handles rate limiting, SSL termination, and transparently routes traffic to the internal microservices.
+- **Auth Service (4001)**: The identity provider. Manages JWT issuance (Access/Refresh tokens), Role-Based Access Control (RBAC), and global audit logging.
+- **Farmer Service (4002)**: Handles the "Trust Engine." Processes KYC, RTC land records, and hand-drawn land sketches using intelligent name-matching confidence scores.
+- **Supplier Service (4003)**: Manages supplier catalogs, trade licenses, and inventory verification.
+- **Marketplace Service (4004)**: Core e-commerce engine. Manages the product catalog, shopping carts, wishlists, and Razorpay payment integration.
+- **Notification Service (4005)**: The communication hub. Consumes Kafka events to dispatch real-time WebSocket alerts, SMS (Fast2SMS), and Email (SMTP).
+- **ML Service (4006)**: A specialized Python (FastAPI) service. Leverages Google Vision and Gemini Pro for document OCR and intelligent extraction of land details.
+- **Blockchain Service (4007)**: Interacts with the Polygon Amoy testnet to store immutable land agreement hashes for legal transparency.
+
+### 🔄 Event-Driven Flow (Kafka)
+AgriLink uses Kafka to ensure eventual consistency across services without hard-coupling.
+- **User Registration**: `Auth` publishes `user.registered` → `Farmer`/`Supplier` create local profile stubs.
+- **KYC Decision**: `Farmer` publishes `kyc.approved` → `Auth` promotes user role → `Notif` sends a celebratory alert.
+- **Order Placement**: `Marketplace` publishes `order.placed` → `Supplier` receives a dashboard alert → `Notif` sends an order confirmation SMS.
+
+---
+
+## 🛡️ Administrative Hub
+AgriLink includes a premium **Admin Dashboard** for platform governance.
+- **KYC Queue**: Review and approve farmer/supplier identities.
+- **Audit Logs**: Visual timeline of all critical system actions.
+- **Promotion**: Use the CLI tool to promote users:
+  ```bash
+  npm run admin:promote <email>
+  ```
+
+---
+
+## 📦 Tech Stack
+- **Frontend**: Next.js 14, Tailwind CSS, SWR, Lucide.
+- **Backend**: Fastify (Node.js), FastAPI (Python), Prisma ORM.
+- **Data**: PostgreSQL, MongoDB, Redis.
+- **Messaging**: Apache Kafka.
+- **AI**: Google Gemini Pro, Cloud Vision.
+- **Blockchain**: Solidity, Viem, Hardhat.
+
+---
+
+## 📄 License
+This project is licensed under the MIT License.
+
+---
+**Built for Indian Agriculture.**

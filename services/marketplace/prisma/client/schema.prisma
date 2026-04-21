@@ -154,3 +154,55 @@ model InquiryReply {
 
   @@index([inquiryId])
 }
+
+// ── Community Buying (Group Deals) ───────────────────────────
+
+model CommunityDeal {
+  id                 String   @id @default(uuid())
+  productId          String
+  supplierId         String
+  title              String
+  description        String
+  targetQuantity     Int // Quantity required to unlock discount
+  currentQuantity    Int      @default(0)
+  originalPricePaise Int
+  dealPricePaise     Int // Discounted price
+  endsAt             DateTime
+  isActive           Boolean  @default(true)
+
+  participants DealParticipant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([productId])
+  @@index([supplierId])
+  @@index([isActive])
+}
+
+model DealParticipant {
+  id            String        @id @default(uuid())
+  dealId        String
+  farmerId      String
+  quantity      Int
+  paymentStatus PaymentStatus @default(PENDING)
+  orderId       String? // Link to final order
+
+  deal      CommunityDeal @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([dealId, farmerId])
+  @@index([farmerId])
+}
+
+model WishlistItem {
+  id         String   @id @default(uuid())
+  farmerId   String
+  productId  String
+  supplierId String
+  snapshot   Json // Product info for quick display
+  addedAt    DateTime @default(now())
+
+  @@unique([farmerId, productId])
+  @@index([farmerId])
+}

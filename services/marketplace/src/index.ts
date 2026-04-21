@@ -12,10 +12,12 @@ import { cartRoutes } from './routes/cart.js';
 import { orderRoutes } from './routes/orders.js';
 import { inquiryRoutes } from './routes/inquiries.js';
 import { reviewRoutes } from './routes/reviews.js';
+import { communityRoutes } from './routes/community.js';
+import { wishlistRoutes } from './routes/wishlist.js';
 import { startConsumer } from './services/kafka.js';
 import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
-import { makeAuthMiddleware } from '@agrilink/auth-middleware';
+import { makeAuthMiddleware, requireRole } from '@agrilink/auth-middleware';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
 import FastifyRateLimit from '@fastify/rate-limit';
@@ -87,6 +89,7 @@ await fastify.register(FastifyJwt, {
 
 // Setup auth middleware
 fastify.decorate('authenticate', makeAuthMiddleware(fastify));
+fastify.decorate('requireRole', (role: string) => requireRole(role));
 
 // Swagger Documentation Engine
 await fastify.register(FastifySwagger, {
@@ -127,6 +130,8 @@ await fastify.register(async (app) => {
   await app.register(cartRoutes, { prefix: '/cart' });
   await app.register(inquiryRoutes, { prefix: '/inquiries' });
   await app.register(reviewRoutes, { prefix: '/reviews' });
+  await app.register(communityRoutes, { prefix: '/community' });
+  await app.register(wishlistRoutes, { prefix: '/wishlist' });
 }, { prefix: '/marketplace' });
 
 // Start Kafka

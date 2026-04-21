@@ -41,3 +41,32 @@ export function levenshtein(a: string, b: string): number {
   }
   return dp[m][n];
 }
+
+/**
+ * Robustly parses land extent strings from Bhoomi/RTC
+ * Handles formats like: "2.34.0", "2-34-0", "1.025 Ha", "1.025"
+ */
+export function parseExtentToAcres(raw: string): number {
+  if (!raw) return 0;
+  const s = String(raw).toLowerCase();
+  
+  // 1. Hectares (Ha) -> Acres conversion
+  if (s.includes('ha')) {
+    const m = s.match(/([\d.]+)/);
+    return m ? parseFloat((parseFloat(m[1]) * 2.47105).toFixed(3)) : 0;
+  }
+  
+  // 2. Acres-Guntas-Annas (Common in KA RTCs)
+  // Standard: 1 Acre = 40 Guntas, 1 Gunta = 16 Annas
+  const parts = s.split(/[-.]/).filter(p => p.trim() !== '');
+  if (parts.length >= 2) {
+    const a = parseFloat(parts[0]) || 0;
+    const g = parseFloat(parts[1]) || 0;
+    const an = parseFloat(parts[2]) || 0;
+    return parseFloat((a + (g / 40) + (an / 640)).toFixed(3));
+  }
+  
+  // 3. Fallback: simple numeric acres
+  const numMatch = s.match(/[\d.]+/);
+  return numMatch ? parseFloat(parseFloat(numMatch[0]).toFixed(3)) : 0;
+}

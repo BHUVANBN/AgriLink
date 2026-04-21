@@ -164,11 +164,14 @@ export async function paymentRoutes(fastify: FastifyInstance) {
 
   /**
    * POST /marketplace/payment/refund
-   * Initiates a refund for a paid order.
+   * Initiates a refund for a paid order. (Admin Only)
    */
   fastify.post(
     '/payment/refund',
-    { config: { rateLimit: { max: 5, timeWindow: '1m' } } },
+    { 
+      preHandler: [(fastify as any).requireRole('admin')],
+      config: { rateLimit: { max: 5, timeWindow: '1m' } } 
+    },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const { orderId } = req.body as { orderId: string };
       const { prisma } = req.server as any;

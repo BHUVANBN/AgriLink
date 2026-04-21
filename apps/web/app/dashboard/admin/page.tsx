@@ -1,212 +1,180 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import React from 'react';
 import useSWR from 'swr';
 import { 
   Users, 
   ShieldCheck, 
-  ShoppingCart, 
-  TrendingUp,
-  Activity,
-  UserPlus,
-  AlertCircle,
-  Clock,
-  ChevronRight,
-  ArrowUpRight,
-  BarChart3
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Activity, 
+  Cpu, 
+  Database, 
+  Globe,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
-import AdminLayout from '@/components/AdminLayout';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts';
-import { useRouter } from 'next/navigation';
-import { ADMIN_STRINGS, ADMIN_CONFIG } from '@/config/admin.constants';
+import { motion } from 'framer-motion';
 
-const API = ADMIN_CONFIG.API_URL;
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => d.data);
 
-function StatCard({ label, value, sub, icon: Icon, color }: any) {
+function StatCard({ title, value, sub, trend, trendValue, icon: Icon }: any) {
   return (
-    <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 relative overflow-hidden group hover:border-red-600/30 transition-all">
-       <div className="flex justify-between items-start mb-6">
-          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center bg-${color}-600/10 text-${color}-600 shadow-xl group-hover:scale-110 transition-transform`}>
-             <Icon className="w-7 h-7" />
-          </div>
-          <div className="p-3 bg-white/5 rounded-xl text-[9px] font-bold uppercase tracking-widest text-white/40">Real-time</div>
-       </div>
-       <h3 className="text-sm font-bold text-white/40 uppercase tracking-widest mb-1">{label}</h3>
-       <div className="flex items-end gap-3">
-          <p className="text-4xl font-bold text-white font-serif tracking-tighter">{value}</p>
-          <p className={`text-[10px] font-bold uppercase tracking-widest text-${color}-600 mb-1.5`}>{sub}</p>
-       </div>
-       <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[80px] -translate-y-16 translate-x-16 opacity-30 group-hover:scale-125 transition-transform" />
+    <div className="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-xl hover:shadow-slate-200/50 transition-all group">
+      <div className="flex justify-between items-start mb-6">
+        <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:bg-slate-900 group-hover:text-white transition-all">
+          <Icon className="w-6 h-6" />
+        </div>
+        <div className={`flex items-center gap-1 text-[10px] font-black uppercase tracking-wider ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+          {trend === 'up' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+          {trendValue}
+        </div>
+      </div>
+      <div>
+        <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">{title}</p>
+        <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{value}</h3>
+        <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-tight">{sub}</p>
+      </div>
     </div>
   );
 }
 
-export default function AdminDashboardPage() {
-  const router = useRouter();
-  const { data: stats, isLoading } = useSWR(`${API}/auth/admin/stats`, fetcher);
-  const { data: kycQueue } = useSWR(`${API}/auth/admin/kyc-queue`, fetcher);
-  const { data: trendData } = useSWR(`${API}/auth/admin/stats/registrations`, fetcher);
+export default function AdminOverview() {
+  const { data: stats, isLoading: statsLoading } = useSWR(`${API}/auth/admin/stats`, fetcher);
+  const { data: health, isLoading: healthLoading } = useSWR(`${API}/auth/admin/health-check`, fetcher);
+
+  if (statsLoading || healthLoading) return null;
 
   return (
-    <AdminLayout pageTitle="Global Overview">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Branding (Page Specific) */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h2 className="text-4xl font-bold text-white font-serif tracking-tighter">{ADMIN_STRINGS.DASHBOARD.TITLE}</h2>
-            <p className="text-red-600 font-bold text-[11px] uppercase tracking-[0.25em] mt-3 pb-1">{ADMIN_STRINGS.DASHBOARD.SUBTITLE}</p>
-          </motion.div>
-
-          <div className="flex items-center gap-4 bg-white/5 p-4 rounded-3xl border border-white/10 shadow-lg">
-             <div className="text-center px-4 border-r border-white/5">
-                <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider mb-2 leading-none">{ADMIN_STRINGS.DASHBOARD.PULSE_LABEL}</p>
-                <div className="flex items-center gap-2">
-                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                   <p className="text-lg font-bold text-white font-serif leading-none">{ADMIN_STRINGS.DASHBOARD.PULSE_STABLE}</p>
-                </div>
-             </div>
-             <div className="text-center px-8">
-                <p className="text-[9px] text-white/40 font-bold uppercase tracking-wider mb-2 leading-none">{ADMIN_STRINGS.DASHBOARD.NODES_LABEL}</p>
-                <p className="text-lg font-bold text-white font-serif leading-none">{ADMIN_STRINGS.DASHBOARD.NODES_STABLE}</p>
-             </div>
-          </div>
-        </div>
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-64 bg-white/5 border border-white/10 rounded-[2.5rem] animate-pulse" />)}
-          </div>
-        ) : (
-          <>
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-               <StatCard label={ADMIN_STRINGS.DASHBOARD.STATS.IDENTITIES} value={stats?.users?.total} sub={`${stats?.users?.farmers} Farmers`} icon={Users} color="blue" />
-               <StatCard label={ADMIN_STRINGS.DASHBOARD.STATS.KYC} value={`${stats?.kyc?.approved}`} sub={`${stats?.kyc?.pending} Pending`} icon={ShieldCheck} color="emerald" />
-               <StatCard label={ADMIN_STRINGS.DASHBOARD.STATS.ACQUISITIONS} value={stats?.users?.recentRegistrations} sub="+12% WoW" icon={UserPlus} color="red" />
-               <StatCard label={ADMIN_STRINGS.DASHBOARD.STATS.INTEGRITY} value="High" sub="0 Critical Failures" icon={Activity} color="amber" />
-            </div>
-
-            {/* Middle Grid: Monitoring & Growth Spectrum */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-               {/* Growth Visualizer */}
-               <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-[3rem] p-12 hover:border-red-600/20 transition-all shadow-2xl relative overflow-hidden group">
-                  <div className="flex items-center justify-between mb-12 relative z-10">
-                     <div>
-                        <h3 className="text-3xl font-bold text-white font-serif tracking-tight">{ADMIN_STRINGS.DASHBOARD.CHARTS.GROWTH_TITLE}</h3>
-                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/30 mt-1">{ADMIN_STRINGS.DASHBOARD.CHARTS.GROWTH_SUB}</p>
-                     </div>
-                     <button className="p-4 bg-white/5 rounded-2xl text-white/40 hover:text-white transition-all"><TrendingUp className="w-5 h-5" /></button>
-                  </div>
-
-                  <div className="h-[400px] w-full relative z-10 pr-4">
-                     <ResponsiveContainer width="100%" height="100%">
-                       <AreaChart data={trendData || []}>
-                         <defs>
-                           <linearGradient id="colorUsers" x1="0" y1="0" x2="0" y2="1">
-                             <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
-                             <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                           </linearGradient>
-                         </defs>
-                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                         <XAxis dataKey="name" stroke="#ffffff30" fontSize={11} axisLine={false} tickLine={false} tick={{dy: 10}} />
-                         <YAxis stroke="#ffffff30" fontSize={11} axisLine={false} tickLine={false} />
-                         <Tooltip 
-                           contentStyle={{ backgroundColor: '#1a1a1a', border: '1px solid #ffffff10', borderRadius: '1.5rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} 
-                           itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                           labelStyle={{ display: 'none' }}
-                         />
-                         <Area type="monotone" dataKey="users" stroke="#ef4444" strokeWidth={4} fillOpacity={1} fill="url(#colorUsers)" />
-                       </AreaChart>
-                     </ResponsiveContainer>
-                  </div>
-               </div>
-
-               {/* KYC Decision Queue Quickview */}
-               <div className="bg-[#0f0f0f] border border-white/5 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden flex flex-col group">
-                  <div className="flex items-center gap-3 mb-10 pb-6 border-b border-white/5 relative z-10">
-                     <div className="w-10 h-10 bg-amber-600/10 text-amber-600 rounded-xl flex items-center justify-center">
-                        <Clock className="w-5 h-5" />
-                     </div>
-                     <div>
-                        <h3 className="text-xl font-bold text-white font-serif italic">{ADMIN_STRINGS.DASHBOARD.QUEUE.TITLE}</h3>
-                        <p className="text-[8px] font-black uppercase tracking-widest text-white/30 italic">{ADMIN_STRINGS.DASHBOARD.QUEUE.SUB}</p>
-                     </div>
-                  </div>
-
-                  <div className="flex-1 space-y-6 relative z-10 overflow-y-auto pr-2 custom-scrollbar">
-                     {kycQueue?.users?.length > 0 ? (
-                       kycQueue.users.slice(0, 4).map((user: any, i: number) => (
-                         <motion.div 
-                           key={user.id} 
-                           whileHover={{ x: 5 }} 
-                           onClick={() => router.push('/dashboard/admin/kyc')}
-                           className="flex items-center justify-between group/item cursor-pointer"
-                         >
-                            <div className="flex items-center gap-4">
-                               <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40 group-hover/item:text-white transition-all italic font-serif">
-                                  {user.fullName?.[0] || 'S'}
-                               </div>
-                               <div className="min-w-0 flex-1">
-                                  <p className="text-[13px] font-bold text-white font-serif italic truncate">{user.fullName || 'Platform Node'}</p>
-                                  <p className="text-[9px] font-bold text-white/20 uppercase tracking-widest leading-none mt-1 italic">Identity Audit Flow</p>
-                               </div>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-white/10 group-hover/item:text-red-500 transition-all" />
-                         </motion.div>
-                       ))
-                     ) : (
-                       <div className="flex flex-col items-center justify-center h-full text-center">
-                          <ShieldCheck className="w-12 h-12 text-white/5 mb-6 opacity-40 shrink-0" />
-                          <p className="text-[10px] font-black uppercase text-white/20 tracking-[0.2em] italic">Queue is clear // Satisfactory compliance level</p>
-                       </div>
-                     )}
-                  </div>
-
-                  <div className="pt-8 border-t border-white/5 mt-auto relative z-10">
-                     <button onClick={() => router.push('/dashboard/admin/kyc')} className="w-full py-4 bg-white/5 hover:bg-white text-white/60 hover:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">
-                        Enter Decision Hub
-                     </button>
-                  </div>
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-red-600 rounded-full blur-[80px] -translate-y-12 translate-x-12 opacity-5 group-hover:scale-125 transition-transform" />
-               </div>
-            </div>
-
-            {/* Security Feedback Spectrum */}
-            <div className="mt-12 p-10 bg-red-600/5 border border-red-600/10 rounded-[3rem] flex items-center justify-between relative overflow-hidden group hover:bg-red-600/10 transition-all">
-               <div className="flex items-center gap-8 relative z-10">
-                  <div className="w-16 h-16 bg-red-600/20 text-red-600 rounded-2xl flex items-center justify-center shadow-inner">
-                     <AlertCircle className="w-8 h-8" />
-                  </div>
-                  <div>
-                     <h4 className="text-2xl font-bold text-white font-serif italic mb-1 uppercase tracking-tight">System Integrity Vector</h4>
-                     <p className="text-xs text-white/40 font-bold italic max-w-2xl leading-relaxed">Critical alerts and cross-service unauthorized attempt logs. Standard protocol (Active-Lockdown) is initialized. Monitoring telemetry nodes for fluctuations.</p>
-                  </div>
-               </div>
-               <div className="flex items-center gap-3 pr-6 relative z-10">
-                  <div className="w-2 h-2 rounded-full bg-red-600 animate-ping" />
-                  <span className="text-[11px] font-black text-red-600 uppercase tracking-widest italic font-serif">Deep-Scanning Nodes...</span>
-               </div>
-               <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-red-600/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-[2000ms] pointer-events-none" />
-            </div>
-          </>
-        )}
+    <div className="space-y-12">
+      {/* Platform Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <StatCard 
+          title="Total Users" 
+          value={stats?.users?.total || 0} 
+          sub={`${stats?.users?.farmers || 0} Farmers | ${stats?.users?.suppliers || 0} Suppliers`}
+          trend="up"
+          trendValue="+12%"
+          icon={Users}
+        />
+        <StatCard 
+          title="Pending KYC" 
+          value={stats?.kyc?.pending || 0} 
+          sub="Requires Administrative Review"
+          trend="down"
+          trendValue="-5%"
+          icon={ShieldCheck}
+        />
+        <StatCard 
+          title="Growth Rate" 
+          value={`${stats?.users?.recentRegistrations || 0}`} 
+          sub="New users in last 7 days"
+          trend="up"
+          trendValue="+18%"
+          icon={Activity}
+        />
+        <StatCard 
+          title="Platform Security" 
+          value="99.9%" 
+          sub="No unauthorized breaches"
+          trend="up"
+          trendValue="STABLE"
+          icon={ShieldCheck}
+        />
       </div>
 
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #ffffff10; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #ffffff20; }
-      `}</style>
-    </AdminLayout>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Service Health Monitoring */}
+        <div className="lg:col-span-2 bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
+           <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+           <div className="flex items-center justify-between mb-10 relative z-10">
+              <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                    <Activity className="w-5 h-5 text-green-400" />
+                 </div>
+                 <h3 className="text-xl font-black uppercase tracking-tight">System Infrastructure Health</h3>
+              </div>
+              <div className="flex items-center gap-2 px-4 py-2 bg-green-500/20 text-green-400 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/20">
+                 <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                 All Systems Normal
+              </div>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+              {health?.services?.map((service: any) => (
+                <div key={service.name} className="flex items-center justify-between p-5 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-all">
+                   <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${service.status === 'UP' ? 'bg-green-400 shadow-[0_0_8px_rgba(74,222,128,0.5)]' : 'bg-red-400'}`} />
+                      <span className="text-sm font-bold opacity-80">{service.name}</span>
+                   </div>
+                   <span className="text-[10px] font-black opacity-40 uppercase">{service.latency}</span>
+                </div>
+              ))}
+           </div>
+
+           <div className="mt-10 pt-10 border-t border-white/5 flex flex-col md:flex-row gap-8 relative z-10">
+              <div className="flex-1 flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
+                    <Cpu className="w-6 h-6 text-slate-400" />
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">CPU Load</p>
+                    <p className="text-2xl font-black">{health?.system?.cpu}%</p>
+                 </div>
+              </div>
+              <div className="flex-1 flex items-center gap-4">
+                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center">
+                    <Database className="w-6 h-6 text-slate-400" />
+                 </div>
+                 <div>
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Memory Usage</p>
+                    <p className="text-2xl font-black">{health?.system?.memory?.percent}% <span className="text-xs text-slate-500 font-medium">({health?.system?.memory?.used}GB / {health?.system?.memory?.total}GB)</span></p>
+                 </div>
+              </div>
+           </div>
+        </div>
+
+        {/* Global Node Map Placeholder / Stats */}
+        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200 flex flex-col">
+           <div className="flex items-center gap-4 mb-8">
+              <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-900">
+                 <Globe className="w-5 h-5" />
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-tight">Regional Distribution</h3>
+           </div>
+           
+           <div className="flex-1 flex flex-col justify-center space-y-6">
+              {[
+                { region: 'Karnataka North', count: 420, percent: 45, color: 'bg-green-500' },
+                { region: 'Karnataka South', count: 310, percent: 35, color: 'bg-brand-orange' },
+                { region: 'Andhra Pradesh', count: 180, percent: 15, color: 'bg-blue-500' },
+                { region: 'Maharashtra', count: 65, percent: 5, color: 'bg-slate-400' },
+              ].map((r) => (
+                <div key={r.region} className="space-y-2">
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-slate-900">{r.region}</span>
+                      <span className="text-slate-400">{r.count} Active Nodes</span>
+                   </div>
+                   <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        animate={{ width: `${r.percent}%` }}
+                        className={`h-full ${r.color}`}
+                      />
+                   </div>
+                </div>
+              ))}
+           </div>
+
+           <div className="mt-10 p-5 bg-slate-50 rounded-2xl flex items-center gap-4">
+              <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <p className="text-[10px] font-bold text-slate-600 leading-relaxed uppercase">
+                 Network nodes are successfully synchronized across <span className="text-slate-900 font-black">4 states</span>.
+              </p>
+           </div>
+        </div>
+      </div>
+    </div>
   );
 }

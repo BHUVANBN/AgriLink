@@ -197,6 +197,41 @@ exports.Prisma.InquiryReplyScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.CommunityDealScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  supplierId: 'supplierId',
+  title: 'title',
+  description: 'description',
+  targetQuantity: 'targetQuantity',
+  currentQuantity: 'currentQuantity',
+  originalPricePaise: 'originalPricePaise',
+  dealPricePaise: 'dealPricePaise',
+  endsAt: 'endsAt',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.DealParticipantScalarFieldEnum = {
+  id: 'id',
+  dealId: 'dealId',
+  farmerId: 'farmerId',
+  quantity: 'quantity',
+  paymentStatus: 'paymentStatus',
+  orderId: 'orderId',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.WishlistItemScalarFieldEnum = {
+  id: 'id',
+  farmerId: 'farmerId',
+  productId: 'productId',
+  supplierId: 'supplierId',
+  snapshot: 'snapshot',
+  addedAt: 'addedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -255,7 +290,10 @@ exports.Prisma.ModelName = {
   CartItem: 'CartItem',
   Review: 'Review',
   Inquiry: 'Inquiry',
-  InquiryReply: 'InquiryReply'
+  InquiryReply: 'InquiryReply',
+  CommunityDeal: 'CommunityDeal',
+  DealParticipant: 'DealParticipant',
+  WishlistItem: 'WishlistItem'
 };
 
 /**

@@ -38,6 +38,21 @@ export type Inquiry = $Result.DefaultSelection<Prisma.$InquiryPayload>
  * 
  */
 export type InquiryReply = $Result.DefaultSelection<Prisma.$InquiryReplyPayload>
+/**
+ * Model CommunityDeal
+ * 
+ */
+export type CommunityDeal = $Result.DefaultSelection<Prisma.$CommunityDealPayload>
+/**
+ * Model DealParticipant
+ * 
+ */
+export type DealParticipant = $Result.DefaultSelection<Prisma.$DealParticipantPayload>
+/**
+ * Model WishlistItem
+ * 
+ */
+export type WishlistItem = $Result.DefaultSelection<Prisma.$WishlistItemPayload>
 
 /**
  * Enums
@@ -268,6 +283,36 @@ export class PrismaClient<
     * ```
     */
   get inquiryReply(): Prisma.InquiryReplyDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.communityDeal`: Exposes CRUD operations for the **CommunityDeal** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more CommunityDeals
+    * const communityDeals = await prisma.communityDeal.findMany()
+    * ```
+    */
+  get communityDeal(): Prisma.CommunityDealDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.dealParticipant`: Exposes CRUD operations for the **DealParticipant** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DealParticipants
+    * const dealParticipants = await prisma.dealParticipant.findMany()
+    * ```
+    */
+  get dealParticipant(): Prisma.DealParticipantDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.wishlistItem`: Exposes CRUD operations for the **WishlistItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more WishlistItems
+    * const wishlistItems = await prisma.wishlistItem.findMany()
+    * ```
+    */
+  get wishlistItem(): Prisma.WishlistItemDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -713,7 +758,10 @@ export namespace Prisma {
     CartItem: 'CartItem',
     Review: 'Review',
     Inquiry: 'Inquiry',
-    InquiryReply: 'InquiryReply'
+    InquiryReply: 'InquiryReply',
+    CommunityDeal: 'CommunityDeal',
+    DealParticipant: 'DealParticipant',
+    WishlistItem: 'WishlistItem'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -732,7 +780,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "order" | "cartItem" | "review" | "inquiry" | "inquiryReply"
+      modelProps: "order" | "cartItem" | "review" | "inquiry" | "inquiryReply" | "communityDeal" | "dealParticipant" | "wishlistItem"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1106,6 +1154,228 @@ export namespace Prisma {
           }
         }
       }
+      CommunityDeal: {
+        payload: Prisma.$CommunityDealPayload<ExtArgs>
+        fields: Prisma.CommunityDealFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.CommunityDealFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.CommunityDealFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>
+          }
+          findFirst: {
+            args: Prisma.CommunityDealFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.CommunityDealFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>
+          }
+          findMany: {
+            args: Prisma.CommunityDealFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>[]
+          }
+          create: {
+            args: Prisma.CommunityDealCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>
+          }
+          createMany: {
+            args: Prisma.CommunityDealCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.CommunityDealCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>[]
+          }
+          delete: {
+            args: Prisma.CommunityDealDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>
+          }
+          update: {
+            args: Prisma.CommunityDealUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>
+          }
+          deleteMany: {
+            args: Prisma.CommunityDealDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.CommunityDealUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.CommunityDealUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>[]
+          }
+          upsert: {
+            args: Prisma.CommunityDealUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$CommunityDealPayload>
+          }
+          aggregate: {
+            args: Prisma.CommunityDealAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateCommunityDeal>
+          }
+          groupBy: {
+            args: Prisma.CommunityDealGroupByArgs<ExtArgs>
+            result: $Utils.Optional<CommunityDealGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.CommunityDealCountArgs<ExtArgs>
+            result: $Utils.Optional<CommunityDealCountAggregateOutputType> | number
+          }
+        }
+      }
+      DealParticipant: {
+        payload: Prisma.$DealParticipantPayload<ExtArgs>
+        fields: Prisma.DealParticipantFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DealParticipantFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DealParticipantFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>
+          }
+          findFirst: {
+            args: Prisma.DealParticipantFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DealParticipantFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>
+          }
+          findMany: {
+            args: Prisma.DealParticipantFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>[]
+          }
+          create: {
+            args: Prisma.DealParticipantCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>
+          }
+          createMany: {
+            args: Prisma.DealParticipantCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.DealParticipantCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>[]
+          }
+          delete: {
+            args: Prisma.DealParticipantDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>
+          }
+          update: {
+            args: Prisma.DealParticipantUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>
+          }
+          deleteMany: {
+            args: Prisma.DealParticipantDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DealParticipantUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.DealParticipantUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>[]
+          }
+          upsert: {
+            args: Prisma.DealParticipantUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DealParticipantPayload>
+          }
+          aggregate: {
+            args: Prisma.DealParticipantAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDealParticipant>
+          }
+          groupBy: {
+            args: Prisma.DealParticipantGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DealParticipantGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DealParticipantCountArgs<ExtArgs>
+            result: $Utils.Optional<DealParticipantCountAggregateOutputType> | number
+          }
+        }
+      }
+      WishlistItem: {
+        payload: Prisma.$WishlistItemPayload<ExtArgs>
+        fields: Prisma.WishlistItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.WishlistItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.WishlistItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>
+          }
+          findFirst: {
+            args: Prisma.WishlistItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.WishlistItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>
+          }
+          findMany: {
+            args: Prisma.WishlistItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>[]
+          }
+          create: {
+            args: Prisma.WishlistItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>
+          }
+          createMany: {
+            args: Prisma.WishlistItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.WishlistItemCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>[]
+          }
+          delete: {
+            args: Prisma.WishlistItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>
+          }
+          update: {
+            args: Prisma.WishlistItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.WishlistItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.WishlistItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.WishlistItemUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>[]
+          }
+          upsert: {
+            args: Prisma.WishlistItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$WishlistItemPayload>
+          }
+          aggregate: {
+            args: Prisma.WishlistItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateWishlistItem>
+          }
+          groupBy: {
+            args: Prisma.WishlistItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<WishlistItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.WishlistItemCountArgs<ExtArgs>
+            result: $Utils.Optional<WishlistItemCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1207,6 +1477,9 @@ export namespace Prisma {
     review?: ReviewOmit
     inquiry?: InquiryOmit
     inquiryReply?: InquiryReplyOmit
+    communityDeal?: CommunityDealOmit
+    dealParticipant?: DealParticipantOmit
+    wishlistItem?: WishlistItemOmit
   }
 
   /* Types for Logging */
@@ -1310,6 +1583,37 @@ export namespace Prisma {
    */
   export type InquiryCountOutputTypeCountRepliesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: InquiryReplyWhereInput
+  }
+
+
+  /**
+   * Count Type CommunityDealCountOutputType
+   */
+
+  export type CommunityDealCountOutputType = {
+    participants: number
+  }
+
+  export type CommunityDealCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    participants?: boolean | CommunityDealCountOutputTypeCountParticipantsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * CommunityDealCountOutputType without action
+   */
+  export type CommunityDealCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDealCountOutputType
+     */
+    select?: CommunityDealCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * CommunityDealCountOutputType without action
+   */
+  export type CommunityDealCountOutputTypeCountParticipantsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DealParticipantWhereInput
   }
 
 
@@ -7001,6 +7305,3348 @@ export namespace Prisma {
 
 
   /**
+   * Model CommunityDeal
+   */
+
+  export type AggregateCommunityDeal = {
+    _count: CommunityDealCountAggregateOutputType | null
+    _avg: CommunityDealAvgAggregateOutputType | null
+    _sum: CommunityDealSumAggregateOutputType | null
+    _min: CommunityDealMinAggregateOutputType | null
+    _max: CommunityDealMaxAggregateOutputType | null
+  }
+
+  export type CommunityDealAvgAggregateOutputType = {
+    targetQuantity: number | null
+    currentQuantity: number | null
+    originalPricePaise: number | null
+    dealPricePaise: number | null
+  }
+
+  export type CommunityDealSumAggregateOutputType = {
+    targetQuantity: number | null
+    currentQuantity: number | null
+    originalPricePaise: number | null
+    dealPricePaise: number | null
+  }
+
+  export type CommunityDealMinAggregateOutputType = {
+    id: string | null
+    productId: string | null
+    supplierId: string | null
+    title: string | null
+    description: string | null
+    targetQuantity: number | null
+    currentQuantity: number | null
+    originalPricePaise: number | null
+    dealPricePaise: number | null
+    endsAt: Date | null
+    isActive: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type CommunityDealMaxAggregateOutputType = {
+    id: string | null
+    productId: string | null
+    supplierId: string | null
+    title: string | null
+    description: string | null
+    targetQuantity: number | null
+    currentQuantity: number | null
+    originalPricePaise: number | null
+    dealPricePaise: number | null
+    endsAt: Date | null
+    isActive: boolean | null
+    createdAt: Date | null
+    updatedAt: Date | null
+  }
+
+  export type CommunityDealCountAggregateOutputType = {
+    id: number
+    productId: number
+    supplierId: number
+    title: number
+    description: number
+    targetQuantity: number
+    currentQuantity: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: number
+    isActive: number
+    createdAt: number
+    updatedAt: number
+    _all: number
+  }
+
+
+  export type CommunityDealAvgAggregateInputType = {
+    targetQuantity?: true
+    currentQuantity?: true
+    originalPricePaise?: true
+    dealPricePaise?: true
+  }
+
+  export type CommunityDealSumAggregateInputType = {
+    targetQuantity?: true
+    currentQuantity?: true
+    originalPricePaise?: true
+    dealPricePaise?: true
+  }
+
+  export type CommunityDealMinAggregateInputType = {
+    id?: true
+    productId?: true
+    supplierId?: true
+    title?: true
+    description?: true
+    targetQuantity?: true
+    currentQuantity?: true
+    originalPricePaise?: true
+    dealPricePaise?: true
+    endsAt?: true
+    isActive?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type CommunityDealMaxAggregateInputType = {
+    id?: true
+    productId?: true
+    supplierId?: true
+    title?: true
+    description?: true
+    targetQuantity?: true
+    currentQuantity?: true
+    originalPricePaise?: true
+    dealPricePaise?: true
+    endsAt?: true
+    isActive?: true
+    createdAt?: true
+    updatedAt?: true
+  }
+
+  export type CommunityDealCountAggregateInputType = {
+    id?: true
+    productId?: true
+    supplierId?: true
+    title?: true
+    description?: true
+    targetQuantity?: true
+    currentQuantity?: true
+    originalPricePaise?: true
+    dealPricePaise?: true
+    endsAt?: true
+    isActive?: true
+    createdAt?: true
+    updatedAt?: true
+    _all?: true
+  }
+
+  export type CommunityDealAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CommunityDeal to aggregate.
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunityDeals to fetch.
+     */
+    orderBy?: CommunityDealOrderByWithRelationInput | CommunityDealOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: CommunityDealWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunityDeals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunityDeals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned CommunityDeals
+    **/
+    _count?: true | CommunityDealCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: CommunityDealAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: CommunityDealSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: CommunityDealMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: CommunityDealMaxAggregateInputType
+  }
+
+  export type GetCommunityDealAggregateType<T extends CommunityDealAggregateArgs> = {
+        [P in keyof T & keyof AggregateCommunityDeal]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateCommunityDeal[P]>
+      : GetScalarType<T[P], AggregateCommunityDeal[P]>
+  }
+
+
+
+
+  export type CommunityDealGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: CommunityDealWhereInput
+    orderBy?: CommunityDealOrderByWithAggregationInput | CommunityDealOrderByWithAggregationInput[]
+    by: CommunityDealScalarFieldEnum[] | CommunityDealScalarFieldEnum
+    having?: CommunityDealScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: CommunityDealCountAggregateInputType | true
+    _avg?: CommunityDealAvgAggregateInputType
+    _sum?: CommunityDealSumAggregateInputType
+    _min?: CommunityDealMinAggregateInputType
+    _max?: CommunityDealMaxAggregateInputType
+  }
+
+  export type CommunityDealGroupByOutputType = {
+    id: string
+    productId: string
+    supplierId: string
+    title: string
+    description: string
+    targetQuantity: number
+    currentQuantity: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: Date
+    isActive: boolean
+    createdAt: Date
+    updatedAt: Date
+    _count: CommunityDealCountAggregateOutputType | null
+    _avg: CommunityDealAvgAggregateOutputType | null
+    _sum: CommunityDealSumAggregateOutputType | null
+    _min: CommunityDealMinAggregateOutputType | null
+    _max: CommunityDealMaxAggregateOutputType | null
+  }
+
+  type GetCommunityDealGroupByPayload<T extends CommunityDealGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<CommunityDealGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof CommunityDealGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], CommunityDealGroupByOutputType[P]>
+            : GetScalarType<T[P], CommunityDealGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type CommunityDealSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    title?: boolean
+    description?: boolean
+    targetQuantity?: boolean
+    currentQuantity?: boolean
+    originalPricePaise?: boolean
+    dealPricePaise?: boolean
+    endsAt?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    participants?: boolean | CommunityDeal$participantsArgs<ExtArgs>
+    _count?: boolean | CommunityDealCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["communityDeal"]>
+
+  export type CommunityDealSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    title?: boolean
+    description?: boolean
+    targetQuantity?: boolean
+    currentQuantity?: boolean
+    originalPricePaise?: boolean
+    dealPricePaise?: boolean
+    endsAt?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["communityDeal"]>
+
+  export type CommunityDealSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    title?: boolean
+    description?: boolean
+    targetQuantity?: boolean
+    currentQuantity?: boolean
+    originalPricePaise?: boolean
+    dealPricePaise?: boolean
+    endsAt?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }, ExtArgs["result"]["communityDeal"]>
+
+  export type CommunityDealSelectScalar = {
+    id?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    title?: boolean
+    description?: boolean
+    targetQuantity?: boolean
+    currentQuantity?: boolean
+    originalPricePaise?: boolean
+    dealPricePaise?: boolean
+    endsAt?: boolean
+    isActive?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+  }
+
+  export type CommunityDealOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "productId" | "supplierId" | "title" | "description" | "targetQuantity" | "currentQuantity" | "originalPricePaise" | "dealPricePaise" | "endsAt" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["communityDeal"]>
+  export type CommunityDealInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    participants?: boolean | CommunityDeal$participantsArgs<ExtArgs>
+    _count?: boolean | CommunityDealCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type CommunityDealIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+  export type CommunityDealIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
+
+  export type $CommunityDealPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "CommunityDeal"
+    objects: {
+      participants: Prisma.$DealParticipantPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      productId: string
+      supplierId: string
+      title: string
+      description: string
+      targetQuantity: number
+      currentQuantity: number
+      originalPricePaise: number
+      dealPricePaise: number
+      endsAt: Date
+      isActive: boolean
+      createdAt: Date
+      updatedAt: Date
+    }, ExtArgs["result"]["communityDeal"]>
+    composites: {}
+  }
+
+  type CommunityDealGetPayload<S extends boolean | null | undefined | CommunityDealDefaultArgs> = $Result.GetResult<Prisma.$CommunityDealPayload, S>
+
+  type CommunityDealCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<CommunityDealFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: CommunityDealCountAggregateInputType | true
+    }
+
+  export interface CommunityDealDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['CommunityDeal'], meta: { name: 'CommunityDeal' } }
+    /**
+     * Find zero or one CommunityDeal that matches the filter.
+     * @param {CommunityDealFindUniqueArgs} args - Arguments to find a CommunityDeal
+     * @example
+     * // Get one CommunityDeal
+     * const communityDeal = await prisma.communityDeal.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends CommunityDealFindUniqueArgs>(args: SelectSubset<T, CommunityDealFindUniqueArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one CommunityDeal that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {CommunityDealFindUniqueOrThrowArgs} args - Arguments to find a CommunityDeal
+     * @example
+     * // Get one CommunityDeal
+     * const communityDeal = await prisma.communityDeal.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends CommunityDealFindUniqueOrThrowArgs>(args: SelectSubset<T, CommunityDealFindUniqueOrThrowArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CommunityDeal that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealFindFirstArgs} args - Arguments to find a CommunityDeal
+     * @example
+     * // Get one CommunityDeal
+     * const communityDeal = await prisma.communityDeal.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends CommunityDealFindFirstArgs>(args?: SelectSubset<T, CommunityDealFindFirstArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first CommunityDeal that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealFindFirstOrThrowArgs} args - Arguments to find a CommunityDeal
+     * @example
+     * // Get one CommunityDeal
+     * const communityDeal = await prisma.communityDeal.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends CommunityDealFindFirstOrThrowArgs>(args?: SelectSubset<T, CommunityDealFindFirstOrThrowArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more CommunityDeals that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all CommunityDeals
+     * const communityDeals = await prisma.communityDeal.findMany()
+     * 
+     * // Get first 10 CommunityDeals
+     * const communityDeals = await prisma.communityDeal.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const communityDealWithIdOnly = await prisma.communityDeal.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends CommunityDealFindManyArgs>(args?: SelectSubset<T, CommunityDealFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a CommunityDeal.
+     * @param {CommunityDealCreateArgs} args - Arguments to create a CommunityDeal.
+     * @example
+     * // Create one CommunityDeal
+     * const CommunityDeal = await prisma.communityDeal.create({
+     *   data: {
+     *     // ... data to create a CommunityDeal
+     *   }
+     * })
+     * 
+     */
+    create<T extends CommunityDealCreateArgs>(args: SelectSubset<T, CommunityDealCreateArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many CommunityDeals.
+     * @param {CommunityDealCreateManyArgs} args - Arguments to create many CommunityDeals.
+     * @example
+     * // Create many CommunityDeals
+     * const communityDeal = await prisma.communityDeal.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends CommunityDealCreateManyArgs>(args?: SelectSubset<T, CommunityDealCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many CommunityDeals and returns the data saved in the database.
+     * @param {CommunityDealCreateManyAndReturnArgs} args - Arguments to create many CommunityDeals.
+     * @example
+     * // Create many CommunityDeals
+     * const communityDeal = await prisma.communityDeal.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many CommunityDeals and only return the `id`
+     * const communityDealWithIdOnly = await prisma.communityDeal.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends CommunityDealCreateManyAndReturnArgs>(args?: SelectSubset<T, CommunityDealCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a CommunityDeal.
+     * @param {CommunityDealDeleteArgs} args - Arguments to delete one CommunityDeal.
+     * @example
+     * // Delete one CommunityDeal
+     * const CommunityDeal = await prisma.communityDeal.delete({
+     *   where: {
+     *     // ... filter to delete one CommunityDeal
+     *   }
+     * })
+     * 
+     */
+    delete<T extends CommunityDealDeleteArgs>(args: SelectSubset<T, CommunityDealDeleteArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one CommunityDeal.
+     * @param {CommunityDealUpdateArgs} args - Arguments to update one CommunityDeal.
+     * @example
+     * // Update one CommunityDeal
+     * const communityDeal = await prisma.communityDeal.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends CommunityDealUpdateArgs>(args: SelectSubset<T, CommunityDealUpdateArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more CommunityDeals.
+     * @param {CommunityDealDeleteManyArgs} args - Arguments to filter CommunityDeals to delete.
+     * @example
+     * // Delete a few CommunityDeals
+     * const { count } = await prisma.communityDeal.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends CommunityDealDeleteManyArgs>(args?: SelectSubset<T, CommunityDealDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CommunityDeals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many CommunityDeals
+     * const communityDeal = await prisma.communityDeal.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends CommunityDealUpdateManyArgs>(args: SelectSubset<T, CommunityDealUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more CommunityDeals and returns the data updated in the database.
+     * @param {CommunityDealUpdateManyAndReturnArgs} args - Arguments to update many CommunityDeals.
+     * @example
+     * // Update many CommunityDeals
+     * const communityDeal = await prisma.communityDeal.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more CommunityDeals and only return the `id`
+     * const communityDealWithIdOnly = await prisma.communityDeal.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends CommunityDealUpdateManyAndReturnArgs>(args: SelectSubset<T, CommunityDealUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one CommunityDeal.
+     * @param {CommunityDealUpsertArgs} args - Arguments to update or create a CommunityDeal.
+     * @example
+     * // Update or create a CommunityDeal
+     * const communityDeal = await prisma.communityDeal.upsert({
+     *   create: {
+     *     // ... data to create a CommunityDeal
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the CommunityDeal we want to update
+     *   }
+     * })
+     */
+    upsert<T extends CommunityDealUpsertArgs>(args: SelectSubset<T, CommunityDealUpsertArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of CommunityDeals.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealCountArgs} args - Arguments to filter CommunityDeals to count.
+     * @example
+     * // Count the number of CommunityDeals
+     * const count = await prisma.communityDeal.count({
+     *   where: {
+     *     // ... the filter for the CommunityDeals we want to count
+     *   }
+     * })
+    **/
+    count<T extends CommunityDealCountArgs>(
+      args?: Subset<T, CommunityDealCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], CommunityDealCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a CommunityDeal.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends CommunityDealAggregateArgs>(args: Subset<T, CommunityDealAggregateArgs>): Prisma.PrismaPromise<GetCommunityDealAggregateType<T>>
+
+    /**
+     * Group by CommunityDeal.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {CommunityDealGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends CommunityDealGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: CommunityDealGroupByArgs['orderBy'] }
+        : { orderBy?: CommunityDealGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, CommunityDealGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetCommunityDealGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the CommunityDeal model
+   */
+  readonly fields: CommunityDealFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for CommunityDeal.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__CommunityDealClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    participants<T extends CommunityDeal$participantsArgs<ExtArgs> = {}>(args?: Subset<T, CommunityDeal$participantsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the CommunityDeal model
+   */
+  interface CommunityDealFieldRefs {
+    readonly id: FieldRef<"CommunityDeal", 'String'>
+    readonly productId: FieldRef<"CommunityDeal", 'String'>
+    readonly supplierId: FieldRef<"CommunityDeal", 'String'>
+    readonly title: FieldRef<"CommunityDeal", 'String'>
+    readonly description: FieldRef<"CommunityDeal", 'String'>
+    readonly targetQuantity: FieldRef<"CommunityDeal", 'Int'>
+    readonly currentQuantity: FieldRef<"CommunityDeal", 'Int'>
+    readonly originalPricePaise: FieldRef<"CommunityDeal", 'Int'>
+    readonly dealPricePaise: FieldRef<"CommunityDeal", 'Int'>
+    readonly endsAt: FieldRef<"CommunityDeal", 'DateTime'>
+    readonly isActive: FieldRef<"CommunityDeal", 'Boolean'>
+    readonly createdAt: FieldRef<"CommunityDeal", 'DateTime'>
+    readonly updatedAt: FieldRef<"CommunityDeal", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * CommunityDeal findUnique
+   */
+  export type CommunityDealFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunityDeal to fetch.
+     */
+    where: CommunityDealWhereUniqueInput
+  }
+
+  /**
+   * CommunityDeal findUniqueOrThrow
+   */
+  export type CommunityDealFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunityDeal to fetch.
+     */
+    where: CommunityDealWhereUniqueInput
+  }
+
+  /**
+   * CommunityDeal findFirst
+   */
+  export type CommunityDealFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunityDeal to fetch.
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunityDeals to fetch.
+     */
+    orderBy?: CommunityDealOrderByWithRelationInput | CommunityDealOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CommunityDeals.
+     */
+    cursor?: CommunityDealWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunityDeals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunityDeals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CommunityDeals.
+     */
+    distinct?: CommunityDealScalarFieldEnum | CommunityDealScalarFieldEnum[]
+  }
+
+  /**
+   * CommunityDeal findFirstOrThrow
+   */
+  export type CommunityDealFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunityDeal to fetch.
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunityDeals to fetch.
+     */
+    orderBy?: CommunityDealOrderByWithRelationInput | CommunityDealOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for CommunityDeals.
+     */
+    cursor?: CommunityDealWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunityDeals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunityDeals.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of CommunityDeals.
+     */
+    distinct?: CommunityDealScalarFieldEnum | CommunityDealScalarFieldEnum[]
+  }
+
+  /**
+   * CommunityDeal findMany
+   */
+  export type CommunityDealFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * Filter, which CommunityDeals to fetch.
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of CommunityDeals to fetch.
+     */
+    orderBy?: CommunityDealOrderByWithRelationInput | CommunityDealOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing CommunityDeals.
+     */
+    cursor?: CommunityDealWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` CommunityDeals from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` CommunityDeals.
+     */
+    skip?: number
+    distinct?: CommunityDealScalarFieldEnum | CommunityDealScalarFieldEnum[]
+  }
+
+  /**
+   * CommunityDeal create
+   */
+  export type CommunityDealCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * The data needed to create a CommunityDeal.
+     */
+    data: XOR<CommunityDealCreateInput, CommunityDealUncheckedCreateInput>
+  }
+
+  /**
+   * CommunityDeal createMany
+   */
+  export type CommunityDealCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many CommunityDeals.
+     */
+    data: CommunityDealCreateManyInput | CommunityDealCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * CommunityDeal createManyAndReturn
+   */
+  export type CommunityDealCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * The data used to create many CommunityDeals.
+     */
+    data: CommunityDealCreateManyInput | CommunityDealCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * CommunityDeal update
+   */
+  export type CommunityDealUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * The data needed to update a CommunityDeal.
+     */
+    data: XOR<CommunityDealUpdateInput, CommunityDealUncheckedUpdateInput>
+    /**
+     * Choose, which CommunityDeal to update.
+     */
+    where: CommunityDealWhereUniqueInput
+  }
+
+  /**
+   * CommunityDeal updateMany
+   */
+  export type CommunityDealUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update CommunityDeals.
+     */
+    data: XOR<CommunityDealUpdateManyMutationInput, CommunityDealUncheckedUpdateManyInput>
+    /**
+     * Filter which CommunityDeals to update
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * Limit how many CommunityDeals to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CommunityDeal updateManyAndReturn
+   */
+  export type CommunityDealUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * The data used to update CommunityDeals.
+     */
+    data: XOR<CommunityDealUpdateManyMutationInput, CommunityDealUncheckedUpdateManyInput>
+    /**
+     * Filter which CommunityDeals to update
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * Limit how many CommunityDeals to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * CommunityDeal upsert
+   */
+  export type CommunityDealUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * The filter to search for the CommunityDeal to update in case it exists.
+     */
+    where: CommunityDealWhereUniqueInput
+    /**
+     * In case the CommunityDeal found by the `where` argument doesn't exist, create a new CommunityDeal with this data.
+     */
+    create: XOR<CommunityDealCreateInput, CommunityDealUncheckedCreateInput>
+    /**
+     * In case the CommunityDeal was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<CommunityDealUpdateInput, CommunityDealUncheckedUpdateInput>
+  }
+
+  /**
+   * CommunityDeal delete
+   */
+  export type CommunityDealDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+    /**
+     * Filter which CommunityDeal to delete.
+     */
+    where: CommunityDealWhereUniqueInput
+  }
+
+  /**
+   * CommunityDeal deleteMany
+   */
+  export type CommunityDealDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which CommunityDeals to delete
+     */
+    where?: CommunityDealWhereInput
+    /**
+     * Limit how many CommunityDeals to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * CommunityDeal.participants
+   */
+  export type CommunityDeal$participantsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    where?: DealParticipantWhereInput
+    orderBy?: DealParticipantOrderByWithRelationInput | DealParticipantOrderByWithRelationInput[]
+    cursor?: DealParticipantWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DealParticipantScalarFieldEnum | DealParticipantScalarFieldEnum[]
+  }
+
+  /**
+   * CommunityDeal without action
+   */
+  export type CommunityDealDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the CommunityDeal
+     */
+    select?: CommunityDealSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the CommunityDeal
+     */
+    omit?: CommunityDealOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: CommunityDealInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model DealParticipant
+   */
+
+  export type AggregateDealParticipant = {
+    _count: DealParticipantCountAggregateOutputType | null
+    _avg: DealParticipantAvgAggregateOutputType | null
+    _sum: DealParticipantSumAggregateOutputType | null
+    _min: DealParticipantMinAggregateOutputType | null
+    _max: DealParticipantMaxAggregateOutputType | null
+  }
+
+  export type DealParticipantAvgAggregateOutputType = {
+    quantity: number | null
+  }
+
+  export type DealParticipantSumAggregateOutputType = {
+    quantity: number | null
+  }
+
+  export type DealParticipantMinAggregateOutputType = {
+    id: string | null
+    dealId: string | null
+    farmerId: string | null
+    quantity: number | null
+    paymentStatus: $Enums.PaymentStatus | null
+    orderId: string | null
+    createdAt: Date | null
+  }
+
+  export type DealParticipantMaxAggregateOutputType = {
+    id: string | null
+    dealId: string | null
+    farmerId: string | null
+    quantity: number | null
+    paymentStatus: $Enums.PaymentStatus | null
+    orderId: string | null
+    createdAt: Date | null
+  }
+
+  export type DealParticipantCountAggregateOutputType = {
+    id: number
+    dealId: number
+    farmerId: number
+    quantity: number
+    paymentStatus: number
+    orderId: number
+    createdAt: number
+    _all: number
+  }
+
+
+  export type DealParticipantAvgAggregateInputType = {
+    quantity?: true
+  }
+
+  export type DealParticipantSumAggregateInputType = {
+    quantity?: true
+  }
+
+  export type DealParticipantMinAggregateInputType = {
+    id?: true
+    dealId?: true
+    farmerId?: true
+    quantity?: true
+    paymentStatus?: true
+    orderId?: true
+    createdAt?: true
+  }
+
+  export type DealParticipantMaxAggregateInputType = {
+    id?: true
+    dealId?: true
+    farmerId?: true
+    quantity?: true
+    paymentStatus?: true
+    orderId?: true
+    createdAt?: true
+  }
+
+  export type DealParticipantCountAggregateInputType = {
+    id?: true
+    dealId?: true
+    farmerId?: true
+    quantity?: true
+    paymentStatus?: true
+    orderId?: true
+    createdAt?: true
+    _all?: true
+  }
+
+  export type DealParticipantAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DealParticipant to aggregate.
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DealParticipants to fetch.
+     */
+    orderBy?: DealParticipantOrderByWithRelationInput | DealParticipantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DealParticipantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DealParticipants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DealParticipants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DealParticipants
+    **/
+    _count?: true | DealParticipantCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DealParticipantAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DealParticipantSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DealParticipantMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DealParticipantMaxAggregateInputType
+  }
+
+  export type GetDealParticipantAggregateType<T extends DealParticipantAggregateArgs> = {
+        [P in keyof T & keyof AggregateDealParticipant]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDealParticipant[P]>
+      : GetScalarType<T[P], AggregateDealParticipant[P]>
+  }
+
+
+
+
+  export type DealParticipantGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DealParticipantWhereInput
+    orderBy?: DealParticipantOrderByWithAggregationInput | DealParticipantOrderByWithAggregationInput[]
+    by: DealParticipantScalarFieldEnum[] | DealParticipantScalarFieldEnum
+    having?: DealParticipantScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DealParticipantCountAggregateInputType | true
+    _avg?: DealParticipantAvgAggregateInputType
+    _sum?: DealParticipantSumAggregateInputType
+    _min?: DealParticipantMinAggregateInputType
+    _max?: DealParticipantMaxAggregateInputType
+  }
+
+  export type DealParticipantGroupByOutputType = {
+    id: string
+    dealId: string
+    farmerId: string
+    quantity: number
+    paymentStatus: $Enums.PaymentStatus
+    orderId: string | null
+    createdAt: Date
+    _count: DealParticipantCountAggregateOutputType | null
+    _avg: DealParticipantAvgAggregateOutputType | null
+    _sum: DealParticipantSumAggregateOutputType | null
+    _min: DealParticipantMinAggregateOutputType | null
+    _max: DealParticipantMaxAggregateOutputType | null
+  }
+
+  type GetDealParticipantGroupByPayload<T extends DealParticipantGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DealParticipantGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DealParticipantGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DealParticipantGroupByOutputType[P]>
+            : GetScalarType<T[P], DealParticipantGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DealParticipantSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    dealId?: boolean
+    farmerId?: boolean
+    quantity?: boolean
+    paymentStatus?: boolean
+    orderId?: boolean
+    createdAt?: boolean
+    deal?: boolean | CommunityDealDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["dealParticipant"]>
+
+  export type DealParticipantSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    dealId?: boolean
+    farmerId?: boolean
+    quantity?: boolean
+    paymentStatus?: boolean
+    orderId?: boolean
+    createdAt?: boolean
+    deal?: boolean | CommunityDealDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["dealParticipant"]>
+
+  export type DealParticipantSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    dealId?: boolean
+    farmerId?: boolean
+    quantity?: boolean
+    paymentStatus?: boolean
+    orderId?: boolean
+    createdAt?: boolean
+    deal?: boolean | CommunityDealDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["dealParticipant"]>
+
+  export type DealParticipantSelectScalar = {
+    id?: boolean
+    dealId?: boolean
+    farmerId?: boolean
+    quantity?: boolean
+    paymentStatus?: boolean
+    orderId?: boolean
+    createdAt?: boolean
+  }
+
+  export type DealParticipantOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "dealId" | "farmerId" | "quantity" | "paymentStatus" | "orderId" | "createdAt", ExtArgs["result"]["dealParticipant"]>
+  export type DealParticipantInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    deal?: boolean | CommunityDealDefaultArgs<ExtArgs>
+  }
+  export type DealParticipantIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    deal?: boolean | CommunityDealDefaultArgs<ExtArgs>
+  }
+  export type DealParticipantIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    deal?: boolean | CommunityDealDefaultArgs<ExtArgs>
+  }
+
+  export type $DealParticipantPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DealParticipant"
+    objects: {
+      deal: Prisma.$CommunityDealPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      dealId: string
+      farmerId: string
+      quantity: number
+      paymentStatus: $Enums.PaymentStatus
+      orderId: string | null
+      createdAt: Date
+    }, ExtArgs["result"]["dealParticipant"]>
+    composites: {}
+  }
+
+  type DealParticipantGetPayload<S extends boolean | null | undefined | DealParticipantDefaultArgs> = $Result.GetResult<Prisma.$DealParticipantPayload, S>
+
+  type DealParticipantCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<DealParticipantFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: DealParticipantCountAggregateInputType | true
+    }
+
+  export interface DealParticipantDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DealParticipant'], meta: { name: 'DealParticipant' } }
+    /**
+     * Find zero or one DealParticipant that matches the filter.
+     * @param {DealParticipantFindUniqueArgs} args - Arguments to find a DealParticipant
+     * @example
+     * // Get one DealParticipant
+     * const dealParticipant = await prisma.dealParticipant.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DealParticipantFindUniqueArgs>(args: SelectSubset<T, DealParticipantFindUniqueArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one DealParticipant that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {DealParticipantFindUniqueOrThrowArgs} args - Arguments to find a DealParticipant
+     * @example
+     * // Get one DealParticipant
+     * const dealParticipant = await prisma.dealParticipant.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DealParticipantFindUniqueOrThrowArgs>(args: SelectSubset<T, DealParticipantFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DealParticipant that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantFindFirstArgs} args - Arguments to find a DealParticipant
+     * @example
+     * // Get one DealParticipant
+     * const dealParticipant = await prisma.dealParticipant.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DealParticipantFindFirstArgs>(args?: SelectSubset<T, DealParticipantFindFirstArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first DealParticipant that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantFindFirstOrThrowArgs} args - Arguments to find a DealParticipant
+     * @example
+     * // Get one DealParticipant
+     * const dealParticipant = await prisma.dealParticipant.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DealParticipantFindFirstOrThrowArgs>(args?: SelectSubset<T, DealParticipantFindFirstOrThrowArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more DealParticipants that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DealParticipants
+     * const dealParticipants = await prisma.dealParticipant.findMany()
+     * 
+     * // Get first 10 DealParticipants
+     * const dealParticipants = await prisma.dealParticipant.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const dealParticipantWithIdOnly = await prisma.dealParticipant.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DealParticipantFindManyArgs>(args?: SelectSubset<T, DealParticipantFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a DealParticipant.
+     * @param {DealParticipantCreateArgs} args - Arguments to create a DealParticipant.
+     * @example
+     * // Create one DealParticipant
+     * const DealParticipant = await prisma.dealParticipant.create({
+     *   data: {
+     *     // ... data to create a DealParticipant
+     *   }
+     * })
+     * 
+     */
+    create<T extends DealParticipantCreateArgs>(args: SelectSubset<T, DealParticipantCreateArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many DealParticipants.
+     * @param {DealParticipantCreateManyArgs} args - Arguments to create many DealParticipants.
+     * @example
+     * // Create many DealParticipants
+     * const dealParticipant = await prisma.dealParticipant.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DealParticipantCreateManyArgs>(args?: SelectSubset<T, DealParticipantCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many DealParticipants and returns the data saved in the database.
+     * @param {DealParticipantCreateManyAndReturnArgs} args - Arguments to create many DealParticipants.
+     * @example
+     * // Create many DealParticipants
+     * const dealParticipant = await prisma.dealParticipant.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many DealParticipants and only return the `id`
+     * const dealParticipantWithIdOnly = await prisma.dealParticipant.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends DealParticipantCreateManyAndReturnArgs>(args?: SelectSubset<T, DealParticipantCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a DealParticipant.
+     * @param {DealParticipantDeleteArgs} args - Arguments to delete one DealParticipant.
+     * @example
+     * // Delete one DealParticipant
+     * const DealParticipant = await prisma.dealParticipant.delete({
+     *   where: {
+     *     // ... filter to delete one DealParticipant
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DealParticipantDeleteArgs>(args: SelectSubset<T, DealParticipantDeleteArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one DealParticipant.
+     * @param {DealParticipantUpdateArgs} args - Arguments to update one DealParticipant.
+     * @example
+     * // Update one DealParticipant
+     * const dealParticipant = await prisma.dealParticipant.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DealParticipantUpdateArgs>(args: SelectSubset<T, DealParticipantUpdateArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more DealParticipants.
+     * @param {DealParticipantDeleteManyArgs} args - Arguments to filter DealParticipants to delete.
+     * @example
+     * // Delete a few DealParticipants
+     * const { count } = await prisma.dealParticipant.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DealParticipantDeleteManyArgs>(args?: SelectSubset<T, DealParticipantDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DealParticipants.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DealParticipants
+     * const dealParticipant = await prisma.dealParticipant.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DealParticipantUpdateManyArgs>(args: SelectSubset<T, DealParticipantUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DealParticipants and returns the data updated in the database.
+     * @param {DealParticipantUpdateManyAndReturnArgs} args - Arguments to update many DealParticipants.
+     * @example
+     * // Update many DealParticipants
+     * const dealParticipant = await prisma.dealParticipant.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more DealParticipants and only return the `id`
+     * const dealParticipantWithIdOnly = await prisma.dealParticipant.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends DealParticipantUpdateManyAndReturnArgs>(args: SelectSubset<T, DealParticipantUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one DealParticipant.
+     * @param {DealParticipantUpsertArgs} args - Arguments to update or create a DealParticipant.
+     * @example
+     * // Update or create a DealParticipant
+     * const dealParticipant = await prisma.dealParticipant.upsert({
+     *   create: {
+     *     // ... data to create a DealParticipant
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DealParticipant we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DealParticipantUpsertArgs>(args: SelectSubset<T, DealParticipantUpsertArgs<ExtArgs>>): Prisma__DealParticipantClient<$Result.GetResult<Prisma.$DealParticipantPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of DealParticipants.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantCountArgs} args - Arguments to filter DealParticipants to count.
+     * @example
+     * // Count the number of DealParticipants
+     * const count = await prisma.dealParticipant.count({
+     *   where: {
+     *     // ... the filter for the DealParticipants we want to count
+     *   }
+     * })
+    **/
+    count<T extends DealParticipantCountArgs>(
+      args?: Subset<T, DealParticipantCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DealParticipantCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DealParticipant.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DealParticipantAggregateArgs>(args: Subset<T, DealParticipantAggregateArgs>): Prisma.PrismaPromise<GetDealParticipantAggregateType<T>>
+
+    /**
+     * Group by DealParticipant.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DealParticipantGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DealParticipantGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DealParticipantGroupByArgs['orderBy'] }
+        : { orderBy?: DealParticipantGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DealParticipantGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDealParticipantGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DealParticipant model
+   */
+  readonly fields: DealParticipantFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DealParticipant.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DealParticipantClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    deal<T extends CommunityDealDefaultArgs<ExtArgs> = {}>(args?: Subset<T, CommunityDealDefaultArgs<ExtArgs>>): Prisma__CommunityDealClient<$Result.GetResult<Prisma.$CommunityDealPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DealParticipant model
+   */
+  interface DealParticipantFieldRefs {
+    readonly id: FieldRef<"DealParticipant", 'String'>
+    readonly dealId: FieldRef<"DealParticipant", 'String'>
+    readonly farmerId: FieldRef<"DealParticipant", 'String'>
+    readonly quantity: FieldRef<"DealParticipant", 'Int'>
+    readonly paymentStatus: FieldRef<"DealParticipant", 'PaymentStatus'>
+    readonly orderId: FieldRef<"DealParticipant", 'String'>
+    readonly createdAt: FieldRef<"DealParticipant", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DealParticipant findUnique
+   */
+  export type DealParticipantFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * Filter, which DealParticipant to fetch.
+     */
+    where: DealParticipantWhereUniqueInput
+  }
+
+  /**
+   * DealParticipant findUniqueOrThrow
+   */
+  export type DealParticipantFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * Filter, which DealParticipant to fetch.
+     */
+    where: DealParticipantWhereUniqueInput
+  }
+
+  /**
+   * DealParticipant findFirst
+   */
+  export type DealParticipantFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * Filter, which DealParticipant to fetch.
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DealParticipants to fetch.
+     */
+    orderBy?: DealParticipantOrderByWithRelationInput | DealParticipantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DealParticipants.
+     */
+    cursor?: DealParticipantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DealParticipants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DealParticipants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DealParticipants.
+     */
+    distinct?: DealParticipantScalarFieldEnum | DealParticipantScalarFieldEnum[]
+  }
+
+  /**
+   * DealParticipant findFirstOrThrow
+   */
+  export type DealParticipantFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * Filter, which DealParticipant to fetch.
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DealParticipants to fetch.
+     */
+    orderBy?: DealParticipantOrderByWithRelationInput | DealParticipantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DealParticipants.
+     */
+    cursor?: DealParticipantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DealParticipants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DealParticipants.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DealParticipants.
+     */
+    distinct?: DealParticipantScalarFieldEnum | DealParticipantScalarFieldEnum[]
+  }
+
+  /**
+   * DealParticipant findMany
+   */
+  export type DealParticipantFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * Filter, which DealParticipants to fetch.
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DealParticipants to fetch.
+     */
+    orderBy?: DealParticipantOrderByWithRelationInput | DealParticipantOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DealParticipants.
+     */
+    cursor?: DealParticipantWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DealParticipants from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DealParticipants.
+     */
+    skip?: number
+    distinct?: DealParticipantScalarFieldEnum | DealParticipantScalarFieldEnum[]
+  }
+
+  /**
+   * DealParticipant create
+   */
+  export type DealParticipantCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DealParticipant.
+     */
+    data: XOR<DealParticipantCreateInput, DealParticipantUncheckedCreateInput>
+  }
+
+  /**
+   * DealParticipant createMany
+   */
+  export type DealParticipantCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DealParticipants.
+     */
+    data: DealParticipantCreateManyInput | DealParticipantCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DealParticipant createManyAndReturn
+   */
+  export type DealParticipantCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * The data used to create many DealParticipants.
+     */
+    data: DealParticipantCreateManyInput | DealParticipantCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DealParticipant update
+   */
+  export type DealParticipantUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DealParticipant.
+     */
+    data: XOR<DealParticipantUpdateInput, DealParticipantUncheckedUpdateInput>
+    /**
+     * Choose, which DealParticipant to update.
+     */
+    where: DealParticipantWhereUniqueInput
+  }
+
+  /**
+   * DealParticipant updateMany
+   */
+  export type DealParticipantUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DealParticipants.
+     */
+    data: XOR<DealParticipantUpdateManyMutationInput, DealParticipantUncheckedUpdateManyInput>
+    /**
+     * Filter which DealParticipants to update
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * Limit how many DealParticipants to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * DealParticipant updateManyAndReturn
+   */
+  export type DealParticipantUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * The data used to update DealParticipants.
+     */
+    data: XOR<DealParticipantUpdateManyMutationInput, DealParticipantUncheckedUpdateManyInput>
+    /**
+     * Filter which DealParticipants to update
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * Limit how many DealParticipants to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * DealParticipant upsert
+   */
+  export type DealParticipantUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DealParticipant to update in case it exists.
+     */
+    where: DealParticipantWhereUniqueInput
+    /**
+     * In case the DealParticipant found by the `where` argument doesn't exist, create a new DealParticipant with this data.
+     */
+    create: XOR<DealParticipantCreateInput, DealParticipantUncheckedCreateInput>
+    /**
+     * In case the DealParticipant was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DealParticipantUpdateInput, DealParticipantUncheckedUpdateInput>
+  }
+
+  /**
+   * DealParticipant delete
+   */
+  export type DealParticipantDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+    /**
+     * Filter which DealParticipant to delete.
+     */
+    where: DealParticipantWhereUniqueInput
+  }
+
+  /**
+   * DealParticipant deleteMany
+   */
+  export type DealParticipantDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DealParticipants to delete
+     */
+    where?: DealParticipantWhereInput
+    /**
+     * Limit how many DealParticipants to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * DealParticipant without action
+   */
+  export type DealParticipantDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DealParticipant
+     */
+    select?: DealParticipantSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the DealParticipant
+     */
+    omit?: DealParticipantOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DealParticipantInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model WishlistItem
+   */
+
+  export type AggregateWishlistItem = {
+    _count: WishlistItemCountAggregateOutputType | null
+    _min: WishlistItemMinAggregateOutputType | null
+    _max: WishlistItemMaxAggregateOutputType | null
+  }
+
+  export type WishlistItemMinAggregateOutputType = {
+    id: string | null
+    farmerId: string | null
+    productId: string | null
+    supplierId: string | null
+    addedAt: Date | null
+  }
+
+  export type WishlistItemMaxAggregateOutputType = {
+    id: string | null
+    farmerId: string | null
+    productId: string | null
+    supplierId: string | null
+    addedAt: Date | null
+  }
+
+  export type WishlistItemCountAggregateOutputType = {
+    id: number
+    farmerId: number
+    productId: number
+    supplierId: number
+    snapshot: number
+    addedAt: number
+    _all: number
+  }
+
+
+  export type WishlistItemMinAggregateInputType = {
+    id?: true
+    farmerId?: true
+    productId?: true
+    supplierId?: true
+    addedAt?: true
+  }
+
+  export type WishlistItemMaxAggregateInputType = {
+    id?: true
+    farmerId?: true
+    productId?: true
+    supplierId?: true
+    addedAt?: true
+  }
+
+  export type WishlistItemCountAggregateInputType = {
+    id?: true
+    farmerId?: true
+    productId?: true
+    supplierId?: true
+    snapshot?: true
+    addedAt?: true
+    _all?: true
+  }
+
+  export type WishlistItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WishlistItem to aggregate.
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WishlistItems to fetch.
+     */
+    orderBy?: WishlistItemOrderByWithRelationInput | WishlistItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: WishlistItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WishlistItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WishlistItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned WishlistItems
+    **/
+    _count?: true | WishlistItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: WishlistItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: WishlistItemMaxAggregateInputType
+  }
+
+  export type GetWishlistItemAggregateType<T extends WishlistItemAggregateArgs> = {
+        [P in keyof T & keyof AggregateWishlistItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateWishlistItem[P]>
+      : GetScalarType<T[P], AggregateWishlistItem[P]>
+  }
+
+
+
+
+  export type WishlistItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WishlistItemWhereInput
+    orderBy?: WishlistItemOrderByWithAggregationInput | WishlistItemOrderByWithAggregationInput[]
+    by: WishlistItemScalarFieldEnum[] | WishlistItemScalarFieldEnum
+    having?: WishlistItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: WishlistItemCountAggregateInputType | true
+    _min?: WishlistItemMinAggregateInputType
+    _max?: WishlistItemMaxAggregateInputType
+  }
+
+  export type WishlistItemGroupByOutputType = {
+    id: string
+    farmerId: string
+    productId: string
+    supplierId: string
+    snapshot: JsonValue
+    addedAt: Date
+    _count: WishlistItemCountAggregateOutputType | null
+    _min: WishlistItemMinAggregateOutputType | null
+    _max: WishlistItemMaxAggregateOutputType | null
+  }
+
+  type GetWishlistItemGroupByPayload<T extends WishlistItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<WishlistItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof WishlistItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], WishlistItemGroupByOutputType[P]>
+            : GetScalarType<T[P], WishlistItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type WishlistItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    farmerId?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    snapshot?: boolean
+    addedAt?: boolean
+  }, ExtArgs["result"]["wishlistItem"]>
+
+  export type WishlistItemSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    farmerId?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    snapshot?: boolean
+    addedAt?: boolean
+  }, ExtArgs["result"]["wishlistItem"]>
+
+  export type WishlistItemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    farmerId?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    snapshot?: boolean
+    addedAt?: boolean
+  }, ExtArgs["result"]["wishlistItem"]>
+
+  export type WishlistItemSelectScalar = {
+    id?: boolean
+    farmerId?: boolean
+    productId?: boolean
+    supplierId?: boolean
+    snapshot?: boolean
+    addedAt?: boolean
+  }
+
+  export type WishlistItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "farmerId" | "productId" | "supplierId" | "snapshot" | "addedAt", ExtArgs["result"]["wishlistItem"]>
+
+  export type $WishlistItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "WishlistItem"
+    objects: {}
+    scalars: $Extensions.GetPayloadResult<{
+      id: string
+      farmerId: string
+      productId: string
+      supplierId: string
+      snapshot: Prisma.JsonValue
+      addedAt: Date
+    }, ExtArgs["result"]["wishlistItem"]>
+    composites: {}
+  }
+
+  type WishlistItemGetPayload<S extends boolean | null | undefined | WishlistItemDefaultArgs> = $Result.GetResult<Prisma.$WishlistItemPayload, S>
+
+  type WishlistItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<WishlistItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: WishlistItemCountAggregateInputType | true
+    }
+
+  export interface WishlistItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['WishlistItem'], meta: { name: 'WishlistItem' } }
+    /**
+     * Find zero or one WishlistItem that matches the filter.
+     * @param {WishlistItemFindUniqueArgs} args - Arguments to find a WishlistItem
+     * @example
+     * // Get one WishlistItem
+     * const wishlistItem = await prisma.wishlistItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends WishlistItemFindUniqueArgs>(args: SelectSubset<T, WishlistItemFindUniqueArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one WishlistItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {WishlistItemFindUniqueOrThrowArgs} args - Arguments to find a WishlistItem
+     * @example
+     * // Get one WishlistItem
+     * const wishlistItem = await prisma.wishlistItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends WishlistItemFindUniqueOrThrowArgs>(args: SelectSubset<T, WishlistItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WishlistItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemFindFirstArgs} args - Arguments to find a WishlistItem
+     * @example
+     * // Get one WishlistItem
+     * const wishlistItem = await prisma.wishlistItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends WishlistItemFindFirstArgs>(args?: SelectSubset<T, WishlistItemFindFirstArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first WishlistItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemFindFirstOrThrowArgs} args - Arguments to find a WishlistItem
+     * @example
+     * // Get one WishlistItem
+     * const wishlistItem = await prisma.wishlistItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends WishlistItemFindFirstOrThrowArgs>(args?: SelectSubset<T, WishlistItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more WishlistItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all WishlistItems
+     * const wishlistItems = await prisma.wishlistItem.findMany()
+     * 
+     * // Get first 10 WishlistItems
+     * const wishlistItems = await prisma.wishlistItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const wishlistItemWithIdOnly = await prisma.wishlistItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends WishlistItemFindManyArgs>(args?: SelectSubset<T, WishlistItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a WishlistItem.
+     * @param {WishlistItemCreateArgs} args - Arguments to create a WishlistItem.
+     * @example
+     * // Create one WishlistItem
+     * const WishlistItem = await prisma.wishlistItem.create({
+     *   data: {
+     *     // ... data to create a WishlistItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends WishlistItemCreateArgs>(args: SelectSubset<T, WishlistItemCreateArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many WishlistItems.
+     * @param {WishlistItemCreateManyArgs} args - Arguments to create many WishlistItems.
+     * @example
+     * // Create many WishlistItems
+     * const wishlistItem = await prisma.wishlistItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends WishlistItemCreateManyArgs>(args?: SelectSubset<T, WishlistItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many WishlistItems and returns the data saved in the database.
+     * @param {WishlistItemCreateManyAndReturnArgs} args - Arguments to create many WishlistItems.
+     * @example
+     * // Create many WishlistItems
+     * const wishlistItem = await prisma.wishlistItem.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many WishlistItems and only return the `id`
+     * const wishlistItemWithIdOnly = await prisma.wishlistItem.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends WishlistItemCreateManyAndReturnArgs>(args?: SelectSubset<T, WishlistItemCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a WishlistItem.
+     * @param {WishlistItemDeleteArgs} args - Arguments to delete one WishlistItem.
+     * @example
+     * // Delete one WishlistItem
+     * const WishlistItem = await prisma.wishlistItem.delete({
+     *   where: {
+     *     // ... filter to delete one WishlistItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends WishlistItemDeleteArgs>(args: SelectSubset<T, WishlistItemDeleteArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one WishlistItem.
+     * @param {WishlistItemUpdateArgs} args - Arguments to update one WishlistItem.
+     * @example
+     * // Update one WishlistItem
+     * const wishlistItem = await prisma.wishlistItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends WishlistItemUpdateArgs>(args: SelectSubset<T, WishlistItemUpdateArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more WishlistItems.
+     * @param {WishlistItemDeleteManyArgs} args - Arguments to filter WishlistItems to delete.
+     * @example
+     * // Delete a few WishlistItems
+     * const { count } = await prisma.wishlistItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends WishlistItemDeleteManyArgs>(args?: SelectSubset<T, WishlistItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WishlistItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many WishlistItems
+     * const wishlistItem = await prisma.wishlistItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends WishlistItemUpdateManyArgs>(args: SelectSubset<T, WishlistItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more WishlistItems and returns the data updated in the database.
+     * @param {WishlistItemUpdateManyAndReturnArgs} args - Arguments to update many WishlistItems.
+     * @example
+     * // Update many WishlistItems
+     * const wishlistItem = await prisma.wishlistItem.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more WishlistItems and only return the `id`
+     * const wishlistItemWithIdOnly = await prisma.wishlistItem.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends WishlistItemUpdateManyAndReturnArgs>(args: SelectSubset<T, WishlistItemUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one WishlistItem.
+     * @param {WishlistItemUpsertArgs} args - Arguments to update or create a WishlistItem.
+     * @example
+     * // Update or create a WishlistItem
+     * const wishlistItem = await prisma.wishlistItem.upsert({
+     *   create: {
+     *     // ... data to create a WishlistItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the WishlistItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends WishlistItemUpsertArgs>(args: SelectSubset<T, WishlistItemUpsertArgs<ExtArgs>>): Prisma__WishlistItemClient<$Result.GetResult<Prisma.$WishlistItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of WishlistItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemCountArgs} args - Arguments to filter WishlistItems to count.
+     * @example
+     * // Count the number of WishlistItems
+     * const count = await prisma.wishlistItem.count({
+     *   where: {
+     *     // ... the filter for the WishlistItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends WishlistItemCountArgs>(
+      args?: Subset<T, WishlistItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], WishlistItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a WishlistItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends WishlistItemAggregateArgs>(args: Subset<T, WishlistItemAggregateArgs>): Prisma.PrismaPromise<GetWishlistItemAggregateType<T>>
+
+    /**
+     * Group by WishlistItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {WishlistItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends WishlistItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: WishlistItemGroupByArgs['orderBy'] }
+        : { orderBy?: WishlistItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, WishlistItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetWishlistItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the WishlistItem model
+   */
+  readonly fields: WishlistItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for WishlistItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__WishlistItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the WishlistItem model
+   */
+  interface WishlistItemFieldRefs {
+    readonly id: FieldRef<"WishlistItem", 'String'>
+    readonly farmerId: FieldRef<"WishlistItem", 'String'>
+    readonly productId: FieldRef<"WishlistItem", 'String'>
+    readonly supplierId: FieldRef<"WishlistItem", 'String'>
+    readonly snapshot: FieldRef<"WishlistItem", 'Json'>
+    readonly addedAt: FieldRef<"WishlistItem", 'DateTime'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * WishlistItem findUnique
+   */
+  export type WishlistItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * Filter, which WishlistItem to fetch.
+     */
+    where: WishlistItemWhereUniqueInput
+  }
+
+  /**
+   * WishlistItem findUniqueOrThrow
+   */
+  export type WishlistItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * Filter, which WishlistItem to fetch.
+     */
+    where: WishlistItemWhereUniqueInput
+  }
+
+  /**
+   * WishlistItem findFirst
+   */
+  export type WishlistItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * Filter, which WishlistItem to fetch.
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WishlistItems to fetch.
+     */
+    orderBy?: WishlistItemOrderByWithRelationInput | WishlistItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WishlistItems.
+     */
+    cursor?: WishlistItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WishlistItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WishlistItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WishlistItems.
+     */
+    distinct?: WishlistItemScalarFieldEnum | WishlistItemScalarFieldEnum[]
+  }
+
+  /**
+   * WishlistItem findFirstOrThrow
+   */
+  export type WishlistItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * Filter, which WishlistItem to fetch.
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WishlistItems to fetch.
+     */
+    orderBy?: WishlistItemOrderByWithRelationInput | WishlistItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for WishlistItems.
+     */
+    cursor?: WishlistItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WishlistItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WishlistItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of WishlistItems.
+     */
+    distinct?: WishlistItemScalarFieldEnum | WishlistItemScalarFieldEnum[]
+  }
+
+  /**
+   * WishlistItem findMany
+   */
+  export type WishlistItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * Filter, which WishlistItems to fetch.
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of WishlistItems to fetch.
+     */
+    orderBy?: WishlistItemOrderByWithRelationInput | WishlistItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing WishlistItems.
+     */
+    cursor?: WishlistItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` WishlistItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` WishlistItems.
+     */
+    skip?: number
+    distinct?: WishlistItemScalarFieldEnum | WishlistItemScalarFieldEnum[]
+  }
+
+  /**
+   * WishlistItem create
+   */
+  export type WishlistItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * The data needed to create a WishlistItem.
+     */
+    data: XOR<WishlistItemCreateInput, WishlistItemUncheckedCreateInput>
+  }
+
+  /**
+   * WishlistItem createMany
+   */
+  export type WishlistItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many WishlistItems.
+     */
+    data: WishlistItemCreateManyInput | WishlistItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WishlistItem createManyAndReturn
+   */
+  export type WishlistItemCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * The data used to create many WishlistItems.
+     */
+    data: WishlistItemCreateManyInput | WishlistItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * WishlistItem update
+   */
+  export type WishlistItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * The data needed to update a WishlistItem.
+     */
+    data: XOR<WishlistItemUpdateInput, WishlistItemUncheckedUpdateInput>
+    /**
+     * Choose, which WishlistItem to update.
+     */
+    where: WishlistItemWhereUniqueInput
+  }
+
+  /**
+   * WishlistItem updateMany
+   */
+  export type WishlistItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update WishlistItems.
+     */
+    data: XOR<WishlistItemUpdateManyMutationInput, WishlistItemUncheckedUpdateManyInput>
+    /**
+     * Filter which WishlistItems to update
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * Limit how many WishlistItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WishlistItem updateManyAndReturn
+   */
+  export type WishlistItemUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * The data used to update WishlistItems.
+     */
+    data: XOR<WishlistItemUpdateManyMutationInput, WishlistItemUncheckedUpdateManyInput>
+    /**
+     * Filter which WishlistItems to update
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * Limit how many WishlistItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * WishlistItem upsert
+   */
+  export type WishlistItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * The filter to search for the WishlistItem to update in case it exists.
+     */
+    where: WishlistItemWhereUniqueInput
+    /**
+     * In case the WishlistItem found by the `where` argument doesn't exist, create a new WishlistItem with this data.
+     */
+    create: XOR<WishlistItemCreateInput, WishlistItemUncheckedCreateInput>
+    /**
+     * In case the WishlistItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<WishlistItemUpdateInput, WishlistItemUncheckedUpdateInput>
+  }
+
+  /**
+   * WishlistItem delete
+   */
+  export type WishlistItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+    /**
+     * Filter which WishlistItem to delete.
+     */
+    where: WishlistItemWhereUniqueInput
+  }
+
+  /**
+   * WishlistItem deleteMany
+   */
+  export type WishlistItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which WishlistItems to delete
+     */
+    where?: WishlistItemWhereInput
+    /**
+     * Limit how many WishlistItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * WishlistItem without action
+   */
+  export type WishlistItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WishlistItem
+     */
+    select?: WishlistItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WishlistItem
+     */
+    omit?: WishlistItemOmit<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -7103,6 +10749,50 @@ export namespace Prisma {
   };
 
   export type InquiryReplyScalarFieldEnum = (typeof InquiryReplyScalarFieldEnum)[keyof typeof InquiryReplyScalarFieldEnum]
+
+
+  export const CommunityDealScalarFieldEnum: {
+    id: 'id',
+    productId: 'productId',
+    supplierId: 'supplierId',
+    title: 'title',
+    description: 'description',
+    targetQuantity: 'targetQuantity',
+    currentQuantity: 'currentQuantity',
+    originalPricePaise: 'originalPricePaise',
+    dealPricePaise: 'dealPricePaise',
+    endsAt: 'endsAt',
+    isActive: 'isActive',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+  };
+
+  export type CommunityDealScalarFieldEnum = (typeof CommunityDealScalarFieldEnum)[keyof typeof CommunityDealScalarFieldEnum]
+
+
+  export const DealParticipantScalarFieldEnum: {
+    id: 'id',
+    dealId: 'dealId',
+    farmerId: 'farmerId',
+    quantity: 'quantity',
+    paymentStatus: 'paymentStatus',
+    orderId: 'orderId',
+    createdAt: 'createdAt'
+  };
+
+  export type DealParticipantScalarFieldEnum = (typeof DealParticipantScalarFieldEnum)[keyof typeof DealParticipantScalarFieldEnum]
+
+
+  export const WishlistItemScalarFieldEnum: {
+    id: 'id',
+    farmerId: 'farmerId',
+    productId: 'productId',
+    supplierId: 'supplierId',
+    snapshot: 'snapshot',
+    addedAt: 'addedAt'
+  };
+
+  export type WishlistItemScalarFieldEnum = (typeof WishlistItemScalarFieldEnum)[keyof typeof WishlistItemScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -7739,6 +11429,229 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"InquiryReply"> | Date | string
   }
 
+  export type CommunityDealWhereInput = {
+    AND?: CommunityDealWhereInput | CommunityDealWhereInput[]
+    OR?: CommunityDealWhereInput[]
+    NOT?: CommunityDealWhereInput | CommunityDealWhereInput[]
+    id?: StringFilter<"CommunityDeal"> | string
+    productId?: StringFilter<"CommunityDeal"> | string
+    supplierId?: StringFilter<"CommunityDeal"> | string
+    title?: StringFilter<"CommunityDeal"> | string
+    description?: StringFilter<"CommunityDeal"> | string
+    targetQuantity?: IntFilter<"CommunityDeal"> | number
+    currentQuantity?: IntFilter<"CommunityDeal"> | number
+    originalPricePaise?: IntFilter<"CommunityDeal"> | number
+    dealPricePaise?: IntFilter<"CommunityDeal"> | number
+    endsAt?: DateTimeFilter<"CommunityDeal"> | Date | string
+    isActive?: BoolFilter<"CommunityDeal"> | boolean
+    createdAt?: DateTimeFilter<"CommunityDeal"> | Date | string
+    updatedAt?: DateTimeFilter<"CommunityDeal"> | Date | string
+    participants?: DealParticipantListRelationFilter
+  }
+
+  export type CommunityDealOrderByWithRelationInput = {
+    id?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    title?: SortOrder
+    description?: SortOrder
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+    endsAt?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    participants?: DealParticipantOrderByRelationAggregateInput
+  }
+
+  export type CommunityDealWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    AND?: CommunityDealWhereInput | CommunityDealWhereInput[]
+    OR?: CommunityDealWhereInput[]
+    NOT?: CommunityDealWhereInput | CommunityDealWhereInput[]
+    productId?: StringFilter<"CommunityDeal"> | string
+    supplierId?: StringFilter<"CommunityDeal"> | string
+    title?: StringFilter<"CommunityDeal"> | string
+    description?: StringFilter<"CommunityDeal"> | string
+    targetQuantity?: IntFilter<"CommunityDeal"> | number
+    currentQuantity?: IntFilter<"CommunityDeal"> | number
+    originalPricePaise?: IntFilter<"CommunityDeal"> | number
+    dealPricePaise?: IntFilter<"CommunityDeal"> | number
+    endsAt?: DateTimeFilter<"CommunityDeal"> | Date | string
+    isActive?: BoolFilter<"CommunityDeal"> | boolean
+    createdAt?: DateTimeFilter<"CommunityDeal"> | Date | string
+    updatedAt?: DateTimeFilter<"CommunityDeal"> | Date | string
+    participants?: DealParticipantListRelationFilter
+  }, "id">
+
+  export type CommunityDealOrderByWithAggregationInput = {
+    id?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    title?: SortOrder
+    description?: SortOrder
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+    endsAt?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    _count?: CommunityDealCountOrderByAggregateInput
+    _avg?: CommunityDealAvgOrderByAggregateInput
+    _max?: CommunityDealMaxOrderByAggregateInput
+    _min?: CommunityDealMinOrderByAggregateInput
+    _sum?: CommunityDealSumOrderByAggregateInput
+  }
+
+  export type CommunityDealScalarWhereWithAggregatesInput = {
+    AND?: CommunityDealScalarWhereWithAggregatesInput | CommunityDealScalarWhereWithAggregatesInput[]
+    OR?: CommunityDealScalarWhereWithAggregatesInput[]
+    NOT?: CommunityDealScalarWhereWithAggregatesInput | CommunityDealScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"CommunityDeal"> | string
+    productId?: StringWithAggregatesFilter<"CommunityDeal"> | string
+    supplierId?: StringWithAggregatesFilter<"CommunityDeal"> | string
+    title?: StringWithAggregatesFilter<"CommunityDeal"> | string
+    description?: StringWithAggregatesFilter<"CommunityDeal"> | string
+    targetQuantity?: IntWithAggregatesFilter<"CommunityDeal"> | number
+    currentQuantity?: IntWithAggregatesFilter<"CommunityDeal"> | number
+    originalPricePaise?: IntWithAggregatesFilter<"CommunityDeal"> | number
+    dealPricePaise?: IntWithAggregatesFilter<"CommunityDeal"> | number
+    endsAt?: DateTimeWithAggregatesFilter<"CommunityDeal"> | Date | string
+    isActive?: BoolWithAggregatesFilter<"CommunityDeal"> | boolean
+    createdAt?: DateTimeWithAggregatesFilter<"CommunityDeal"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"CommunityDeal"> | Date | string
+  }
+
+  export type DealParticipantWhereInput = {
+    AND?: DealParticipantWhereInput | DealParticipantWhereInput[]
+    OR?: DealParticipantWhereInput[]
+    NOT?: DealParticipantWhereInput | DealParticipantWhereInput[]
+    id?: StringFilter<"DealParticipant"> | string
+    dealId?: StringFilter<"DealParticipant"> | string
+    farmerId?: StringFilter<"DealParticipant"> | string
+    quantity?: IntFilter<"DealParticipant"> | number
+    paymentStatus?: EnumPaymentStatusFilter<"DealParticipant"> | $Enums.PaymentStatus
+    orderId?: StringNullableFilter<"DealParticipant"> | string | null
+    createdAt?: DateTimeFilter<"DealParticipant"> | Date | string
+    deal?: XOR<CommunityDealScalarRelationFilter, CommunityDealWhereInput>
+  }
+
+  export type DealParticipantOrderByWithRelationInput = {
+    id?: SortOrder
+    dealId?: SortOrder
+    farmerId?: SortOrder
+    quantity?: SortOrder
+    paymentStatus?: SortOrder
+    orderId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    deal?: CommunityDealOrderByWithRelationInput
+  }
+
+  export type DealParticipantWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    dealId_farmerId?: DealParticipantDealIdFarmerIdCompoundUniqueInput
+    AND?: DealParticipantWhereInput | DealParticipantWhereInput[]
+    OR?: DealParticipantWhereInput[]
+    NOT?: DealParticipantWhereInput | DealParticipantWhereInput[]
+    dealId?: StringFilter<"DealParticipant"> | string
+    farmerId?: StringFilter<"DealParticipant"> | string
+    quantity?: IntFilter<"DealParticipant"> | number
+    paymentStatus?: EnumPaymentStatusFilter<"DealParticipant"> | $Enums.PaymentStatus
+    orderId?: StringNullableFilter<"DealParticipant"> | string | null
+    createdAt?: DateTimeFilter<"DealParticipant"> | Date | string
+    deal?: XOR<CommunityDealScalarRelationFilter, CommunityDealWhereInput>
+  }, "id" | "dealId_farmerId">
+
+  export type DealParticipantOrderByWithAggregationInput = {
+    id?: SortOrder
+    dealId?: SortOrder
+    farmerId?: SortOrder
+    quantity?: SortOrder
+    paymentStatus?: SortOrder
+    orderId?: SortOrderInput | SortOrder
+    createdAt?: SortOrder
+    _count?: DealParticipantCountOrderByAggregateInput
+    _avg?: DealParticipantAvgOrderByAggregateInput
+    _max?: DealParticipantMaxOrderByAggregateInput
+    _min?: DealParticipantMinOrderByAggregateInput
+    _sum?: DealParticipantSumOrderByAggregateInput
+  }
+
+  export type DealParticipantScalarWhereWithAggregatesInput = {
+    AND?: DealParticipantScalarWhereWithAggregatesInput | DealParticipantScalarWhereWithAggregatesInput[]
+    OR?: DealParticipantScalarWhereWithAggregatesInput[]
+    NOT?: DealParticipantScalarWhereWithAggregatesInput | DealParticipantScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"DealParticipant"> | string
+    dealId?: StringWithAggregatesFilter<"DealParticipant"> | string
+    farmerId?: StringWithAggregatesFilter<"DealParticipant"> | string
+    quantity?: IntWithAggregatesFilter<"DealParticipant"> | number
+    paymentStatus?: EnumPaymentStatusWithAggregatesFilter<"DealParticipant"> | $Enums.PaymentStatus
+    orderId?: StringNullableWithAggregatesFilter<"DealParticipant"> | string | null
+    createdAt?: DateTimeWithAggregatesFilter<"DealParticipant"> | Date | string
+  }
+
+  export type WishlistItemWhereInput = {
+    AND?: WishlistItemWhereInput | WishlistItemWhereInput[]
+    OR?: WishlistItemWhereInput[]
+    NOT?: WishlistItemWhereInput | WishlistItemWhereInput[]
+    id?: StringFilter<"WishlistItem"> | string
+    farmerId?: StringFilter<"WishlistItem"> | string
+    productId?: StringFilter<"WishlistItem"> | string
+    supplierId?: StringFilter<"WishlistItem"> | string
+    snapshot?: JsonFilter<"WishlistItem">
+    addedAt?: DateTimeFilter<"WishlistItem"> | Date | string
+  }
+
+  export type WishlistItemOrderByWithRelationInput = {
+    id?: SortOrder
+    farmerId?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    snapshot?: SortOrder
+    addedAt?: SortOrder
+  }
+
+  export type WishlistItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: string
+    farmerId_productId?: WishlistItemFarmerIdProductIdCompoundUniqueInput
+    AND?: WishlistItemWhereInput | WishlistItemWhereInput[]
+    OR?: WishlistItemWhereInput[]
+    NOT?: WishlistItemWhereInput | WishlistItemWhereInput[]
+    farmerId?: StringFilter<"WishlistItem"> | string
+    productId?: StringFilter<"WishlistItem"> | string
+    supplierId?: StringFilter<"WishlistItem"> | string
+    snapshot?: JsonFilter<"WishlistItem">
+    addedAt?: DateTimeFilter<"WishlistItem"> | Date | string
+  }, "id" | "farmerId_productId">
+
+  export type WishlistItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    farmerId?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    snapshot?: SortOrder
+    addedAt?: SortOrder
+    _count?: WishlistItemCountOrderByAggregateInput
+    _max?: WishlistItemMaxOrderByAggregateInput
+    _min?: WishlistItemMinOrderByAggregateInput
+  }
+
+  export type WishlistItemScalarWhereWithAggregatesInput = {
+    AND?: WishlistItemScalarWhereWithAggregatesInput | WishlistItemScalarWhereWithAggregatesInput[]
+    OR?: WishlistItemScalarWhereWithAggregatesInput[]
+    NOT?: WishlistItemScalarWhereWithAggregatesInput | WishlistItemScalarWhereWithAggregatesInput[]
+    id?: StringWithAggregatesFilter<"WishlistItem"> | string
+    farmerId?: StringWithAggregatesFilter<"WishlistItem"> | string
+    productId?: StringWithAggregatesFilter<"WishlistItem"> | string
+    supplierId?: StringWithAggregatesFilter<"WishlistItem"> | string
+    snapshot?: JsonWithAggregatesFilter<"WishlistItem">
+    addedAt?: DateTimeWithAggregatesFilter<"WishlistItem"> | Date | string
+  }
+
   export type OrderCreateInput = {
     id?: string
     orderNumber: string
@@ -8272,6 +12185,254 @@ export namespace Prisma {
     senderRole?: StringFieldUpdateOperationsInput | string
     message?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunityDealCreateInput = {
+    id?: string
+    productId: string
+    supplierId: string
+    title: string
+    description: string
+    targetQuantity: number
+    currentQuantity?: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: Date | string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    participants?: DealParticipantCreateNestedManyWithoutDealInput
+  }
+
+  export type CommunityDealUncheckedCreateInput = {
+    id?: string
+    productId: string
+    supplierId: string
+    title: string
+    description: string
+    targetQuantity: number
+    currentQuantity?: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: Date | string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    participants?: DealParticipantUncheckedCreateNestedManyWithoutDealInput
+  }
+
+  export type CommunityDealUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    targetQuantity?: IntFieldUpdateOperationsInput | number
+    currentQuantity?: IntFieldUpdateOperationsInput | number
+    originalPricePaise?: IntFieldUpdateOperationsInput | number
+    dealPricePaise?: IntFieldUpdateOperationsInput | number
+    endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    participants?: DealParticipantUpdateManyWithoutDealNestedInput
+  }
+
+  export type CommunityDealUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    targetQuantity?: IntFieldUpdateOperationsInput | number
+    currentQuantity?: IntFieldUpdateOperationsInput | number
+    originalPricePaise?: IntFieldUpdateOperationsInput | number
+    dealPricePaise?: IntFieldUpdateOperationsInput | number
+    endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    participants?: DealParticipantUncheckedUpdateManyWithoutDealNestedInput
+  }
+
+  export type CommunityDealCreateManyInput = {
+    id?: string
+    productId: string
+    supplierId: string
+    title: string
+    description: string
+    targetQuantity: number
+    currentQuantity?: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: Date | string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommunityDealUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    targetQuantity?: IntFieldUpdateOperationsInput | number
+    currentQuantity?: IntFieldUpdateOperationsInput | number
+    originalPricePaise?: IntFieldUpdateOperationsInput | number
+    dealPricePaise?: IntFieldUpdateOperationsInput | number
+    endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunityDealUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    targetQuantity?: IntFieldUpdateOperationsInput | number
+    currentQuantity?: IntFieldUpdateOperationsInput | number
+    originalPricePaise?: IntFieldUpdateOperationsInput | number
+    dealPricePaise?: IntFieldUpdateOperationsInput | number
+    endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DealParticipantCreateInput = {
+    id?: string
+    farmerId: string
+    quantity: number
+    paymentStatus?: $Enums.PaymentStatus
+    orderId?: string | null
+    createdAt?: Date | string
+    deal: CommunityDealCreateNestedOneWithoutParticipantsInput
+  }
+
+  export type DealParticipantUncheckedCreateInput = {
+    id?: string
+    dealId: string
+    farmerId: string
+    quantity: number
+    paymentStatus?: $Enums.PaymentStatus
+    orderId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type DealParticipantUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    deal?: CommunityDealUpdateOneRequiredWithoutParticipantsNestedInput
+  }
+
+  export type DealParticipantUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dealId?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DealParticipantCreateManyInput = {
+    id?: string
+    dealId: string
+    farmerId: string
+    quantity: number
+    paymentStatus?: $Enums.PaymentStatus
+    orderId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type DealParticipantUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DealParticipantUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    dealId?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WishlistItemCreateInput = {
+    id?: string
+    farmerId: string
+    productId: string
+    supplierId: string
+    snapshot: JsonNullValueInput | InputJsonValue
+    addedAt?: Date | string
+  }
+
+  export type WishlistItemUncheckedCreateInput = {
+    id?: string
+    farmerId: string
+    productId: string
+    supplierId: string
+    snapshot: JsonNullValueInput | InputJsonValue
+    addedAt?: Date | string
+  }
+
+  export type WishlistItemUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    snapshot?: JsonNullValueInput | InputJsonValue
+    addedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WishlistItemUncheckedUpdateInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    snapshot?: JsonNullValueInput | InputJsonValue
+    addedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WishlistItemCreateManyInput = {
+    id?: string
+    farmerId: string
+    productId: string
+    supplierId: string
+    snapshot: JsonNullValueInput | InputJsonValue
+    addedAt?: Date | string
+  }
+
+  export type WishlistItemUpdateManyMutationInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    snapshot?: JsonNullValueInput | InputJsonValue
+    addedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type WishlistItemUncheckedUpdateManyInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    snapshot?: JsonNullValueInput | InputJsonValue
+    addedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
   export type StringFilter<$PrismaModel = never> = {
@@ -8824,6 +12985,156 @@ export namespace Prisma {
     createdAt?: SortOrder
   }
 
+  export type DealParticipantListRelationFilter = {
+    every?: DealParticipantWhereInput
+    some?: DealParticipantWhereInput
+    none?: DealParticipantWhereInput
+  }
+
+  export type DealParticipantOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type CommunityDealCountOrderByAggregateInput = {
+    id?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    title?: SortOrder
+    description?: SortOrder
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+    endsAt?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CommunityDealAvgOrderByAggregateInput = {
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+  }
+
+  export type CommunityDealMaxOrderByAggregateInput = {
+    id?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    title?: SortOrder
+    description?: SortOrder
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+    endsAt?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CommunityDealMinOrderByAggregateInput = {
+    id?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    title?: SortOrder
+    description?: SortOrder
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+    endsAt?: SortOrder
+    isActive?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+  }
+
+  export type CommunityDealSumOrderByAggregateInput = {
+    targetQuantity?: SortOrder
+    currentQuantity?: SortOrder
+    originalPricePaise?: SortOrder
+    dealPricePaise?: SortOrder
+  }
+
+  export type CommunityDealScalarRelationFilter = {
+    is?: CommunityDealWhereInput
+    isNot?: CommunityDealWhereInput
+  }
+
+  export type DealParticipantDealIdFarmerIdCompoundUniqueInput = {
+    dealId: string
+    farmerId: string
+  }
+
+  export type DealParticipantCountOrderByAggregateInput = {
+    id?: SortOrder
+    dealId?: SortOrder
+    farmerId?: SortOrder
+    quantity?: SortOrder
+    paymentStatus?: SortOrder
+    orderId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DealParticipantAvgOrderByAggregateInput = {
+    quantity?: SortOrder
+  }
+
+  export type DealParticipantMaxOrderByAggregateInput = {
+    id?: SortOrder
+    dealId?: SortOrder
+    farmerId?: SortOrder
+    quantity?: SortOrder
+    paymentStatus?: SortOrder
+    orderId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DealParticipantMinOrderByAggregateInput = {
+    id?: SortOrder
+    dealId?: SortOrder
+    farmerId?: SortOrder
+    quantity?: SortOrder
+    paymentStatus?: SortOrder
+    orderId?: SortOrder
+    createdAt?: SortOrder
+  }
+
+  export type DealParticipantSumOrderByAggregateInput = {
+    quantity?: SortOrder
+  }
+
+  export type WishlistItemFarmerIdProductIdCompoundUniqueInput = {
+    farmerId: string
+    productId: string
+  }
+
+  export type WishlistItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    farmerId?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    snapshot?: SortOrder
+    addedAt?: SortOrder
+  }
+
+  export type WishlistItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    farmerId?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    addedAt?: SortOrder
+  }
+
+  export type WishlistItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    farmerId?: SortOrder
+    productId?: SortOrder
+    supplierId?: SortOrder
+    addedAt?: SortOrder
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
@@ -8922,6 +13233,62 @@ export namespace Prisma {
     upsert?: InquiryUpsertWithoutRepliesInput
     connect?: InquiryWhereUniqueInput
     update?: XOR<XOR<InquiryUpdateToOneWithWhereWithoutRepliesInput, InquiryUpdateWithoutRepliesInput>, InquiryUncheckedUpdateWithoutRepliesInput>
+  }
+
+  export type DealParticipantCreateNestedManyWithoutDealInput = {
+    create?: XOR<DealParticipantCreateWithoutDealInput, DealParticipantUncheckedCreateWithoutDealInput> | DealParticipantCreateWithoutDealInput[] | DealParticipantUncheckedCreateWithoutDealInput[]
+    connectOrCreate?: DealParticipantCreateOrConnectWithoutDealInput | DealParticipantCreateOrConnectWithoutDealInput[]
+    createMany?: DealParticipantCreateManyDealInputEnvelope
+    connect?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+  }
+
+  export type DealParticipantUncheckedCreateNestedManyWithoutDealInput = {
+    create?: XOR<DealParticipantCreateWithoutDealInput, DealParticipantUncheckedCreateWithoutDealInput> | DealParticipantCreateWithoutDealInput[] | DealParticipantUncheckedCreateWithoutDealInput[]
+    connectOrCreate?: DealParticipantCreateOrConnectWithoutDealInput | DealParticipantCreateOrConnectWithoutDealInput[]
+    createMany?: DealParticipantCreateManyDealInputEnvelope
+    connect?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+  }
+
+  export type DealParticipantUpdateManyWithoutDealNestedInput = {
+    create?: XOR<DealParticipantCreateWithoutDealInput, DealParticipantUncheckedCreateWithoutDealInput> | DealParticipantCreateWithoutDealInput[] | DealParticipantUncheckedCreateWithoutDealInput[]
+    connectOrCreate?: DealParticipantCreateOrConnectWithoutDealInput | DealParticipantCreateOrConnectWithoutDealInput[]
+    upsert?: DealParticipantUpsertWithWhereUniqueWithoutDealInput | DealParticipantUpsertWithWhereUniqueWithoutDealInput[]
+    createMany?: DealParticipantCreateManyDealInputEnvelope
+    set?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    disconnect?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    delete?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    connect?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    update?: DealParticipantUpdateWithWhereUniqueWithoutDealInput | DealParticipantUpdateWithWhereUniqueWithoutDealInput[]
+    updateMany?: DealParticipantUpdateManyWithWhereWithoutDealInput | DealParticipantUpdateManyWithWhereWithoutDealInput[]
+    deleteMany?: DealParticipantScalarWhereInput | DealParticipantScalarWhereInput[]
+  }
+
+  export type DealParticipantUncheckedUpdateManyWithoutDealNestedInput = {
+    create?: XOR<DealParticipantCreateWithoutDealInput, DealParticipantUncheckedCreateWithoutDealInput> | DealParticipantCreateWithoutDealInput[] | DealParticipantUncheckedCreateWithoutDealInput[]
+    connectOrCreate?: DealParticipantCreateOrConnectWithoutDealInput | DealParticipantCreateOrConnectWithoutDealInput[]
+    upsert?: DealParticipantUpsertWithWhereUniqueWithoutDealInput | DealParticipantUpsertWithWhereUniqueWithoutDealInput[]
+    createMany?: DealParticipantCreateManyDealInputEnvelope
+    set?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    disconnect?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    delete?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    connect?: DealParticipantWhereUniqueInput | DealParticipantWhereUniqueInput[]
+    update?: DealParticipantUpdateWithWhereUniqueWithoutDealInput | DealParticipantUpdateWithWhereUniqueWithoutDealInput[]
+    updateMany?: DealParticipantUpdateManyWithWhereWithoutDealInput | DealParticipantUpdateManyWithWhereWithoutDealInput[]
+    deleteMany?: DealParticipantScalarWhereInput | DealParticipantScalarWhereInput[]
+  }
+
+  export type CommunityDealCreateNestedOneWithoutParticipantsInput = {
+    create?: XOR<CommunityDealCreateWithoutParticipantsInput, CommunityDealUncheckedCreateWithoutParticipantsInput>
+    connectOrCreate?: CommunityDealCreateOrConnectWithoutParticipantsInput
+    connect?: CommunityDealWhereUniqueInput
+  }
+
+  export type CommunityDealUpdateOneRequiredWithoutParticipantsNestedInput = {
+    create?: XOR<CommunityDealCreateWithoutParticipantsInput, CommunityDealUncheckedCreateWithoutParticipantsInput>
+    connectOrCreate?: CommunityDealCreateOrConnectWithoutParticipantsInput
+    upsert?: CommunityDealUpsertWithoutParticipantsInput
+    connect?: CommunityDealWhereUniqueInput
+    update?: XOR<XOR<CommunityDealUpdateToOneWithWhereWithoutParticipantsInput, CommunityDealUpdateWithoutParticipantsInput>, CommunityDealUncheckedUpdateWithoutParticipantsInput>
   }
 
   export type NestedStringFilter<$PrismaModel = never> = {
@@ -9311,6 +13678,143 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type DealParticipantCreateWithoutDealInput = {
+    id?: string
+    farmerId: string
+    quantity: number
+    paymentStatus?: $Enums.PaymentStatus
+    orderId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type DealParticipantUncheckedCreateWithoutDealInput = {
+    id?: string
+    farmerId: string
+    quantity: number
+    paymentStatus?: $Enums.PaymentStatus
+    orderId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type DealParticipantCreateOrConnectWithoutDealInput = {
+    where: DealParticipantWhereUniqueInput
+    create: XOR<DealParticipantCreateWithoutDealInput, DealParticipantUncheckedCreateWithoutDealInput>
+  }
+
+  export type DealParticipantCreateManyDealInputEnvelope = {
+    data: DealParticipantCreateManyDealInput | DealParticipantCreateManyDealInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type DealParticipantUpsertWithWhereUniqueWithoutDealInput = {
+    where: DealParticipantWhereUniqueInput
+    update: XOR<DealParticipantUpdateWithoutDealInput, DealParticipantUncheckedUpdateWithoutDealInput>
+    create: XOR<DealParticipantCreateWithoutDealInput, DealParticipantUncheckedCreateWithoutDealInput>
+  }
+
+  export type DealParticipantUpdateWithWhereUniqueWithoutDealInput = {
+    where: DealParticipantWhereUniqueInput
+    data: XOR<DealParticipantUpdateWithoutDealInput, DealParticipantUncheckedUpdateWithoutDealInput>
+  }
+
+  export type DealParticipantUpdateManyWithWhereWithoutDealInput = {
+    where: DealParticipantScalarWhereInput
+    data: XOR<DealParticipantUpdateManyMutationInput, DealParticipantUncheckedUpdateManyWithoutDealInput>
+  }
+
+  export type DealParticipantScalarWhereInput = {
+    AND?: DealParticipantScalarWhereInput | DealParticipantScalarWhereInput[]
+    OR?: DealParticipantScalarWhereInput[]
+    NOT?: DealParticipantScalarWhereInput | DealParticipantScalarWhereInput[]
+    id?: StringFilter<"DealParticipant"> | string
+    dealId?: StringFilter<"DealParticipant"> | string
+    farmerId?: StringFilter<"DealParticipant"> | string
+    quantity?: IntFilter<"DealParticipant"> | number
+    paymentStatus?: EnumPaymentStatusFilter<"DealParticipant"> | $Enums.PaymentStatus
+    orderId?: StringNullableFilter<"DealParticipant"> | string | null
+    createdAt?: DateTimeFilter<"DealParticipant"> | Date | string
+  }
+
+  export type CommunityDealCreateWithoutParticipantsInput = {
+    id?: string
+    productId: string
+    supplierId: string
+    title: string
+    description: string
+    targetQuantity: number
+    currentQuantity?: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: Date | string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommunityDealUncheckedCreateWithoutParticipantsInput = {
+    id?: string
+    productId: string
+    supplierId: string
+    title: string
+    description: string
+    targetQuantity: number
+    currentQuantity?: number
+    originalPricePaise: number
+    dealPricePaise: number
+    endsAt: Date | string
+    isActive?: boolean
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type CommunityDealCreateOrConnectWithoutParticipantsInput = {
+    where: CommunityDealWhereUniqueInput
+    create: XOR<CommunityDealCreateWithoutParticipantsInput, CommunityDealUncheckedCreateWithoutParticipantsInput>
+  }
+
+  export type CommunityDealUpsertWithoutParticipantsInput = {
+    update: XOR<CommunityDealUpdateWithoutParticipantsInput, CommunityDealUncheckedUpdateWithoutParticipantsInput>
+    create: XOR<CommunityDealCreateWithoutParticipantsInput, CommunityDealUncheckedCreateWithoutParticipantsInput>
+    where?: CommunityDealWhereInput
+  }
+
+  export type CommunityDealUpdateToOneWithWhereWithoutParticipantsInput = {
+    where?: CommunityDealWhereInput
+    data: XOR<CommunityDealUpdateWithoutParticipantsInput, CommunityDealUncheckedUpdateWithoutParticipantsInput>
+  }
+
+  export type CommunityDealUpdateWithoutParticipantsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    targetQuantity?: IntFieldUpdateOperationsInput | number
+    currentQuantity?: IntFieldUpdateOperationsInput | number
+    originalPricePaise?: IntFieldUpdateOperationsInput | number
+    dealPricePaise?: IntFieldUpdateOperationsInput | number
+    endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type CommunityDealUncheckedUpdateWithoutParticipantsInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    productId?: StringFieldUpdateOperationsInput | string
+    supplierId?: StringFieldUpdateOperationsInput | string
+    title?: StringFieldUpdateOperationsInput | string
+    description?: StringFieldUpdateOperationsInput | string
+    targetQuantity?: IntFieldUpdateOperationsInput | number
+    currentQuantity?: IntFieldUpdateOperationsInput | number
+    originalPricePaise?: IntFieldUpdateOperationsInput | number
+    dealPricePaise?: IntFieldUpdateOperationsInput | number
+    endsAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    isActive?: BoolFieldUpdateOperationsInput | boolean
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
   export type InquiryReplyCreateManyInquiryInput = {
     id?: string
     senderId: string
@@ -9340,6 +13844,42 @@ export namespace Prisma {
     senderId?: StringFieldUpdateOperationsInput | string
     senderRole?: StringFieldUpdateOperationsInput | string
     message?: StringFieldUpdateOperationsInput | string
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DealParticipantCreateManyDealInput = {
+    id?: string
+    farmerId: string
+    quantity: number
+    paymentStatus?: $Enums.PaymentStatus
+    orderId?: string | null
+    createdAt?: Date | string
+  }
+
+  export type DealParticipantUpdateWithoutDealInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DealParticipantUncheckedUpdateWithoutDealInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type DealParticipantUncheckedUpdateManyWithoutDealInput = {
+    id?: StringFieldUpdateOperationsInput | string
+    farmerId?: StringFieldUpdateOperationsInput | string
+    quantity?: IntFieldUpdateOperationsInput | number
+    paymentStatus?: EnumPaymentStatusFieldUpdateOperationsInput | $Enums.PaymentStatus
+    orderId?: NullableStringFieldUpdateOperationsInput | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
