@@ -17,19 +17,41 @@ function AgreementModal({ partner, myProfile, onClose, onProposed }: { partner: 
   const [submitting, setSubmitting] = useState(false);
   const [myShare, setMyShare] = useState(50);
   const [duration, setDuration] = useState(12);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const agreementText = `LAND INTEGRATION & PROFIT SHARING AGREEMENT
+
+This Agreement is made on ${new Date().toLocaleDateString()} between:
+
+PARTY 1 (Owner): ${myProfile.nameDisplay}
+ID: ${myProfile.userId}
+Land Survey: #${myProfile.surveyNumber}
+Area: ${myProfile.totalExtentAcres} Acres
+
+PARTY 2 (Partner): ${partner.nameDisplay}
+ID: ${partner.userId}
+Land Survey: #${partner.surveyNumber}
+Area: ${partner.totalExtentAcres} Acres
+
+TERMS OF INTEGRATION:
+1. Operations: The parties agree to integrate agricultural operations for a period of ${duration} months.
+2. Profit Sharing: Party 1 shall receive ${myShare}% and Party 2 shall receive ${100 - myShare}% of net proceeds.
+3. Governance: Decisions regarding crop selection and inputs will be made mutually.
+4. Blockchain Verification: This agreement is secured on the Polygon network and is legally binding upon digital signature.
+
+DATE: ${new Date().toISOString()}
+AGREEMENT HASH: [PENDING DEPLOYMENT]`;
 
   async function propose() {
+    const password = window.prompt('Please enter your password to authorize this legal contract on the blockchain:');
+    if (!password) return;
 
     setSubmitting(true);
     try {
-      // 1. Generate a dummy agreement text/blob for IPFS
-      const agreementText = `LAND INTEGRATION AGREEMENT\n\nParties:\n1. ${myProfile.nameDisplay} (${myProfile.userId})\n2. ${partner.nameDisplay} (${partner.userId})\n\nLand Details:\nMy Land: Survey #${myProfile.surveyNumber}, ${myProfile.totalExtentAcres} acres\nPartner Land: Survey #${partner.surveyNumber}, ${partner.totalExtentAcres} acres\n\nTerms:\n- My Share: ${myShare}%\n- Partner Share: ${100 - myShare}%\n- Duration: ${duration} months\n\nSigned via AgriLink Blockchain (Polygon Amoy).`;
-
       const blob = new Blob([agreementText], { type: 'text/plain' });
       const formData = new FormData();
-      formData.append('file', blob, 'agreement.txt');
+      formData.append('file', blob, 'land_agreement.txt');
 
-      // 2. Upload to IPFS
       const ipfsRes = await fetch(`${API}/blockchain/ipfs/upload`, {
         method: 'POST',
         credentials: 'include',
@@ -39,7 +61,6 @@ function AgreementModal({ partner, myProfile, onClose, onProposed }: { partner: 
       if (!ipfsRes.ok) throw new Error(ipfsJson.error ?? 'IPFS failed');
       const cid = ipfsJson.data.cid;
 
-      // 3. Create on-chain agreement
       const now = Math.floor(Date.now() / 1000);
       const endTs = now + (duration * 30 * 24 * 3600);
 
@@ -59,6 +80,7 @@ function AgreementModal({ partner, myProfile, onClose, onProposed }: { partner: 
         startTimestamp: now,
         endTimestamp: endTs,
         documentCid: cid,
+        password: password
       };
 
       const res = await fetch(`${API}/blockchain/agreements`, {
@@ -69,11 +91,12 @@ function AgreementModal({ partner, myProfile, onClose, onProposed }: { partner: 
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Failed to create agreement on-chain');
+      if (!res.ok) throw new Error(json.error ?? 'Failed to create agreement');
 
-      toast.success('Land integration agreement proposed on-chain! ✓');
+      toast.success('Contract generated and secured on-chain! ✓');
       onProposed();
     } catch (err: any) {
+      console.error('Blockchain Propose Error:', err);
       toast.error(err.message);
     } finally {
       setSubmitting(false);
@@ -81,88 +104,139 @@ function AgreementModal({ partner, myProfile, onClose, onProposed }: { partner: 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2f2d29]/40 backdrop-blur-sm">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2rem] w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-[#eae6de]">
-        <div className="p-6 border-b border-[#f8f7f4] flex items-center justify-between">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2f2d29]/60 backdrop-blur-md">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[95vh] shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-[#eae6de]">
+        <div className="p-6 border-b border-[#f8f7f4] flex items-center justify-between bg-[#fdfcfb]">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center">
               <Shield className="w-6 h-6 text-brand-green" />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-text-dark font-serif">Propose Agreement</h3>
-              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">On-Chain Smart Contract v1.2</p>
+              <h3 className="text-xl font-bold text-text-dark font-serif">Land Agreement</h3>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Smart Contract Generator</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-[#f8f7f4] rounded-full transition-colors"><X className="w-5 h-5 text-text-muted" /></button>
         </div>
 
-        <div className="p-8 space-y-6 overflow-y-auto">
-          {/* Partner Info */}
-          <div className="p-5 rounded-2xl bg-[#f8f7f4] border border-[#eae6de]">
-            <p className="text-[10px] text-brand-orange font-black uppercase tracking-widest mb-3">Target Partner</p>
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-brand-green text-white flex items-center justify-center text-xl font-bold font-serif shadow-md shadow-brand-green/20">
-                {partner.nameDisplay?.[0]}
+        <div className="p-8 space-y-6 overflow-y-auto bg-white">
+          {!showPreview ? (
+            <div className="space-y-6">
+              <div className="p-6 rounded-3xl bg-[#f8f7f4] border border-[#eae6de]">
+                <p className="text-[10px] text-brand-orange font-black uppercase tracking-widest mb-4">Partner Details</p>
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-brand-green text-white flex items-center justify-center text-2xl font-bold font-serif shadow-lg shadow-brand-green/20">
+                    {partner.nameDisplay?.[0]}
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-text-dark">{partner.nameDisplay}</p>
+                    <p className="text-text-muted text-sm font-medium">Village: {partner.village} | Survey: {partner.surveyNumber}</p>
+                  </div>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-text-dark font-bold truncate">{partner.nameDisplay}</p>
-                <p className="text-text-muted text-xs flex items-center gap-1 mt-0.5">
-                  <Briefcase className="w-3 h-3" /> {partner.surveyNumber} • {partner.totalExtentAcres} Acres
-                </p>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-text-muted font-black uppercase tracking-widest block ml-1">Your Revenue Share (%)</label>
+                  <input type="number" value={myShare} onChange={e => setMyShare(Math.min(99, Math.max(1, parseInt(e.target.value) || 0)))} className="input-field py-4" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-text-muted font-black uppercase tracking-widest block ml-1">Partner Share (%)</label>
+                  <input readOnly value={100 - myShare} className="input-field py-4 bg-[#f8f7f4]/50 opacity-60" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] text-text-muted font-black uppercase tracking-widest block ml-1">Contract Duration (Months)</label>
+                <select value={duration} onChange={e => setDuration(parseInt(e.target.value))} className="input-field py-4 appearance-none">
+                  <option value="6">6 Months (Short Term)</option>
+                  <option value="12">12 Months (Full Season)</option>
+                  <option value="24">24 Months (Strategic)</option>
+                </select>
+              </div>
+            </div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              <div className="bg-[#fcfcfc] border-2 border-[#eae6de] border-dashed rounded-3xl p-8 font-mono text-[13px] leading-relaxed text-text-dark shadow-inner max-h-[400px] overflow-y-auto">
+                <pre className="whitespace-pre-wrap">{agreementText}</pre>
+              </div>
+              <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-100 rounded-2xl">
+                <CheckCircle className="w-5 h-5 text-blue-500 mt-0.5" />
+                <p className="text-blue-800 text-xs font-medium">Please review all terms. This document will be permanently stored on IPFS and indexed on the Polygon blockchain.</p>
+              </div>
+            </motion.div>
+          )}
+        </div>
+
+        <div className="p-8 border-t border-[#f8f7f4] bg-[#fdfcfb] flex gap-4">
+          {!showPreview ? (
+            <button onClick={() => setShowPreview(true)} className="btn-primary w-full py-4 text-xs font-black uppercase tracking-widest">
+              Review Legal Document
+            </button>
+          ) : (
+            <>
+              <button onClick={() => setShowPreview(false)} className="px-6 py-4 border border-[#eae6de] rounded-2xl text-xs font-black uppercase tracking-widest text-text-muted hover:bg-white transition-all">
+                Back to Edit
+              </button>
+              <button onClick={propose} disabled={submitting} className="btn-primary flex-1 py-4 text-xs font-black uppercase tracking-widest shadow-xl shadow-brand-green/20">
+                {submitting ? 'Verifying...' : 'Sign & Deploy to Chain'}
+              </button>
+            </>
+          )}
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function ViewAgreementModal({ agreement, onClose, onSign, signing }: { agreement: any; onClose: () => void; onSign: (id: string) => void; signing: string | null }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2f2d29]/60 backdrop-blur-md">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[95vh] shadow-2xl border border-[#eae6de]">
+        <div className="p-6 border-b border-[#f8f7f4] flex items-center justify-between bg-[#fdfcfb]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-brand-green/10 flex items-center justify-center">
+              <FileText className="w-6 h-6 text-brand-green" />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-text-dark font-serif">Review Partnership Terms</h3>
+              <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Received Proposal</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-[#f8f7f4] rounded-full transition-colors"><X className="w-5 h-5 text-text-muted" /></button>
+        </div>
+
+        <div className="p-8 space-y-6 overflow-y-auto bg-white">
+          <div className="p-6 rounded-3xl bg-[#f8f7f4] border border-[#eae6de]">
+            <p className="text-[10px] text-brand-orange font-black uppercase tracking-widest mb-4">Agreement Details</p>
+            <div className="grid grid-cols-2 gap-4 text-sm font-medium text-text-dark">
+              <div>
+                <p className="text-text-muted text-[10px] uppercase font-bold mb-1">Proposer</p>
+                <p>{agreement.farmer1Name}</p>
+              </div>
+              <div>
+                <p className="text-text-muted text-[10px] uppercase font-bold mb-1">Your Share</p>
+                <p>{agreement.farmer2SharePercent}%</p>
               </div>
             </div>
           </div>
 
-          {/* Shares */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-[10px] text-text-muted font-bold uppercase tracking-widest block">
-                Your Revenue Share
-              </label>
-              <div className="relative">
-                <input type="number" value={myShare} onChange={e => {
-                  const v = parseInt(e.target.value);
-                  setMyShare(isNaN(v) ? 0 : Math.min(99, Math.max(1, v)));
-                }} className="input-field pr-10" />
-                <span className="absolute right-4 top-3 text-text-muted font-bold">%</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] text-text-muted font-bold uppercase tracking-widest block opacity-60">
-                Partner Share
-              </label>
-              <div className="relative">
-                <input readOnly value={100 - myShare} className="input-field pr-10 bg-[#f8f7f4]/50 cursor-not-allowed border-dashed" />
-                <span className="absolute right-4 top-3 text-text-muted font-bold opacity-40">%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Duration */}
-          <div className="space-y-2">
-            <label className="text-[10px] text-text-muted font-bold uppercase tracking-widest block">
-              Contract Lifecycle
-            </label>
-            <select value={duration} onChange={e => setDuration(parseInt(e.target.value))} className="input-field appearance-none hover:border-brand-green transition-colors">
-              <option value="6">6 Months Term</option>
-              <option value="12">1 Year Anniversary</option>
-              <option value="24">2 Years Strategic</option>
-              <option value="36">3 Years Long-term</option>
-            </select>
-          </div>
-
-          <div className="p-4 rounded-xl bg-brand-green/5 border border-brand-green/10 flex items-start gap-3">
-            <FileText className="w-4 h-4 text-brand-green flex-shrink-0 mt-0.5" />
-            <p className="text-text-muted text-[11px] leading-relaxed font-medium">
-              This legal instrument will be hashed and stored on the <strong>Polygon POS Network</strong>.
-              Execution requires mutual cryptographic signatures from both verified properties.
-            </p>
+          <div className="bg-[#fcfcfc] border-2 border-[#eae6de] border-dashed rounded-3xl p-8 font-mono text-[13px] leading-relaxed text-text-dark shadow-inner min-h-[200px]">
+            <p className="italic text-text-muted mb-4 text-xs font-sans">[Legal document content fetched from IPFS CID: {agreement.documentCid.slice(0, 10)}...]</p>
+            <p>This digital smart contract establishes a profit-sharing partnership between {agreement.farmer1Name} and {agreement.farmer2Name}. By counter-signing, you agree to the division of yields as specified above for the duration of the operational period.</p>
           </div>
         </div>
 
-        <div className="p-8 border-t border-[#f8f7f4] bg-[#fdfcfb]">
-          <button onClick={propose} disabled={submitting} className="btn-primary w-full shadow-lg shadow-brand-green/20 py-4 text-xs font-black uppercase tracking-widest">
-            {submitting ? 'Broadcasting to Chain...' : 'Deploy Smart Agreement'}
+        <div className="p-8 border-t border-[#f8f7f4] bg-[#fdfcfb] flex gap-4">
+          <button onClick={onClose} className="px-6 py-4 border border-[#eae6de] rounded-2xl text-xs font-black uppercase tracking-widest text-text-muted hover:bg-white transition-all">
+            Later
+          </button>
+          <button 
+            onClick={() => onSign(agreement.agreementId)} 
+            disabled={signing === agreement.agreementId} 
+            className="btn-primary flex-1 py-4 text-xs font-black uppercase tracking-widest shadow-xl shadow-brand-green/20"
+          >
+            {signing === agreement.agreementId ? 'Signing...' : 'Counter-Sign & Activate'}
           </button>
         </div>
       </motion.div>
@@ -191,6 +265,7 @@ export default function IntegrationPage() {
   const [enabling, setEnabling] = useState(false);
   const [signing, setSigning] = useState<string | null>(null);
   const [selectedPartner, setSelectedPartner] = useState<any>(null);
+  const [viewingAgreement, setViewingAgreement] = useState<any>(null);
 
   if (authLoading || statsLoading || profileLoading) {
     return (
@@ -227,24 +302,33 @@ export default function IntegrationPage() {
   }
 
   async function signAgreement(id: string) {
+    const password = window.prompt('Please enter your password to counter-sign this legal agreement on the Polygon blockchain:');
+    if (!password) return;
+
     setSigning(id);
     try {
       const res = await fetch(`${API}/blockchain/agreements/${id}/sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ signerName: profile.nameDisplay }),
+        body: JSON.stringify({ 
+          signerName: profile.nameDisplay,
+          password: password
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to sign');
-      toast.success('Agreement successfully signed on Polygon!');
+      toast.success('Agreement successfully activated on Polygon!');
       mutateAgreements();
+      setViewingAgreement(null);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
       setSigning(null);
     }
   }
+
+  // ViewAgreementModal and AgreementModal are now top-level components
 
   return (
     <div className="min-h-screen bg-brand-bg font-sans">
@@ -385,12 +469,31 @@ export default function IntegrationPage() {
                         </div>
                       </div>
 
-                      <button
-                        onClick={() => setSelectedPartner(p)}
-                        className="w-full py-3 bg-[#f6f3eb] text-brand-green border border-[#eae6de] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-green hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
-                      >
-                        Propose Agreement <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      {(() => {
+                        const existing = myAgreements?.find((a: any) => 
+                          a.farmer1UserId === p.userId || a.farmer2UserId === p.userId
+                        );
+                        
+                        if (existing) {
+                          return (
+                            <div className="flex items-center gap-2 px-6 py-3 bg-[#f8f7f4] rounded-2xl border border-[#eae6de]">
+                              <div className={`w-2 h-2 rounded-full ${existing.status === 2 ? 'bg-brand-green' : 'bg-brand-orange animate-pulse'}`} />
+                              <span className="text-[10px] font-black text-text-muted uppercase tracking-widest">
+                                {existing.status === 2 ? 'Active Partner' : 'Proposal Pending'}
+                              </span>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <button
+                            onClick={() => setSelectedPartner(p)}
+                            className="w-full py-3 bg-[#f6f3eb] text-brand-green border border-[#eae6de] rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-green hover:text-white transition-all shadow-sm flex items-center justify-center gap-2"
+                          >
+                            Propose Agreement <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        );
+                      })()}
                     </motion.div>
                   ))}
                 </div>
@@ -440,13 +543,12 @@ export default function IntegrationPage() {
                         >
                           View Terms <ArrowRight className="w-3.5 h-3.5 rotate-[-45deg]" />
                         </a>
-                        {needsMySignature && (
+                        {agr.status === 1 && agr.farmer2UserId === profile?.userId && (
                           <button
-                            onClick={() => signAgreement(agr.agreementId)}
-                            disabled={signing === agr.agreementId}
-                            className="bg-brand-orange text-white px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-brand-orange-hover shadow-md shadow-brand-orange/20 transition-all"
+                            onClick={() => setViewingAgreement(agr)}
+                            className="px-6 py-2 bg-brand-green text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-green-hover transition-all shadow-md shadow-brand-green/20 flex items-center gap-2"
                           >
-                            {signing === agr.agreementId ? 'Signing...' : 'Counter-Sign'}
+                            Review &amp; Sign <ArrowRight className="w-3 h-3" />
                           </button>
                         )}
                       </div>
@@ -459,17 +561,26 @@ export default function IntegrationPage() {
         </motion.div>
       </main>
 
-
+      {/* Modals */}
       <AnimatePresence>
         {selectedPartner && (
-          <AgreementModal
-            partner={selectedPartner}
-            myProfile={profile}
-            onClose={() => setSelectedPartner(null)}
+          <AgreementModal 
+            partner={selectedPartner} 
+            myProfile={profile} 
+            onClose={() => setSelectedPartner(null)} 
             onProposed={() => {
               setSelectedPartner(null);
               mutateAgreements();
-            }}
+            }} 
+          />
+        )}
+
+        {viewingAgreement && (
+          <ViewAgreementModal 
+            agreement={viewingAgreement} 
+            onClose={() => setViewingAgreement(null)} 
+            onSign={signAgreement}
+            signing={signing}
           />
         )}
       </AnimatePresence>

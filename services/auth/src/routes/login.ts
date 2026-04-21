@@ -181,4 +181,38 @@ export async function loginRoutes(fastify: FastifyInstance) {
       });
     }
   );
+
+  // ── POST /auth/verify-password ──────────────────────────────
+  // Used for re-authentication before sensitive operations (e.g., signing blockchain agreements)
+  fastify.post(
+    '/verify-password',
+    {
+      preHandler: [(fastify as any).authenticate],
+      config: {
+        rateLimit: { max: 10, timeWindow: '1m', keyGenerator: (req) => req.ip },
+      },
+    },
+    async (req: any, reply: FastifyReply) => {
+      const { password } = req.body as { password?: string };
+      if (!password) {
+        return reply.status(400).send({ success: false, error: 'Password is required' });
+      }
+
+      const user = await User.findUnique({ where: { id: req.user.sub } }) as any;
+      if (!user) {
+        return reply.status(404).send({ success: false, error: 'User not found' });
+      }
+
+      const passwordValid = await bcrypt.compare(password, user.passwordHash);
+      if (!passwordValid) {
+        return reply.status(401).send({
+          success: false,
+          error: 'Incorrect password',
+          code: 'INVALID_PASSWORD',
+        });
+      }
+
+      return reply.send({ success: true, message: 'Password verified' });
+    }
+  );
 }

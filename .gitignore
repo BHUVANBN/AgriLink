@@ -16,3 +16,13 @@ coverage/
 .nyc_output/
 *.tsbuildinfo
 kafka_2.13-3.6.1
+
+# Blockchain Artifacts
+services/blockchain/artifacts/
+services/blockchain/cache/
+services/blockchain/typechain-types/
+services/blockchain/deployments/
+
+# Temp Notes
+*.txt
+

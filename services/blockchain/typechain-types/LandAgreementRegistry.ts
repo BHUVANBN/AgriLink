@@ -90,7 +90,7 @@ export interface LandAgreementRegistryInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "signAgreement",
-    values: [BytesLike, string]
+    values: [BytesLike, AddressLike, string]
   ): string;
   encodeFunctionData(
     functionFragment: "totalAgreements",
@@ -375,7 +375,7 @@ export interface LandAgreementRegistry extends BaseContract {
   >;
 
   signAgreement: TypedContractMethod<
-    [agreementId: BytesLike, signerName: string],
+    [agreementId: BytesLike, farmerAddress: AddressLike, signerName: string],
     [void],
     "nonpayable"
   >;
@@ -482,7 +482,7 @@ export interface LandAgreementRegistry extends BaseContract {
   getFunction(
     nameOrSignature: "signAgreement"
   ): TypedContractMethod<
-    [agreementId: BytesLike, signerName: string],
+    [agreementId: BytesLike, farmerAddress: AddressLike, signerName: string],
     [void],
     "nonpayable"
   >;

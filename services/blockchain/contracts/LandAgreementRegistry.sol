@@ -204,22 +204,31 @@ contract LandAgreementRegistry {
     /**
      * @notice Sign an agreement. Both parties must sign to activate it.
      */
-    function signAgreement(bytes32 agreementId, string calldata signerName)
+    function signAgreement(bytes32 agreementId, address farmerAddress, string calldata signerName)
         external
         agreementExists(agreementId)
-        onlyParty(agreementId)
     {
         Agreement storage agr = agreements[agreementId];
         require(agr.status == AgreementStatus.PendingSignature, "Agreement not pending signature");
         
-        string memory role = (msg.sender == agr.farmer1Address) ? "farmer1" : "farmer2";
+        // Ensure only the farmer themselves or the platform admin can submit the signature
+        require(
+            msg.sender == farmerAddress || msg.sender == owner,
+            "Not authorized to sign for this farmer"
+        );
+        require(
+            farmerAddress == agr.farmer1Address || farmerAddress == agr.farmer2Address,
+            "Farmer is not a party to this agreement"
+        );
+        
+        string memory role = (farmerAddress == agr.farmer1Address) ? "farmer1" : "farmer2";
         
         // Check not already signed
         for (uint i = 0; i < agr.signatures.length; i++) {
-            require(agr.signatures[i].signer != msg.sender, "Already signed");
+            require(agr.signatures[i].signer != farmerAddress, "Already signed");
         }
         
-        agr.signatures.push(Signature(msg.sender, signerName, role, block.timestamp));
+        agr.signatures.push(Signature(farmerAddress, signerName, role, block.timestamp));
         agr.updatedAt = block.timestamp;
         
         // Both parties signed → activate
@@ -227,7 +236,7 @@ contract LandAgreementRegistry {
             agr.status = AgreementStatus.Active;
         }
         
-        emit AgreementSigned(agreementId, msg.sender, role, agr.status);
+        emit AgreementSigned(agreementId, farmerAddress, role, agr.status);
     }
     
     /**

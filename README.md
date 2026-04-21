@@ -100,57 +100,32 @@
 
 ## Quick Start
 
-### 1. Prerequisites
+### 1. One-Command Setup (Local Blockchain + Microservices)
+
+Copy and run this single command to clone the project, install dependencies, spin up the Docker infrastructure, deploy the local Hardhat blockchain, migrate the databases, and start all microservices:
 
 ```bash
-# Install required tools
-node --version   # v20+ required
-pnpm --version   # v9+ required (npm install -g pnpm)
-docker --version # Docker + Compose required
+git clone https://github.com/BHUVANBN/AgriLink.git AgriLink_v2 && cd AgriLink_v2 && cp .env.example .env && pnpm install && docker compose -f infrastructure/docker-compose.yml --env-file .env up -d postgres redis zookeeper kafka prometheus grafana kafka-ui ml-service api-gateway mongodb-auth mongodb-farmer && sleep 10 && make db-migrate db-generate && (cd services/blockchain && npx hardhat node > /dev/null 2>&1 & sleep 5 && npx hardhat run scripts/deploy.ts --network localhost | grep "Contract Address" | awk '{print $3}' | xargs -I {} sed -i "s/^BLOCKCHAIN_CONTRACT_ADDRESS=.*/BLOCKCHAIN_CONTRACT_ADDRESS={}/" ../../.env) && pnpm dev
 ```
 
-### 2. Environment Setup
+### What this single command does:
+1. Clones the repository and copies `.env.example` to `.env`
+2. Installs all workspace dependencies via `pnpm`
+3. Spins up the Docker compose infrastructure (Postgres, Redis, Kafka, API Gateway, etc.) in the background
+4. Runs Prisma migrations (`make db-migrate db-generate`)
+5. Starts a local Hardhat blockchain node in the background
+6. Deploys the `LandAgreementRegistry` smart contract and automatically updates `.env` with the new address
+7. Boots up all Fastify microservices and the Next.js frontend concurrently via Turborepo (`pnpm dev`)
+
+### 2. Deploying to Polygon Amoy Testnet (Optional)
+
+If you want to test on the real Polygon network instead of the local node:
 
 ```bash
-cd /home/batman/AgriLink_v2
-cp .env.example .env
-# Edit .env and fill in all CHANGE_ME values
-```
+# Fund your admin wallet with MATIC from: https://faucet.polygon.technology/
+# Edit .env to set BLOCKCHAIN_NETWORK=amoy and BLOCKCHAIN_RPC_URL=https://rpc-amoy.polygon.technology/
 
-### 3. Install Dependencies
-
-```bash
-pnpm install
-```
-
-### 4. Development (all services locally)
-
-```bash
-# Start infrastructure only (DB, Kafka, Redis)
-docker compose -f infrastructure/docker-compose.yml up mongodb-auth mongodb-farmer mongodb-ml postgres redis kafka zookeeper -d
-
-# Run all services in dev mode
-pnpm dev
-
-# Or run a single service
-pnpm --filter @agrilink/auth dev
-pnpm --filter @agrilink/farmer dev
-```
-
-### 5. Full Docker Build
-
-```bash
-docker compose -f infrastructure/docker-compose.yml --env-file .env up --build
-```
-
-### 6. Deploy Blockchain Contract
-
-```bash
-# Fund your admin wallet from: https://faucet.polygon.technology/
 pnpm --filter @agrilink/blockchain deploy:amoy
-
-# Copy the contract address from output and add to .env:
-# BLOCKCHAIN_CONTRACT_ADDRESS=0x...
 
 # Verify on PolygonScan:
 npx hardhat verify --network amoy <CONTRACT_ADDRESS>

@@ -1,8 +1,8 @@
 {
-  "contractAddress": "0x5128ee3FdCfff39595f1FFA0d0cF6C03F5E6A9ab",
-  "network": "amoy",
-  "chainId": 80002,
-  "deployedAt": "2026-03-22T03:09:50.905Z",
-  "deployedBy": "0xb61AAAe4d7BebF9bf3bdEf8B5E05C78FaFda7171",
-  "txHash": "0x6c3e84e9a6d522a00ef9baede97b2e73be86aaf851d74f048f1e6d59fd022e42"
+  "contractAddress": "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6",
+  "network": "localhost",
+  "chainId": 31337,
+  "deployedAt": "2026-04-21T16:26:22.568Z",
+  "deployedBy": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "txHash": "0x40907b40f4665934c93e5a8c0bf87d0c7217e91aab60bf631d41d953d7d6547f"
 }

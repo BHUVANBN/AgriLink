@@ -13,7 +13,7 @@ import { makeAuthMiddleware, requireRole } from '@agrilink/auth-middleware';
 import FastifyMultipart from '@fastify/multipart';
 import { createPublicClient, createWalletClient, http, parseAbi, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { polygon, polygonAmoy } from 'viem/chains';
+import { polygon, polygonAmoy, hardhat } from 'viem/chains';
 import PinataSDK from '@pinata/sdk';
 import { Readable } from 'stream';
 import { z } from 'zod';
@@ -22,8 +22,9 @@ const fastify = Fastify({ logger: true });
 
 // ── Config ────────────────────────────────────────────────────
 
-const IS_TESTNET = process.env.BLOCKCHAIN_NETWORK !== 'polygon';
-const CHAIN = IS_TESTNET ? polygonAmoy : polygon;
+const IS_LOCAL = process.env.BLOCKCHAIN_NETWORK === 'localhost';
+const IS_MAINNET = process.env.BLOCKCHAIN_NETWORK === 'polygon';
+const CHAIN = IS_LOCAL ? hardhat : IS_MAINNET ? polygon : polygonAmoy;
 const RPC_URL = process.env.BLOCKCHAIN_RPC_URL!;
 const PRIVATE_KEY = process.env.BLOCKCHAIN_ADMIN_PRIVATE_KEY as Hex;
 const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS as Hex | undefined;
@@ -53,7 +54,7 @@ const walletClient = createWalletClient({
 const contractABI = parseAbi([
   // Write functions
   'function createAgreement(string farmer1UserId, string farmer1Name, address farmer1Address, string farmer1Survey, uint32 farmer1Centiacres, uint8 farmer1SharePercent, string farmer2UserId, string farmer2Name, address farmer2Address, string farmer2Survey, uint32 farmer2Centiacres, uint8 farmer2SharePercent, uint64 startTs, uint64 endTs, string documentCid) returns (bytes32)',
-  'function signAgreement(bytes32 agreementId, string signerName)',
+  'function signAgreement(bytes32 agreementId, address farmerAddress, string signerName)',
   'function revokeAgreement(bytes32 agreementId)',
   'function updateDocument(bytes32 agreementId, string documentCid, string metadataCid)',
   // Read functions
@@ -170,10 +171,35 @@ fastify.setErrorHandler(async (error: any, _req, reply) => {
       return reply.status(400).send({ success: false, error: result.error.flatten() });
     }
 
-    const d = result.data;
+    const { password, ...d } = req.body as any;
+    if (!password) {
+      return reply.status(400).send({ success: false, error: 'Password is required' });
+    }
 
     try {
-      // REAL transaction — Relayed via system admin account to pay for GAS
+      // 1. Verify password with Auth Service
+      const AUTH_URL = process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
+      
+      // Extract token from header or cookie
+      const cookieToken = (req as any).cookies?.agrilink_access;
+      const headerToken = req.headers.authorization;
+      const token = headerToken ?? (cookieToken ? `Bearer ${cookieToken}` : undefined);
+
+      const authRes = await fetch(`${AUTH_URL}/auth/verify-password`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token!
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!authRes.ok) {
+        const authJson: any = await authRes.json();
+        return reply.status(401).send({ success: false, error: authJson.error ?? 'Authentication failed' });
+      }
+
+      // 2. REAL transaction — Relayed via system admin account to pay for GAS
       const txHash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: contractABI,
@@ -185,16 +211,27 @@ fastify.setErrorHandler(async (error: any, _req, reply) => {
           d.farmer2Centiacres, d.farmer2SharePercent,
           BigInt(d.startTimestamp), BigInt(d.endTimestamp), d.documentCid,
         ],
-        gas: 350_000n,
       });
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+      const agreementId = receipt.logs[0]?.topics[1];
+
+      // Automatically submit Farmer 1's signature right after creation
+      if (agreementId) {
+        const signTx = await walletClient.writeContract({
+          address: CONTRACT_ADDRESS,
+          abi: contractABI,
+          functionName: 'signAgreement',
+          args: [agreementId as Hex, d.farmer1Address as Hex, d.farmer1Name],
+        });
+        await publicClient.waitForTransactionReceipt({ hash: signTx });
+      }
 
       return reply.status(201).send({
         success: true,
         data: {
           txHash,
-          agreementId: receipt.logs[0]?.topics[1], // Extract new agreementId from event
+          agreementId,
           blockNumber: receipt.blockNumber.toString(),
           network: CHAIN.name,
         },
@@ -215,15 +252,50 @@ fastify.setErrorHandler(async (error: any, _req, reply) => {
     }
 
     const { id } = req.params as { id: string };
-    const { signerName } = req.body as { signerName: string };
+    const { signerName, password } = req.body as { signerName: string; password?: string };
+
+    if (!password) {
+      return reply.status(400).send({ success: false, error: 'Password is required for signing' });
+    }
 
     try {
+      // 1. Verify password with Auth Service (cookie-aware token extraction)
+      const AUTH_URL = process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
+      const cookieToken = (req as any).cookies?.agrilink_access;
+      const headerToken = req.headers.authorization;
+      const token = headerToken ?? (cookieToken ? `Bearer ${cookieToken}` : undefined);
+
+      if (!token) {
+        return reply.status(401).send({ success: false, error: 'No auth token found' });
+      }
+
+      const authRes = await fetch(`${AUTH_URL}/auth/verify-password`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': token
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      if (!authRes.ok) {
+        const authJson: any = await authRes.json();
+        return reply.status(401).send({ success: false, error: authJson.error ?? 'Authentication failed' });
+      }
+
+      // Compute the deterministic wallet address for the logged-in user
+      const userId = (req as any).user.sub;
+      if (!userId) {
+        return reply.status(401).send({ success: false, error: 'User ID missing in token payload' });
+      }
+      const farmerAddress = '0x' + Buffer.from(userId).toString('hex').padEnd(40, '0').slice(0, 40);
+
+      // 2. Perform blockchain transaction (proxy sign)
       const txHash = await walletClient.writeContract({
         address: CONTRACT_ADDRESS,
         abi: contractABI,
         functionName: 'signAgreement',
-        args: [id as Hex, signerName],
-        gas: 150_000n,
+        args: [id as Hex, farmerAddress as Hex, signerName],
       });
       const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
       return reply.send({ success: true, data: { txHash, blockNumber: receipt.blockNumber.toString() } });
