@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import ProductReviews from '@/components/ProductReviews';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,7 +44,7 @@ export default function ProductDetailPage() {
    const [imageIdx, setImageIdx] = useState(0);
    const [adding, setAdding] = useState(false);
    const [qty, setQty] = useState(1);
-   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reivews'>('desc');
+   const [activeTab, setActiveTab] = useState<'desc' | 'specs' | 'reviews'>('desc');
 
    const product = data?.data;
    const cartCount = cartData?.data?.length ?? 0;
@@ -127,7 +128,7 @@ export default function ProductDetailPage() {
                   </p>
                </div>
 
-               <Link href="/marketplace/cart" className="relative p-2.5 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/5">
+               <Link href="/dashboard/farmer/marketplace/cart" className="relative p-2.5 bg-white/5 rounded-2xl hover:bg-white/10 transition-all border border-white/5">
                   <ShoppingCart className="w-5 h-5 text-slate-300" />
                   {cartCount > 0 && (
                      <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 text-white text-[10px] flex items-center justify-center font-black shadow-lg">
@@ -284,7 +285,7 @@ export default function ProductDetailPage() {
             {/* Tabbed In-Depth Info */}
             <div className="mt-24">
                <div className="flex gap-8 border-b border-white/5 mb-10">
-                  {['desc', 'specs', 'reivews'].map((tab) => (
+                  {['desc', 'specs', 'reviews'].map((tab) => (
                      <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
@@ -315,6 +316,12 @@ export default function ProductDetailPage() {
                            </div>
                         ))}
                         {Object.keys(specs).length === 0 && <p className="text-slate-500 italic text-sm">No technical parameters provided by supplier.</p>}
+                     </motion.div>
+                  )}
+
+                  {activeTab === 'reviews' && (
+                     <motion.div key="reviews" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                        <ProductReviews productId={product.id} tone="dark" />
                      </motion.div>
                   )}
                </AnimatePresence>

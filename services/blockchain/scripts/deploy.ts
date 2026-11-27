@@ -1,60 +1,66 @@
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 import fs from 'fs';
 import path from 'path';
 
 /**
- * Deployment script for LandAgreementRegistry on Polygon Amoy testnet.
- * BUG-016 fix: single authoritative deploy script.
- * Run: npx hardhat run scripts/deploy.ts --network amoy
+ * Deploy LandAgreementRegistry (v2).
+ *
+ *   Free testnet:  pnpm --filter @agrilink/blockchain deploy:amoy
+ *   Local node:    npx hardhat node  &&  pnpm --filter @agrilink/blockchain deploy:local
+ *
+ * Optional: EXTRA_RELAYERS=0xabc...,0xdef...  → extra relayer wallets (one per
+ * blockchain-service replica, so replicas never fight over the same nonce).
  */
 async function main() {
   const [deployer] = await ethers.getSigners();
+  const net = await ethers.provider.getNetwork();
 
-  console.log('🚀 Deploying LandAgreementRegistry...');
-  console.log('   Network:', (await ethers.provider.getNetwork()).name);
+  console.log('🚀 Deploying LandAgreementRegistry v2');
+  console.log('   Network :', network.name, `(chainId ${net.chainId})`);
   console.log('   Deployer:', deployer.address);
-  
-  const balance = await ethers.provider.getBalance(deployer.address);
-  console.log('   Balance:', ethers.formatEther(balance), 'MATIC');
 
+  const balance = await ethers.provider.getBalance(deployer.address);
+  console.log('   Balance :', ethers.formatEther(balance), 'POL');
   if (balance === 0n) {
-    throw new Error('Deployer wallet has 0 balance. Fund from https://faucet.polygon.technology/');
+    throw new Error('Deployer has 0 balance. Get free Amoy POL from https://faucet.polygon.technology/');
   }
 
-  // Deploy
-  const ContractFactory = await ethers.getContractFactory('LandAgreementRegistry');
-  const contract = await ContractFactory.deploy();
+  const Factory = await ethers.getContractFactory('LandAgreementRegistry');
+  const contract = await Factory.deploy();
   await contract.waitForDeployment();
+  const address = await contract.getAddress();
+  const tx = contract.deploymentTransaction();
+  const receipt = await tx?.wait();
 
-  const contractAddress = await contract.getAddress();
-  const deployTx = contract.deploymentTransaction();
-  
-  console.log('\n✅ Deployed successfully!');
-  console.log('   Contract Address:', contractAddress);
-  console.log('   Tx Hash:', deployTx?.hash);
-  console.log('   Block:', deployTx?.blockNumber);
+  for (const r of (process.env.EXTRA_RELAYERS ?? '').split(',').map((s) => s.trim()).filter(Boolean)) {
+    await (await contract.setRelayer(r, true)).wait();
+    console.log('   + relayer', r);
+  }
 
-  // Save deployment info
-  const deploymentInfo = {
-    contractAddress,
-    network: (await ethers.provider.getNetwork()).name,
-    chainId: Number((await ethers.provider.getNetwork()).chainId),
+  const info = {
+    contract: 'LandAgreementRegistry',
+    version: 2,
+    contractAddress: address,
+    network: network.name,
+    chainId: Number(net.chainId),
     deployedAt: new Date().toISOString(),
     deployedBy: deployer.address,
-    txHash: deployTx?.hash,
+    txHash: tx?.hash,
+    blockNumber: receipt?.blockNumber,
   };
 
   const outDir = path.join(__dirname, '../deployments');
   fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(outDir, 'deployment.json'),
-    JSON.stringify(deploymentInfo, null, 2)
-  );
+  fs.writeFileSync(path.join(outDir, `${network.name}.json`), JSON.stringify(info, null, 2));
 
-  console.log('\n📄 Deployment info saved to services/blockchain/deployments/deployment.json');
-  console.log('\n📋 Next steps:');
-  console.log('   1. Copy contract address to .env: BLOCKCHAIN_CONTRACT_ADDRESS=' + contractAddress);
-  console.log('   2. Verify on PolygonScan: npx hardhat verify --network amoy', contractAddress);
+  console.log('\n✅ Deployed at', address);
+  console.log(`   Saved deployments/${network.name}.json`);
+  console.log('\nNext:');
+  console.log('   1. .env → BLOCKCHAIN_CONTRACT_ADDRESS=' + address);
+  if (network.name === 'amoy') {
+    console.log('   2. Verify (free): npx hardhat verify --network amoy', address);
+    console.log('   3. Explorer: https://amoy.polygonscan.com/address/' + address);
+  }
 }
 
 main().catch((err) => {

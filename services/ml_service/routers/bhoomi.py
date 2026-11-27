@@ -12,7 +12,6 @@ from selenium.webdriver.support.ui import Select, WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 import pytesseract
 from PIL import Image
@@ -62,16 +61,7 @@ def solve_captcha_with_ocr(driver: webdriver.Chrome, captcha_element_id: str = "
         logger.error(f"CAPTCHA solve failed: {e}")
         return ""
 
-def get_chrome_driver() -> webdriver.Chrome:
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1280,800")
-    options.add_argument("--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36")
-    service = Service(ChromeDriverManager().install())
-    return webdriver.Chrome(service=service, options=options)
+from browser import chrome, BrowserBusy
 
 # ── RTC Parser (from HTML table — much more reliable than PDF) ──
 
@@ -142,7 +132,17 @@ def parse_rtc_html(html: str) -> dict:
 # ── Main Scraper Endpoint ─────────────────────────────────────
 
 @router.post("/fetch-rtc", response_model=RTCResponse)
-async def fetch_rtc(req: RTCRequest):
+def fetch_rtc(req: RTCRequest):
+    # Plain `def`: Selenium is blocking, so FastAPI runs this in its threadpool
+    # instead of freezing the event loop for every other request.
+    try:
+        with chrome() as driver:
+            return _fetch_rtc_with(driver, req)
+    except BrowserBusy as e:
+        return RTCResponse(success=False, error=str(e))
+
+
+def _fetch_rtc_with(driver, req: RTCRequest) -> RTCResponse:
     """
     Fetches RTC from Karnataka Bhoomi portal for a given survey number.
     Implements a robust retry loop for CAPTCHA failures.
@@ -151,9 +151,7 @@ async def fetch_rtc(req: RTCRequest):
     last_error = "Unknown error"
 
     for attempt in range(max_retries):
-        driver = None
         try:
-            driver = get_chrome_driver()
             wait = WebDriverWait(driver, 20)
             
             # Navigate to Bhoomi RTC portal
@@ -246,8 +244,5 @@ async def fetch_rtc(req: RTCRequest):
         except Exception as e:
             logger.error(f"Attempt {attempt+1} failed: {e}")
             last_error = str(e)
-        finally:
-            if driver:
-                driver.quit()
 
     return RTCResponse(success=False, error=f"Failed after {max_retries} attempts. Last error: {last_error}")

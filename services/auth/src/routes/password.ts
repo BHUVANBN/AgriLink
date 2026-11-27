@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { clearSessionCookies } from '../services/tokens.service.js';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { z } from 'zod';
@@ -56,7 +57,7 @@ export async function passwordRoutes(fastify: FastifyInstance) {
       const { email } = result.data;
 
       // Always return 200 — don't leak whether email exists
-      const user = await User.findUnique({ where: { email } });
+      const user = await User.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
       if (!user) {
         return reply.send({
           success: true,
@@ -164,7 +165,7 @@ export async function passwordRoutes(fastify: FastifyInstance) {
 
       const { email, token, newPassword } = result.data;
 
-      const user = await User.findUnique({ where: { email } });
+      const user = await User.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
       if (!user) {
         return reply.status(400).send({ success: false, error: 'Invalid or expired reset token' });
       }
@@ -250,8 +251,7 @@ export async function passwordRoutes(fastify: FastifyInstance) {
       });
 
       // Clear cookies
-      reply.clearCookie('agrilink_access', { path: '/' });
-      reply.clearCookie('agrilink_refresh', { path: '/auth/refresh' });
+      clearSessionCookies(reply);
 
       // Notify user
       await publishEvent('notification.send', {

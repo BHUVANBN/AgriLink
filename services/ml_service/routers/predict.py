@@ -7,10 +7,9 @@ from typing import Optional, List
 import logging, os, json
 from datetime import datetime
 import pandas as pd
-import random
 import requests
 from db import get_pool
-from auth import require_token
+from forecasting import forecast_prices
 
 router = APIRouter()
 logger = logging.getLogger("predict")
@@ -130,30 +129,22 @@ async def sync_agmarknet_to_database(commodity_id: str, market_id: str, district
 
 # ── Logic ─────────────────────────────────────────────────────
 
-def generate_forecast(base_price: float, months: int, trend_factor: float = 0.02) -> list:
-    forecast = []
-    price = base_price
-    m_names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-    curr_m = datetime.utcnow().month
+M_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
-    for i in range(1, months + 1):
-        m_idx = (curr_m + i - 1) % 12
-        # Simple seasonal nudge
-        seasonal = 1.02 if m_idx in [9, 10, 11] else 0.98 if m_idx in [3, 4] else 1.0
-        
-        price = price * (1 + trend_factor + random.uniform(-0.005, 0.005)) * seasonal
-        var = price * 0.05 
-        
-        forecast.append(PricePoint(
-            month=f"{m_names[m_idx]} {datetime.utcnow().year + (curr_m + i - 1) // 12}",
-            predictedPrice=round(price, 2),
-            minPrice=round(price - var, 2),
-            maxPrice=round(price + var, 2),
-            unit="INR/quintal"
+def generate_forecast(chronological_prices: list, months: int) -> list:
+    """Deterministic damped-trend forecast (see forecasting.py)."""
+    now = datetime.utcnow()
+    out = []
+    for p in forecast_prices(chronological_prices, months):
+        idx = now.month - 1 + p["step"]
+        out.append(PricePoint(
+            month=f"{M_NAMES[idx % 12]} {now.year + idx // 12}",
+            predictedPrice=p["predictedPrice"],
+            minPrice=p["minPrice"],
+            maxPrice=p["maxPrice"],
+            unit="INR/quintal",
         ))
-    return forecast
-
-# ── Endpoints ─────────────────────────────────────────────────
+    return out
 
 class SyncRequest(BaseModel):
     commodity_id: str
@@ -187,20 +178,12 @@ async def sync_agmarknet_data(req: SyncRequest):
             # Extract all prices for AI prediction (convert strings to numbers)
             prices = [float(record.get('model_price_wt', 0)) for record in records if record.get('model_price_wt')]
             
-            # Generate AI prediction using all historical prices
+            # Agmarknet returns newest first → reverse to chronological
             if prices:
                 base_price = prices[0]  # Latest price
-                # Calculate trend from all historical data
-                if len(prices) > 10:
-                    recent_avg = sum(prices[:10]) / 10
-                    older_avg = sum(prices[10:20]) / 10 if len(prices) > 20 else sum(prices[10:]) / len(prices[10:])
-                    trend_factor = (recent_avg - older_avg) / older_avg if older_avg > 0 else 0.02
-                else:
-                    trend_factor = 0.02
-                
-                # Generate 4-month forecast
-                forecast = generate_forecast(base_price, 4, trend_factor=trend_factor)
-                
+                forecast = generate_forecast(list(reversed(prices)), 4)
+                trend_factor = (forecast[-1].predictedPrice - base_price) / base_price if base_price else 0.0
+
                 return SyncResponse(
                     success=True,
                     message="Data fetched and predictions generated successfully",
@@ -239,7 +222,6 @@ async def sync_agmarknet_data(req: SyncRequest):
         )
 
 @router.post("/crop-price", response_model=PredictResponse)
-@require_token
 async def predict_crop_price(req: PredictRequest):
     """
     Analyzes historical local Postgres data to predict the next few months
@@ -270,17 +252,10 @@ async def predict_crop_price(req: PredictRequest):
         latest_price = float(latest_row['modal_price'])
         last_date = latest_row['rep_date'].strftime('%Y-%m-%d')
 
-        # 3. Trend Analysis
-        if len(df) > 5:
-            # simple trend: comparison of recent 5 vs prior 5
-            recent = df.head(min(5, len(df)))['modal_price'].astype(float).mean()
-            prior = df.tail(min(5, len(df)))['modal_price'].astype(float).mean()
-            trend_val = (recent - prior) / prior if prior > 0 else 0.01
-        else:
-            trend_val = 0.02
-
-        # 4. Predict
-        forecast = generate_forecast(latest_price, req.forecastMonths, trend_factor=trend_val)
+        # 3. Forecast on chronological series (SQL returned newest first)
+        chronological = df['modal_price'].astype(float).tolist()[::-1]
+        forecast = generate_forecast(chronological, req.forecastMonths)
+        trend_val = (forecast[-1].predictedPrice - latest_price) / latest_price if forecast and latest_price else 0.0
 
         return PredictResponse(
             success=True,

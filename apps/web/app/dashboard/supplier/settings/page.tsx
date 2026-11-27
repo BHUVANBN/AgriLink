@@ -65,9 +65,12 @@ function DocUploadRow({
       <div className="flex-1 min-w-0">
         <p className="text-text-dark text-sm font-medium">{doc.label}</p>
         <p className="text-slate-500 text-xs mt-0.5">{doc.hint}</p>
-        {currentUrl && (
+        {currentUrl && (currentUrl.startsWith('http') ? (
           <a href={currentUrl} target="_blank" rel="noopener noreferrer" className="text-green-400 text-xs hover:underline">View uploaded ↗</a>
-        )}
+        ) : (
+          // Freshly uploaded private document: a signed viewing link appears after reload
+          <span className="text-green-400 text-xs">Uploaded ✓ (stored privately)</span>
+        ))}
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
         {currentUrl && <CheckCircle className="w-4 h-4 text-green-400" />}

@@ -14,7 +14,7 @@ import {
 
 const RegisterFarmerSchema = z.object({
   fullName: z.string().min(2).max(100),
-  email: z.string().email(),
+  email: z.string().email().transform((v) => v.toLowerCase().trim()),
   phone: z
     .string()
     .transform((v) => v.replace(/[\s-]/g, ''))
@@ -28,7 +28,7 @@ const RegisterFarmerSchema = z.object({
 
 const RegisterSupplierSchema = z.object({
   companyName: z.string().min(2).max(200),
-  email: z.string().email(),
+  email: z.string().email().transform((v) => v.toLowerCase().trim()),
   phone: z
     .string()
     .transform((v) => v.replace(/[\s-]/g, ''))
@@ -60,7 +60,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const { fullName, email, phone, password } = result.data;
 
       // Check for existing user
-      const existing = await User.findFirst({ where: { email } });
+      const existing = await User.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
       if (existing && existing.emailVerified) {
         return reply.status(409).send({ 
           success: false, 
@@ -145,7 +145,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
       const { companyName, email, phone, password } = result.data;
 
-      const existing = await User.findFirst({ where: { email } });
+      const existing = await User.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
       if (existing && existing.emailVerified) {
         return reply.status(409).send({ 
           success: false, 

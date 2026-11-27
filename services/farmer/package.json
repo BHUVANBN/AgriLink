@@ -8,7 +8,13 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "predev": "prisma generate",
+    "prebuild": "prisma generate",
+    "pretest": "prisma generate",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "@agrilink/auth-middleware": "workspace:^",
@@ -28,7 +34,8 @@
     "kafkajs": "^2.2.4",
     "mongoose": "^8.10.0",
     "uuid": "^11.0.0",
-    "zod": "^3.24.0"
+    "zod": "^3.24.0",
+    "@agrilink/platform": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",

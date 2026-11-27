@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { CreditCard, MapPin, Phone, User, ArrowLeft, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { CreditCard, MapPin, Phone, User, ArrowLeft, ShieldCheck, CheckCircle2, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getCart, CartItem } from '@/lib/marketplace/cart';
 import { loadRazorpay } from '@/lib/marketplace/razorpay';
@@ -48,50 +50,50 @@ export default function CheckoutPage() {
     setProcessing(true);
 
     try {
-      // 1. Create Order in our backend
+      // 1. Create orders (server prices everything from the catalogue)
       const orderRes = await fetch(`${API_URL}/marketplace/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          items,
+          items: items.map((i: any) => ({ productId: i.productId, quantity: i.quantity })),
           shippingAddress: address,
           paymentMethod: 'RAZORPAY',
         }),
       });
       const orderData = await orderRes.json();
-      if (!orderData.success) throw new Error('Order creation failed');
+      if (!orderData.success) {
+        const unavailable = (orderData.details ?? []).map((d: any) => d.name ?? d.productId).join(', ');
+        throw new Error(unavailable ? `Unavailable: ${unavailable}` : (orderData.error ?? 'Order creation failed'));
+      }
 
-      // We handle the first order for the payment demo
-      const order = orderData.data.orders[0];
+      // One order per supplier — paid together in a single Razorpay payment
+      const orders: any[] = orderData.data.orders;
+      const order = orders[0];
 
       // 2. Load Razorpay
       const isLoaded = await loadRazorpay();
       if (!isLoaded) throw new Error('Razorpay SDK failed to load');
 
-      // 3. Create Razorpay Order
+      // 3. Create Razorpay Order (amount is computed server-side)
       const paymentRes = await fetch(`${API_URL}/marketplace/payment/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          orderId: order.id,
-          totalPaise: order.totalPaise,
-          farmerId: order.farmerId,
-        }),
+        body: JSON.stringify({ orderIds: orders.map((o) => o.id) }),
       });
       const paymentData = await paymentRes.json();
-      if (!paymentData.success) throw new Error('Payment initialization failed');
+      if (!paymentData.success) throw new Error(paymentData.error ?? 'Payment initialization failed');
 
-      const { razorpayOrderId, keyId } = paymentData.data;
+      const { razorpayOrderId, keyId, amount } = paymentData.data;
 
       // 4. Open Razorpay Modal
       const options = {
         key: keyId,
-        amount: order.totalPaise,
+        amount,
         currency: 'INR',
         name: 'AgriLink Marketplace',
-        description: `Order ${order.orderNumber}`,
+        description: orders.length > 1 ? `${orders.length} orders` : `Order ${order.orderNumber}`,
         order_id: razorpayOrderId,
         handler: async (response: any) => {
           // 5. Verify Payment
@@ -100,7 +102,6 @@ export default function CheckoutPage() {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-              orderId: order.id,
               razorpayOrderId: response.razorpay_order_id,
               razorpayPaymentId: response.razorpay_payment_id,
               razorpaySignature: response.razorpay_signature,

@@ -29,7 +29,7 @@ const UNITS = ['kg', 'g', 'litre', 'ml', 'unit', 'pack', 'bag', 'box', 'bottle',
 export default function EditProductPage() {
   const router = useRouter();
   const { id } = useParams();
-  const { data: product, mutate } = useSWR(`${API}/supplier/products/public/${id}`, fetcher);
+  const { data: product, mutate } = useSWR(`${API}/supplier/products/${id}`, fetcher);
   
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -154,7 +154,7 @@ export default function EditProductPage() {
                   <ArrowLeft className="w-5 h-5 text-text-muted" />
                </Link>
                <div>
-                  <h2 className="text-4xl font-bold text-text-dark font-serif tracking-tighter">Edit Protocol: <span className="opacity-40">{product.sku}</span></h2>
+                  <h2 className="text-4xl font-bold text-text-dark font-serif tracking-tighter">Edit: <span className="opacity-40">{product.sku}</span></h2>
                   <p className="text-text-muted font-bold text-[10px] uppercase tracking-widest mt-1 italic">Last sync: {new Date(product.updatedAt).toLocaleString()}</p>
                </div>
             </div>
@@ -180,7 +180,7 @@ export default function EditProductPage() {
 
                       <div className="grid grid-cols-2 gap-6">
                         <div>
-                          <label className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-2 block italic">Sector Class</label>
+                          <label className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-2 block italic">Category</label>
                           <select className="input-field" value={form.category} onChange={e => change('category', e.target.value)}>
                             {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
                           </select>
@@ -194,7 +194,7 @@ export default function EditProductPage() {
                       </div>
 
                       <div>
-                        <label className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-2 block italic">Vector Description</label>
+                        <label className="text-text-muted text-[10px] font-black uppercase tracking-widest mb-2 block italic">Description</label>
                         <textarea className="input-field min-h-32 resize-none" value={form.description} onChange={e => change('description', e.target.value)} required />
                       </div>
                    </div>
@@ -227,7 +227,7 @@ export default function EditProductPage() {
                       </div>
                       <div className="pt-6">
                          <button type="submit" disabled={saving} className="w-full py-5 bg-brand-green text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest hover:bg-brand-green-hover transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-green/15">
-                            <Save className="w-5 h-5" /> {saving ? 'Updating Protocol...' : 'Finalize Strategy Changes'}
+                            <Save className="w-5 h-5" /> {saving ? 'Saving…' : 'Finalize Strategy Changes'}
                          </button>
                       </div>
                    </div>
@@ -237,7 +237,7 @@ export default function EditProductPage() {
              {/* Right Column: Visual Clusters & Status */}
              <div className="space-y-8">
                 <div className="bg-white rounded-[2.5rem] border border-[#eae6de] shadow-soft p-8 space-y-6">
-                   <h3 className="text-[11px] font-black text-text-dark uppercase tracking-[0.2em] italic border-b border-[#f8f7f4] pb-4">Lifecycle Vector</h3>
+                   <h3 className="text-[11px] font-black text-text-dark uppercase tracking-[0.2em] italic border-b border-[#f8f7f4] pb-4">Status</h3>
                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                          <div className={`w-3 h-3 rounded-full ${form.status === 'active' ? 'bg-emerald-500' : 'bg-slate-300'}`} />

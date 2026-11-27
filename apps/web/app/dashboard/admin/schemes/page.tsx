@@ -133,7 +133,7 @@ export default function AdminSchemesPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
            <div>
               <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-1">Central & State Repository</p>
-              <h2 className="text-2xl font-black text-white">Manual Scheme Controls</h2>
+              <h2 className="text-2xl font-black text-slate-900">Manual Scheme Controls</h2>
            </div>
            <button 
              onClick={openAddModal}
@@ -145,65 +145,65 @@ export default function AdminSchemesPage() {
 
         {/* Stats Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-           <div className="glass-card p-6 border-white/5">
+           <div className="glass-card p-6 border-slate-200">
               <div className="flex items-center gap-3 mb-2">
                  <Globe className="w-4 h-4 text-blue-400" />
                  <span className="text-[10px] text-slate-500 uppercase font-black">Total Active</span>
               </div>
-              <p className="text-3xl font-black text-white">{schemes.length}</p>
+              <p className="text-3xl font-black text-slate-900">{schemes.length}</p>
            </div>
-           <div className="glass-card p-6 border-white/5">
+           <div className="glass-card p-6 border-slate-200">
               <div className="flex items-center gap-3 mb-2">
                  <FileCheck className="w-4 h-4 text-green-400" />
                  <span className="text-[10px] text-slate-500 uppercase font-black">Karnataka State</span>
               </div>
-              <p className="text-3xl font-black text-white">{schemes.filter((s:any) => s.state === 'Karnataka').length}</p>
+              <p className="text-3xl font-black text-slate-900">{schemes.filter((s:any) => s.state === 'Karnataka').length}</p>
            </div>
-           <div className="glass-card p-6 border-white/5">
+           <div className="glass-card p-6 border-slate-200">
               <div className="flex items-center gap-3 mb-2">
                  <Settings className="w-4 h-4 text-purple-400" />
                  <span className="text-[10px] text-slate-500 uppercase font-black">Auto-Scraped</span>
               </div>
-              <p className="text-3xl font-black text-white">{schemes.filter((s:any) => s.scrapedAt).length}</p>
+              <p className="text-3xl font-black text-slate-900">{schemes.filter((s:any) => s.scrapedAt).length}</p>
            </div>
         </div>
 
         {/* Schemes Table */}
-        <div className="glass-card overflow-hidden border-white/5 bg-white/[0.02]">
+        <div className="glass-card overflow-hidden border-slate-200 bg-white">
            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                  <thead>
-                    <tr className="border-b border-white/10 bg-white/5">
-                       <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Scheme Name</th>
-                       <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ministry / Dept</th>
-                       <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">State</th>
-                       <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Eligibility</th>
-                       <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                    <tr className="border-b border-slate-200 bg-white">
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Scheme Name</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Ministry / Dept</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">State</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest">Eligibility</th>
+                       <th className="px-6 py-4 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Actions</th>
                     </tr>
                  </thead>
-                 <tbody className="divide-y divide-white/5">
+                 <tbody className="divide-y divide-slate-100">
                     {isLoading ? (
                        Array.from({ length: 5 }).map((_, i) => (
                           <tr key={i} className="animate-pulse">
-                             <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-full" /></td>
-                             <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-3/4" /></td>
-                             <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-1/2" /></td>
-                             <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-1/4" /></td>
-                             <td className="px-6 py-4"><div className="h-4 bg-white/5 rounded w-16 ml-auto" /></td>
+                             <td className="px-6 py-4"><div className="h-4 bg-white rounded w-full" /></td>
+                             <td className="px-6 py-4"><div className="h-4 bg-white rounded w-3/4" /></td>
+                             <td className="px-6 py-4"><div className="h-4 bg-white rounded w-1/2" /></td>
+                             <td className="px-6 py-4"><div className="h-4 bg-white rounded w-1/4" /></td>
+                             <td className="px-6 py-4"><div className="h-4 bg-white rounded w-16 ml-auto" /></td>
                           </tr>
                        ))
                     ) : (
                        schemes.map((scheme: any) => (
-                          <tr key={scheme.name} className="hover:bg-white/[0.03] transition-colors group">
+                          <tr key={scheme.name} className="hover:bg-slate-50 transition-colors group">
                              <td className="px-6 py-4">
-                                <p className="text-white font-bold text-sm">{scheme.name}</p>
+                                <p className="text-slate-900 font-bold text-sm">{scheme.name}</p>
                                 <div className="flex items-center gap-2 mt-1">
                                     <a href={scheme.sourceUrl} target="_blank" className="text-[10px] text-slate-500 hover:text-blue-400 flex items-center gap-1">
                                        Source link <ExternalLink className="w-2.5 h-2.5" />
                                     </a>
                                 </div>
                              </td>
-                             <td className="px-6 py-4 text-slate-400 text-xs font-medium">{scheme.ministry || '—'}</td>
+                             <td className="px-6 py-4 text-slate-500 text-xs font-medium">{scheme.ministry || '—'}</td>
                              <td className="px-6 py-4">
                                 <span className={`badge-${scheme.state ? 'blue' : 'slate'} text-[10px] font-bold`}>
                                    {scheme.state || 'Central'}
@@ -211,7 +211,7 @@ export default function AdminSchemesPage() {
                              </td>
                              <td className="px-6 py-4">
                                 <div className="flex flex-wrap gap-1">
-                                   {scheme.eligibility?.maxLandAcres && <span className="text-[9px] bg-white/5 px-1.5 py-0.5 rounded text-slate-400 border border-white/5">Max {scheme.eligibility.maxLandAcres} ac</span>}
+                                   {scheme.eligibility?.maxLandAcres && <span className="text-[9px] bg-white px-1.5 py-0.5 rounded text-slate-500 border border-slate-200">Max {scheme.eligibility.maxLandAcres} ac</span>}
                                    {scheme.eligibility?.isIncomeTaxPayer === false && <span className="text-[9px] bg-red-500/10 px-1.5 py-0.5 rounded text-red-400 border border-red-500/10">Non-Taxpayer</span>}
                                 </div>
                              </td>
@@ -249,14 +249,14 @@ export default function AdminSchemesPage() {
                 initial={{ opacity: 0, scale: 0.95, y: 20 }} 
                 animate={{ opacity: 1, scale: 1, y: 0 }} 
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="relative w-full max-w-2xl bg-[#0d1526] rounded-3xl border border-white/10 shadow-2xl p-8 overflow-y-auto max-h-[90vh]"
+                className="relative w-full max-w-2xl bg-white rounded-3xl border border-slate-200 shadow-2xl p-8 overflow-y-auto max-h-[90vh]"
               >
                  <div className="flex items-center justify-between mb-8">
                     <div>
-                       <h3 className="text-xl font-black text-white">{editingScheme ? 'Edit Scheme' : 'Add Strategic Scheme'}</h3>
+                       <h3 className="text-xl font-black text-slate-900">{editingScheme ? 'Edit Scheme' : 'Add Strategic Scheme'}</h3>
                        <p className="text-slate-500 text-xs">Configure eligibility rules for the matching engine</p>
                     </div>
-                    <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl hover:bg-white/5 text-slate-400">
+                    <button onClick={() => setIsModalOpen(false)} className="p-2 rounded-xl hover:bg-slate-50 text-slate-500">
                        <X className="w-6 h-6" />
                     </button>
                  </div>
@@ -319,8 +319,8 @@ export default function AdminSchemesPage() {
                        </div>
                     </div>
 
-                    <div className="p-6 bg-white/5 rounded-2xl border border-white/5 space-y-4">
-                       <h4 className="text-xs font-bold text-white flex items-center gap-2">
+                    <div className="p-6 bg-white rounded-2xl border border-slate-200 space-y-4">
+                       <h4 className="text-xs font-bold text-slate-900 flex items-center gap-2">
                           <Settings className="w-4 h-4 text-red-400" /> Eligibility Logic Settings
                        </h4>
                        <div className="grid grid-cols-2 gap-4">
@@ -333,7 +333,7 @@ export default function AdminSchemesPage() {
                                  ...formData, 
                                  eligibility: {...formData.eligibility, maxLandAcres: parseFloat(e.target.value)}
                                })}
-                               className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white w-full text-sm" 
+                               className="bg-black/40 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 w-full text-sm" 
                              />
                           </div>
                           <div>
@@ -344,7 +344,7 @@ export default function AdminSchemesPage() {
                                  ...formData, 
                                  eligibility: {...formData.eligibility, farmingType: e.target.value}
                                })}
-                               className="bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white w-full text-sm"
+                               className="bg-black/40 border border-slate-200 rounded-lg px-3 py-2 text-slate-900 w-full text-sm"
                              >
                                 <option value="any">Any Style</option>
                                 <option value="ORGANIC">Organic Only</option>
@@ -352,8 +352,8 @@ export default function AdminSchemesPage() {
                              </select>
                           </div>
                           
-                          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5">
-                             <span className="text-[11px] text-slate-300">Exclude Tax Payers?</span>
+                          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50">
+                             <span className="text-[11px] text-slate-600">Exclude Tax Payers?</span>
                              <input 
                                type="checkbox" 
                                checked={formData.eligibility.isIncomeTaxPayer === false}
@@ -364,8 +364,8 @@ export default function AdminSchemesPage() {
                                className="w-4 h-4 accent-red-500" 
                              />
                           </div>
-                          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5">
-                             <span className="text-[11px] text-slate-300">Requires Livestock?</span>
+                          <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50">
+                             <span className="text-[11px] text-slate-600">Requires Livestock?</span>
                              <input 
                                type="checkbox" 
                                checked={formData.eligibility.hasLivestock}

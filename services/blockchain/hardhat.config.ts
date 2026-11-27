@@ -1,5 +1,7 @@
 import type { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
+import { config as loadEnv } from 'dotenv';
+loadEnv({ path: '../../.env' });
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -12,6 +14,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: { chainId: 31337 },
+    localhost: { url: 'http://127.0.0.1:8545', chainId: 31337 },
     // Polygon Amoy Testnet
     amoy: {
       url: process.env.BLOCKCHAIN_RPC_URL ?? 'https://rpc-amoy.polygon.technology/',
@@ -19,7 +22,6 @@ const config: HardhatUserConfig = {
         ? [process.env.BLOCKCHAIN_ADMIN_PRIVATE_KEY]
         : [],
       chainId: 80002,
-      gasPrice: 30000000000, // 30 gwei to fit within 0.1 MATIC
     },
     // Polygon Mainnet
     polygon: {

@@ -37,8 +37,9 @@ enum PaymentMethod {
 model Order {
   id                String      @id @default(uuid())
   orderNumber       String      @unique
-  farmerId          String      // MongoDB ObjectId (cross-service reference)
-  supplierId        String      // MongoDB ObjectId
+  farmerId          String      // Auth user ID (cross-service reference)
+  supplierId        String      // Supplier profile ID (supplier service)
+  supplierUserId    String?     // Supplier's auth user ID (for access checks)
   
   // Items stored as JSON array
   items             Json        // OrderItem[]
@@ -74,6 +75,8 @@ model Order {
   
   @@index([farmerId])
   @@index([supplierId])
+  @@index([supplierUserId])
+  @@index([razorpayOrderId])
   @@index([orderStatus])
   @@index([paymentStatus])
   @@index([createdAt(sort: Desc)])
@@ -126,7 +129,8 @@ model Inquiry {
   id            String          @id @default(uuid())
   productId     String?         // Optional: query about a specific product
   farmerId      String
-  supplierId    String
+  supplierId    String          // supplier profile ID
+  supplierUserId String?        // supplier's auth user ID (access + notifications)
   subject       String
   body          String          @db.Text
   status        InquiryStatus   @default(OPEN)
@@ -138,6 +142,7 @@ model Inquiry {
 
   @@index([farmerId])
   @@index([supplierId])
+  @@index([supplierUserId, lastMessageAt(sort: Desc)])
   @@index([productId])
   @@index([status])
 }
@@ -160,7 +165,8 @@ model InquiryReply {
 model CommunityDeal {
   id              String   @id @default(uuid())
   productId       String
-  supplierId      String
+  supplierId      String   // supplier profile ID
+  supplierUserId  String?  // supplier's auth user ID (ownership checks)
   title           String
   description     String
   targetQuantity  Int      // Quantity required to unlock discount
@@ -177,7 +183,8 @@ model CommunityDeal {
 
   @@index([productId])
   @@index([supplierId])
-  @@index([isActive])
+  @@index([supplierUserId])
+  @@index([isActive, endsAt])
 }
 
 model DealParticipant {
@@ -185,6 +192,7 @@ model DealParticipant {
   dealId        String
   farmerId      String
   quantity      Int
+  shippingAddress Json?
   paymentStatus PaymentStatus  @default(PENDING)
   orderId       String?        // Link to final order
   
@@ -205,4 +213,19 @@ model WishlistItem {
 
   @@unique([farmerId, productId])
   @@index([farmerId])
+}
+
+// Durable event outbox (see @agrilink/platform). Holds events that could not
+// be delivered to Kafka yet, or that were written transactionally.
+model OutboxEvent {
+  id            String   @id @default(uuid())
+  topic         String
+  payload       String   @db.Text
+  attempts      Int      @default(0)
+  lastError     String?
+  nextAttemptAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([nextAttemptAt])
+  @@map("outbox_events")
 }

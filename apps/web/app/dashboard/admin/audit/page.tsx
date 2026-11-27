@@ -102,7 +102,7 @@ export default function AuditLogsPage() {
                            <Database className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Target / Payload</p>
+                           <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Target / details</p>
                            <p className="text-xs font-bold text-slate-900 truncate">{log.targetId || 'N/A'}</p>
                         </div>
                      </div>

@@ -11,10 +11,11 @@ import { productRoutes } from './routes/products.js';
 import { cartRoutes } from './routes/cart.js';
 import { orderRoutes } from './routes/orders.js';
 import { inquiryRoutes } from './routes/inquiries.js';
-import { reviewRoutes } from './routes/reviews.js';
-import { communityRoutes } from './routes/community.js';
+import { reviewRoutes, marketplaceAdminRoutes } from './routes/reviews.js';
+import { communityRoutes, settleExpiredDeals } from './routes/community.js';
 import { wishlistRoutes } from './routes/wishlist.js';
-import { startConsumer } from './services/kafka.js';
+import { startConsumer, disconnectKafka, initOutbox } from './services/kafka.js';
+import { registerMetrics } from '@agrilink/platform';
 import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
 import { makeAuthMiddleware, requireRole } from '@agrilink/auth-middleware';
@@ -23,6 +24,7 @@ import FastifySwaggerUI from '@fastify/swagger-ui';
 import FastifyRateLimit from '@fastify/rate-limit';
 
 import { PrismaClient } from '../prisma/client/index.js';
+import { redis } from './services/redis.js';
 
 const fastify = Fastify({
   logger: {
@@ -41,10 +43,16 @@ const prisma = new PrismaClient({
   }
 });
 fastify.decorate('prisma', prisma);
+initOutbox(prisma);
+registerMetrics(fastify, 'marketplace');
 
 fastify.setErrorHandler(async (error: any, _req, reply) => {
   fastify.log.error({ err: error }, 'Unhandled error');
 
+  // zod .parse() failures are client errors, not server errors
+  if (error?.name === 'ZodError') {
+    return reply.status(400).send({ success: false, error: 'Validation error', details: error.flatten?.() ?? error.issues });
+  }
   if (error.validation) {
     return reply.status(422).send({
       success: false,
@@ -73,8 +81,10 @@ await fastify.register(FastifyCors, {
 
 await fastify.register(FastifyRateLimit, {
   global: true,
-  max: 100,
+  max: Number(process.env.RATE_LIMIT_PER_MIN ?? 300),
   timeWindow: '1m',
+  redis,            // shared across replicas
+  skipOnError: true,
 });
 
 // Setup cookies & jwt
@@ -88,8 +98,8 @@ await fastify.register(FastifyJwt, {
 });
 
 // Setup auth middleware
-fastify.decorate('authenticate', makeAuthMiddleware(fastify));
-fastify.decorate('requireRole', (role: string) => requireRole(role));
+fastify.decorate('authenticate', makeAuthMiddleware(fastify, { redis }));
+fastify.decorate('requireRole', (...roles: Parameters<typeof requireRole>) => requireRole(...roles));
 
 // Swagger Documentation Engine
 await fastify.register(FastifySwagger, {
@@ -132,6 +142,7 @@ await fastify.register(async (app) => {
   await app.register(reviewRoutes, { prefix: '/reviews' });
   await app.register(communityRoutes, { prefix: '/community' });
   await app.register(wishlistRoutes, { prefix: '/wishlist' });
+  await app.register(marketplaceAdminRoutes, { prefix: '/admin' });
 }, { prefix: '/marketplace' });
 
 // Start Kafka
@@ -140,3 +151,18 @@ await startConsumer(prisma).catch(err => console.error('Kafka consumer failed', 
 const PORT = Number(process.env.MARKETPLACE_PORT ?? 4004);
 await fastify.listen({ port: PORT, host: '0.0.0.0' });
 fastify.log.info(`🛒 Marketplace service running on http://0.0.0.0:${PORT}`);
+
+// Close expired community deals every minute (idempotent across replicas)
+const dealTimer = setInterval(() => {
+  settleExpiredDeals(fastify).catch((err) => fastify.log.error({ err }, 'settleExpiredDeals failed'));
+}, 60_000);
+dealTimer.unref();
+
+const shutdown = async () => {
+  await fastify.close();
+  await disconnectKafka().catch(() => {});
+  await prisma.$disconnect();
+  process.exit(0);
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

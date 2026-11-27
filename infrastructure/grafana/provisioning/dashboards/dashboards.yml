@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: agrilink
+    folder: AgriLink
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

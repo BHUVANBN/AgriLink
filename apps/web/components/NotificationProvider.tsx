@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import useSWR from 'swr';
 import toast from 'react-hot-toast';
 import { Bell, ShieldAlert, ShoppingBag, Leaf, CheckCircle } from 'lucide-react';
 
@@ -17,22 +18,35 @@ interface Notification {
 const NotificationContext = createContext({
   notifications: [] as Notification[],
   clearNotifications: () => {},
+  unread: 0,
+  refreshUnread: () => {},
 });
+
+const UNREAD_URL = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'}/notification/me/unread-count`;
+const unreadFetcher = (url: string) =>
+  fetch(url, { credentials: 'include' }).then((r) => (r.ok ? r.json() : null)).then((d) => d?.data?.unread ?? 0);
 
 export const useNotifications = () => useContext(NotificationContext);
 
 export default function NotificationProvider({ children, userId }: { children: React.ReactNode; userId?: string }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [socket, setSocket] = useState<Socket | null>(null);
+  // Server-side unread count; refreshed on every live notification and every 2 min
+  const { data: unread = 0, mutate: refreshUnread } = useSWR(userId ? UNREAD_URL : null, unreadFetcher, {
+    refreshInterval: 120_000,
+  });
 
   useEffect(() => {
     if (!userId) return;
 
-    const NOTIFICATION_URL = process.env.NEXT_PUBLIC_NOTIFICATION_URL || 'http://localhost:4005';
-    
-    const newSocket = io(NOTIFICATION_URL, {
-      query: { userId },
-      reconnectionAttempts: 5,
+    // Goes through the API gateway like every other call; the server
+    // authenticates the socket from the HttpOnly access-token cookie.
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+
+    const newSocket = io(API_URL, {
+      path: '/notification/socket.io',
+      withCredentials: true,
+      reconnectionAttempts: 10,
       transports: ['websocket', 'polling'],
     });
 
@@ -43,6 +57,7 @@ export default function NotificationProvider({ children, userId }: { children: R
     newSocket.on('notification', (notif: Notification) => {
       console.log('[WS] New Notification Received:', notif);
       setNotifications(prev => [notif, ...prev].slice(0, 50));
+      refreshUnread();
       
       // Dynamic icons based on topic
       let Icon = Bell;
@@ -85,7 +100,7 @@ export default function NotificationProvider({ children, userId }: { children: R
   const clearNotifications = () => setNotifications([]);
 
   return (
-    <NotificationContext.Provider value={{ notifications, clearNotifications }}>
+    <NotificationContext.Provider value={{ notifications, clearNotifications, unread, refreshUnread: () => { refreshUnread(); } }}>
       {children}
     </NotificationContext.Provider>
   );

@@ -1,0 +1,27 @@
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+**/coverage
+**/__pycache__
+**/*.pyc
+**/.venv
+.git
+.env
+.env.*
+!.env.example
+**/*.log
+**/*.txt
+!**/requirements*.txt
+# Generated in the image instead
+services/*/prisma/client
+services/*/prisma/generated
+services/blockchain/artifacts
+services/blockchain/cache
+services/blockchain/typechain-types
+# Large offline datasets used only by import scripts
+services/ml_service/data
+services/ml_service/map_survey_*.html
+infrastructure/gcp-service-account.json
+tests
+tmp

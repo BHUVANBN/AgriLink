@@ -5,8 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Star, ShoppingCart, ArrowLeft, ShieldCheck, Truck, Store, Info, Package, CheckCircle2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { addToCart as apiAddToCart } from '@/lib/marketplace/cart';
+import ProductReviews from '@/components/ProductReviews';
+import AskSupplier from '@/components/AskSupplier';
+import toast from 'react-hot-toast';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
@@ -40,11 +43,15 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     setAdding(true);
     try {
-      await apiAddToCart(product.id, quantity);
+      const res = await apiAddToCart(product.id, quantity);
+      if (!res?.success) {
+        toast.error(res?.error ?? 'Could not add to cart');
+        return;
+      }
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (err) {
-      alert('Failed to add to cart');
+      toast.error('Network error — please try again');
     } finally {
       setAdding(false);
     }
@@ -122,7 +129,7 @@ export default function ProductDetailPage() {
               </button>
               <span className="w-12 text-center font-bold">{quantity}</span>
               <button
-                onClick={() => setQuantity(quantity + 1)}
+                onClick={() => setQuantity(Math.min(quantity + 1, product.stockQuantity ?? quantity + 1))}
                 className="w-12 h-12 flex items-center justify-center rounded-xl hover:bg-white text-text-dark transition-all"
               >
                 +
@@ -155,6 +162,8 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
+          <AskSupplier productId={product.id} productName={product.name} />
+
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-[#f8f7f4] rounded-2xl border border-[#eae6de] flex items-center gap-4">
               <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-brand-green shadow-sm">
@@ -185,13 +194,11 @@ export default function ProductDetailPage() {
                   <p className="text-[10px] font-black text-text-muted uppercase tracking-widest">Sold By</p>
                   <h4 className="font-serif font-bold text-lg text-text-dark">{product.supplier?.companyName || 'Verified Supplier'}</h4>
                </div>
-               <Link href={`/dashboard/farmer/marketplace/seller/${product.supplierId}`} className="ml-auto text-[10px] font-black uppercase tracking-widest text-brand-green hover:text-brand-orange transition-colors">
-                  View Store
-               </Link>
             </div>
           </div>
         </div>
       </div>
+      <ProductReviews productId={product.id} />
     </div>
   );
 }

@@ -1,445 +1,504 @@
 import './config.js';
 /**
  * Blockchain Service — Fastify (Port 4007)
- * BUG-012 fix: ABI matches the actual deployed contract
- * BUG-013 fix: NO permanent dev mode — real transactions by default
- * BUG-015 fix: Pinata for IPFS (Web3.Storage is deprecated)
+ *
+ * Gasless relayer for LandAgreementRegistry (v2) on Polygon Amoy (free testnet)
+ * or any EVM chain. Farmers never hold keys or pay gas: this service
+ * re-authenticates them (password), builds the agreement document from
+ * VERIFIED profile data, pins it to IPFS (Pinata free tier) and writes the
+ * record on-chain from the relayer wallet.
+ *
+ * Security properties:
+ *  - Callers can only create agreements where THEY are farmer 1.
+ *  - Names / survey numbers / land extent come from the farmer service
+ *    (KYC-verified), never from the browser.
+ *  - Both parties must be KYC-approved; the partner must have opted in.
+ *  - On-chain identity = keccak256(userId), computed by the contract.
+ *  - Writes are serialised through one queue so the relayer nonce never collides.
  */
 import Fastify from 'fastify';
 import FastifyCors from '@fastify/cors';
 import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
 import { makeAuthMiddleware, requireRole } from '@agrilink/auth-middleware';
-import FastifyMultipart from '@fastify/multipart';
-import { createPublicClient, createWalletClient, http, parseAbi, type Hex } from 'viem';
+import { createPublicClient, createWalletClient, http, decodeEventLog, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { polygon, polygonAmoy, hardhat } from 'viem/chains';
 import PinataSDK from '@pinata/sdk';
 import { Readable } from 'stream';
+import { createHash } from 'crypto';
 import { z } from 'zod';
+import { Kafka } from 'kafkajs';
+import { Redis } from 'ioredis';
+import { landAgreementRegistryAbi as abi } from './abi.js';
+import { registerMetrics, gauge } from '@agrilink/platform';
 
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ logger: true, trustProxy: true });
 
 // ── Config ────────────────────────────────────────────────────
 
-const IS_LOCAL = process.env.BLOCKCHAIN_NETWORK === 'localhost';
-const IS_MAINNET = process.env.BLOCKCHAIN_NETWORK === 'polygon';
-const CHAIN = IS_LOCAL ? hardhat : IS_MAINNET ? polygon : polygonAmoy;
-const RPC_URL = process.env.BLOCKCHAIN_RPC_URL!;
-const PRIVATE_KEY = process.env.BLOCKCHAIN_ADMIN_PRIVATE_KEY as Hex;
-const CONTRACT_ADDRESS = process.env.BLOCKCHAIN_CONTRACT_ADDRESS as Hex | undefined;
-const PINATA_JWT = process.env.PINATA_JWT!;
+const NETWORK = process.env.BLOCKCHAIN_NETWORK ?? 'amoy';
+const CHAIN = NETWORK === 'localhost' ? hardhat : NETWORK === 'polygon' ? polygon : polygonAmoy;
+const RPC_URL = process.env.BLOCKCHAIN_RPC_URL ?? (NETWORK === 'localhost' ? 'http://127.0.0.1:8545' : 'https://rpc-amoy.polygon.technology');
+const PRIVATE_KEY = process.env.BLOCKCHAIN_ADMIN_PRIVATE_KEY as Hex | undefined;
+const CONTRACT_ADDRESS = (process.env.BLOCKCHAIN_CONTRACT_ADDRESS || undefined) as Hex | undefined;
+const PINATA_JWT = process.env.PINATA_JWT;
+const PINATA_GATEWAY = process.env.PINATA_GATEWAY ?? 'https://gateway.pinata.cloud';
+const AUTH_URL = process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
+const FARMER_URL = process.env.FARMER_SERVICE_URL ?? 'http://localhost:4002';
+const INTERNAL_KEY = process.env.INTERNAL_API_KEY ?? '';
 
-if (!RPC_URL || !PRIVATE_KEY || !PINATA_JWT) {
-  throw new Error('BLOCKCHAIN_RPC_URL, BLOCKCHAIN_ADMIN_PRIVATE_KEY, and PINATA_JWT are required secrets');
+if (!PRIVATE_KEY || !/^0x[0-9a-fA-F]{64}$/.test(PRIVATE_KEY)) {
+  throw new Error('BLOCKCHAIN_ADMIN_PRIVATE_KEY must be a 0x-prefixed 32-byte hex key');
 }
 
-// ── Viem Clients ──────────────────────────────────────────────
+const STATUS = ['Draft', 'PendingSignature', 'Active', 'Expired', 'Revoked'] as const;
 
-const publicClient = createPublicClient({
-  chain: CHAIN,
-  transport: http(RPC_URL),
-});
+// ── Clients ───────────────────────────────────────────────────
 
+const publicClient = createPublicClient({ chain: CHAIN, transport: http(RPC_URL, { retryCount: 3, timeout: 20_000 }) });
 const account = privateKeyToAccount(PRIVATE_KEY);
+const walletClient = createWalletClient({ account, chain: CHAIN, transport: http(RPC_URL, { retryCount: 3, timeout: 20_000 }) });
+const pinata = PINATA_JWT ? new PinataSDK({ pinataJWTKey: PINATA_JWT }) : null;
 
-const walletClient = createWalletClient({
-  account,
-  chain: CHAIN,
-  transport: http(RPC_URL),
-});
+const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', { maxRetriesPerRequest: 2 });
+redis.on('error', () => {});
 
-// ── Contract ABI (matches LandAgreementRegistry.sol exactly) ──
+const kafka = new Kafka({ clientId: 'blockchain-service', brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',') });
+const producer = kafka.producer();
+let kafkaReady = false;
+producer.connect().then(() => { kafkaReady = true; }).catch((err) => fastify.log.warn({ err: err.message }, '[kafka] not connected (notifications disabled)'));
 
-const contractABI = parseAbi([
-  // Write functions
-  'function createAgreement(string farmer1UserId, string farmer1Name, address farmer1Address, string farmer1Survey, uint32 farmer1Centiacres, uint8 farmer1SharePercent, string farmer2UserId, string farmer2Name, address farmer2Address, string farmer2Survey, uint32 farmer2Centiacres, uint8 farmer2SharePercent, uint64 startTs, uint64 endTs, string documentCid) returns (bytes32)',
-  'function signAgreement(bytes32 agreementId, address farmerAddress, string signerName)',
-  'function revokeAgreement(bytes32 agreementId)',
-  'function updateDocument(bytes32 agreementId, string documentCid, string metadataCid)',
-  // Read functions
-  'function getAgreement(bytes32 agreementId) view returns (bytes32, address, string, string, uint32, uint8, string, string, uint32, uint8, string, uint8, uint256, uint256)',
-  'function getUserAgreements(address user) view returns (bytes32[])',
-  'function getAgreementStatus(bytes32 agreementId) view returns (uint8)',
-  'function hasSignedAgreement(bytes32 agreementId, address user) view returns (bool)',
-  'function verifyDocumentCid(bytes32 agreementId, string cid) view returns (bool)',
-  'function totalAgreements() view returns (uint256)',
-  // Events
-  'event AgreementCreated(bytes32 indexed agreementId, address indexed creator, string farmer1UserId, string farmer2UserId, uint256 createdAt)',
-  'event AgreementSigned(bytes32 indexed agreementId, address indexed signer, string signerRole, uint8 newStatus)',
-]);
+async function publish(topic: string, data: Record<string, unknown>) {
+  if (!kafkaReady) return;
+  await producer.send({
+    topic,
+    messages: [{ value: JSON.stringify({ topic, source: 'blockchain-service', timestamp: new Date().toISOString(), data }) }],
+  }).catch(() => {});
+}
 
-// ── Pinata IPFS Client ────────────────────────────────────────
+// ── Relayer write queue (one tx at a time → no nonce races) ──
 
-const pinata = new PinataSDK({ pinataJWTKey: PINATA_JWT });
+let queue: Promise<unknown> = Promise.resolve();
+function enqueue<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queue.then(fn, fn);
+  queue = run.catch(() => {});
+  return run;
+}
 
-async function uploadToPinata(
-  buffer: Buffer,
-  filename: string,
-  metadata: Record<string, string>
-): Promise<string> {
-  const stream = Readable.from(buffer);
-  (stream as any).path = filename;
+async function writeAndWait(functionName: 'createAgreement' | 'signAgreement' | 'revokeAgreement', args: readonly unknown[]) {
+  return enqueue(async () => {
+    const { request } = await publicClient.simulateContract({
+      address: CONTRACT_ADDRESS!, abi, functionName, args: args as any, account,
+    });
+    const hash = await walletClient.writeContract(request);
+    const receipt = await publicClient.waitForTransactionReceipt({ hash, timeout: 120_000 });
+    if (receipt.status !== 'success') throw new Error('Transaction reverted');
+    return receipt;
+  });
+}
+
+/** Turn viem/contract errors into a short message (custom error name if any). */
+function chainError(err: any): string {
+  const name = err?.cause?.data?.errorName ?? err?.data?.errorName ?? err?.cause?.cause?.data?.errorName;
+  if (name) return `Contract rejected: ${name}`;
+  return err?.shortMessage ?? 'Blockchain transaction failed';
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+
+function bearer(req: any): string | undefined {
+  if (req.headers.authorization) return req.headers.authorization;
+  const c = req.cookies?.agrilink_access;
+  return c ? `Bearer ${c}` : undefined;
+}
+
+async function verifyPassword(req: any, password: string): Promise<string | null> {
+  const token = bearer(req);
+  if (!token) return 'Not authenticated';
+  const res = await fetch(`${AUTH_URL}/auth/verify-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: token },
+    body: JSON.stringify({ password }),
+    signal: AbortSignal.timeout(10_000),
+  }).catch(() => null);
+  if (!res) return 'Auth service unavailable';
+  if (res.ok) return null;
+  const json: any = await res.json().catch(() => ({}));
+  return json.error ?? 'Authentication failed';
+}
+
+interface FarmerProfile {
+  userId: string;
+  nameDisplay?: string | null;
+  nameEnglish?: string | null;
+  surveyNumber?: string | null;
+  hissaNumber?: string | null;
+  village?: string | null;
+  taluk?: string | null;
+  district?: string | null;
+  totalExtentAcres?: number | null;
+  kycStatus: string;
+  readyToIntegrate: boolean;
+}
+
+async function getProfiles(ids: string[]): Promise<Map<string, FarmerProfile>> {
+  const res = await fetch(`${FARMER_URL}/farmer/internal/profiles?ids=${ids.map(encodeURIComponent).join(',')}`, {
+    headers: { 'x-internal-key': INTERNAL_KEY },
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!res.ok) throw new Error(`farmer service responded ${res.status}`);
+  const json = (await res.json()) as { data: FarmerProfile[] };
+  return new Map(json.data.map((p) => [p.userId, p]));
+}
+
+const displayName = (p: FarmerProfile) => p.nameEnglish || p.nameDisplay || 'Farmer';
+const toCentiacres = (acres?: number | null) => Math.round((acres ?? 0) * 100);
+
+function buildAgreementDocument(p1: FarmerProfile, p2: FarmerProfile, terms: { share1: number; start: number; end: number }) {
+  const fmt = (ts: number) => new Date(ts * 1000).toISOString().slice(0, 10);
+  const land = (p: FarmerProfile) =>
+    `Survey No. ${p.surveyNumber}${p.hissaNumber ? `/${p.hissaNumber}` : ''}, ${[p.village, p.taluk, p.district].filter(Boolean).join(', ')} — ${(p.totalExtentAcres ?? 0).toFixed(2)} acres`;
+  return [
+    'LAND INTEGRATION & PROFIT SHARING AGREEMENT',
+    '',
+    `Generated by AgriLink on ${new Date().toISOString()}`,
+    '',
+    'PARTY 1',
+    `  Name: ${displayName(p1)}`,
+    `  AgriLink ID: ${p1.userId}`,
+    `  Land: ${land(p1)}`,
+    '',
+    'PARTY 2',
+    `  Name: ${displayName(p2)}`,
+    `  AgriLink ID: ${p2.userId}`,
+    `  Land: ${land(p2)}`,
+    '',
+    'TERMS',
+    `  1. Period: ${fmt(terms.start)} to ${fmt(terms.end)}.`,
+    `  2. Profit share: Party 1 ${terms.share1}% / Party 2 ${100 - terms.share1}% of net proceeds.`,
+    '  3. Crop selection and inputs are decided jointly.',
+    '  4. Either party may revoke before expiry; revocation is recorded on-chain.',
+    '',
+    'VERIFICATION',
+    '  This document is pinned to IPFS. Its content identifier (CID) is stored in the',
+    '  LandAgreementRegistry smart contract on Polygon together with both parties\' signatures.',
+    '  Party details above are taken from KYC-verified Aadhaar and RTC records.',
+    '',
+  ].join('\n');
+}
+
+async function pinDocument(text: string, agreementKey: string): Promise<string> {
+  if (!pinata) throw Object.assign(new Error('IPFS (PINATA_JWT) is not configured'), { statusCode: 503 });
+  const stream = Readable.from(Buffer.from(text, 'utf8'));
+  (stream as any).path = `agrilink-agreement-${agreementKey}.txt`;
   const result = await pinata.pinFileToIPFS(stream, {
-    pinataMetadata: { name: filename, keyvalues: metadata as any },
+    pinataMetadata: { name: `agrilink-agreement-${agreementKey}`, keyvalues: { platform: 'agrilink' } as any },
   });
   return result.IpfsHash;
 }
 
+function shapeAgreement(v: any) {
+  const signatureCount = (v.farmer1SignedAt > 0n ? 1 : 0) + (v.farmer2SignedAt > 0n ? 1 : 0);
+  return {
+    agreementId: v.agreementId,
+    relayer: v.relayer,
+    farmer1UserId: v.farmer1UserId,
+    farmer1Name: v.farmer1Name,
+    farmer1Survey: v.farmer1Survey,
+    farmer1Centiacres: Number(v.farmer1Centiacres),
+    farmer1SharePercent: Number(v.farmer1SharePercent),
+    farmer1SignedAt: Number(v.farmer1SignedAt),
+    farmer2UserId: v.farmer2UserId,
+    farmer2Name: v.farmer2Name,
+    farmer2Survey: v.farmer2Survey,
+    farmer2Centiacres: Number(v.farmer2Centiacres),
+    farmer2SharePercent: Number(v.farmer2SharePercent),
+    farmer2SignedAt: Number(v.farmer2SignedAt),
+    startTimestamp: Number(v.startTimestamp),
+    endTimestamp: Number(v.endTimestamp),
+    documentCid: v.documentCid,
+    documentUrl: `${PINATA_GATEWAY}/ipfs/${v.documentCid}`,
+    status: Number(v.status),
+    statusLabel: STATUS[Number(v.status)] ?? 'Unknown',
+    signatureCount,
+    createdAt: Number(v.createdAt),
+    updatedAt: Number(v.updatedAt),
+  };
+}
+
+async function readAgreement(id: Hex) {
+  const v = await publicClient.readContract({ address: CONTRACT_ADDRESS!, abi, functionName: 'getAgreement', args: [id] });
+  return shapeAgreement(v);
+}
+
 // ── Schemas ───────────────────────────────────────────────────
 
-const CreateAgreementSchema = z.object({
-  farmer1UserId: z.string(),
-  farmer1Name: z.string(),
-  farmer1Address: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'Invalid ETH address'),
-  farmer1SurveyNumber: z.string(),
-  farmer1Centiacres: z.number().int().positive(),
-  farmer1SharePercent: z.number().int().min(1).max(99),
-  farmer2UserId: z.string(),
-  farmer2Name: z.string(),
-  farmer2Address: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'Invalid ETH address'),
-  farmer2SurveyNumber: z.string(),
-  farmer2Centiacres: z.number().int().positive(),
-  farmer2SharePercent: z.number().int().min(1).max(99),
-  startTimestamp: z.number().int(),
-  endTimestamp: z.number().int(),
-  documentCid: z.string().min(40, 'Must be a valid IPFS CID'),
-});
+const AgreementId = z.string().regex(/^0x[0-9a-fA-F]{64}$/, 'Invalid agreement id');
 
-// ── Routes ────────────────────────────────────────────────────
+const CreateAgreementSchema = z.object({
+  farmer2UserId: z.string().min(1),
+  farmer1SharePercent: z.number().int().min(1).max(99),
+  durationMonths: z.number().int().min(1).max(120).optional(),
+  startTimestamp: z.number().int().optional(),
+  endTimestamp: z.number().int().optional(),
+  password: z.string().min(1),
+}).passthrough();
+
+// ── Server ────────────────────────────────────────────────────
 
 async function start() {
-  await fastify.register(FastifyCors, { 
+  await fastify.register(FastifyCors, {
     origin: (process.env.CORS_ORIGINS ?? 'http://localhost:3000').split(','),
     credentials: true,
   });
+  await fastify.register(FastifyCookie, { hook: 'onRequest' });
+  await fastify.register(FastifyJwt, { secret: process.env.JWT_ACCESS_SECRET! });
+  fastify.decorate('authenticate', makeAuthMiddleware(fastify, { redis }));
+  const auth = (fastify as any).authenticate;
+  registerMetrics(fastify, 'blockchain');
 
-  // JWT & Cookie for Auth Middleware
-  await fastify.register(FastifyCookie, {
-    secret: process.env.COOKIE_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'cookie-secret-dev',
-    hook: 'onRequest',
-  });
+  // Relayer wallet balance — alert before it runs out of gas
+  const balanceGauge = gauge('relayer_balance_native', 'Relayer wallet balance (POL / ETH)');
+  const refreshBalance = async () => {
+    try {
+      balanceGauge.set(Number(await publicClient.getBalance({ address: account.address })) / 1e18);
+    } catch { /* RPC hiccup */ }
+  };
+  void refreshBalance();
+  setInterval(refreshBalance, 60_000).unref();
 
-  await fastify.register(FastifyJwt, {
-    secret: process.env.JWT_ACCESS_SECRET!,
-  });
-
-  // Register standard auth decorator
-fastify.decorate('authenticate', makeAuthMiddleware(fastify));
-
-await fastify.register(FastifyMultipart, {
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB IPFS uploads
-});
-
-fastify.setErrorHandler(async (error: any, _req, reply) => {
-  fastify.log.error({ err: error }, 'Unhandled error');
-
-  if (error.validation) {
-    return reply.status(422).send({
+  fastify.setErrorHandler(async (error: any, _req, reply) => {
+    fastify.log.error({ err: error }, 'Unhandled error');
+    return reply.status(error.statusCode ?? 500).send({
       success: false,
-      error: 'Validation error',
-      details: error.validation,
+      error: process.env.NODE_ENV === 'production' && !error.statusCode ? 'Internal server error' : error.message,
     });
-  }
-  return reply.status(error.statusCode ?? 500).send({
-    success: false,
-    error: process.env.NODE_ENV === 'production'
-      ? 'Internal server error'
-      : error.message,
   });
-});
 
-  fastify.get('/blockchain/health', async () => ({
-    status: 'ok',
-    service: 'blockchain',
-    network: CHAIN.name,
-    contractDeployed: !!CONTRACT_ADDRESS,
-    adminAddress: account.address,
-  }));
+  const requireContract = async (_req: any, reply: any) => {
+    if (!CONTRACT_ADDRESS) return reply.status(503).send({ success: false, error: 'Contract not deployed yet' });
+  };
 
-  // POST /blockchain/agreements — Create agreement on-chain (Relayed via Admin)
-  fastify.post(
-    '/blockchain/agreements',
-    { preHandler: [(fastify as any).authenticate, requireRole('admin', 'farmer')] },
-    async (req, reply) => {
-    if (!CONTRACT_ADDRESS) {
-      return reply.status(503).send({ success: false, error: 'Contract not deployed yet' });
+  fastify.get('/blockchain/health', async () => {
+    let balance: string | undefined;
+    try {
+      balance = (Number(await publicClient.getBalance({ address: account.address })) / 1e18).toFixed(4);
+    } catch { /* RPC down */ }
+    return {
+      status: 'ok',
+      service: 'blockchain',
+      network: CHAIN.name,
+      contractDeployed: !!CONTRACT_ADDRESS,
+      relayer: account.address,
+      relayerBalance: balance,   // top up from the free Amoy faucet when low
+      ipfs: !!pinata,
+    };
+  });
+
+  // POST /blockchain/agreements — caller proposes an agreement with a partner
+  fastify.post('/blockchain/agreements', {
+    preHandler: [auth, requireRole('farmer', 'admin'), requireContract],
+    config: { rateLimit: { max: 5, timeWindow: '1m' } },
+  }, async (req: any, reply) => {
+    const parsed = CreateAgreementSchema.safeParse(req.body);
+    if (!parsed.success) return reply.status(400).send({ success: false, error: parsed.error.flatten() });
+    const d = parsed.data;
+
+    // Admins may file on behalf of a farmer; farmers only for themselves
+    const farmer1UserId = req.user.role === 'admin' && typeof (d as any).farmer1UserId === 'string'
+      ? (d as any).farmer1UserId
+      : req.user.sub;
+    if (farmer1UserId === d.farmer2UserId) {
+      return reply.status(400).send({ success: false, error: 'Cannot create an agreement with yourself' });
     }
 
-    const result = CreateAgreementSchema.safeParse(req.body);
-    if (!result.success) {
-      return reply.status(400).send({ success: false, error: result.error.flatten() });
+    const pwErr = await verifyPassword(req, d.password);
+    if (pwErr) return reply.status(401).send({ success: false, error: pwErr });
+
+    let profiles: Map<string, FarmerProfile>;
+    try {
+      profiles = await getProfiles([farmer1UserId, d.farmer2UserId]);
+    } catch (err: any) {
+      fastify.log.error({ err }, 'farmer service lookup failed');
+      return reply.status(503).send({ success: false, error: 'Farmer service unavailable' });
+    }
+    const p1 = profiles.get(farmer1UserId);
+    const p2 = profiles.get(d.farmer2UserId);
+    if (!p1 || !p2) return reply.status(404).send({ success: false, error: 'Farmer profile not found' });
+    if (p1.kycStatus !== 'approved' || p2.kycStatus !== 'approved') {
+      return reply.status(403).send({ success: false, error: 'Both farmers must have approved KYC' });
+    }
+    if (!p2.readyToIntegrate) {
+      return reply.status(403).send({ success: false, error: 'Partner is not accepting integration proposals' });
+    }
+    if (!p1.surveyNumber || !p2.surveyNumber || toCentiacres(p1.totalExtentAcres) <= 0 || toCentiacres(p2.totalExtentAcres) <= 0) {
+      return reply.status(400).send({ success: false, error: 'Both farmers need verified land records (survey number and extent)' });
     }
 
-    const { password, ...d } = req.body as any;
-    if (!password) {
-      return reply.status(400).send({ success: false, error: 'Password is required' });
-    }
+    const now = Math.floor(Date.now() / 1000);
+    const start = Math.max(d.startTimestamp ?? now, now - 3600);
+    const end = d.durationMonths ? start + d.durationMonths * 30 * 86400 : (d.endTimestamp ?? 0);
+    if (end <= start) return reply.status(400).send({ success: false, error: 'Invalid agreement period' });
+
+    const terms = { share1: d.farmer1SharePercent, start, end };
+    const docText = buildAgreementDocument(p1, p2, terms);
+    const docHash = createHash('sha256').update(docText).digest('hex');
 
     try {
-      // 1. Verify password with Auth Service
-      const AUTH_URL = process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
-      
-      // Extract token from header or cookie
-      const cookieToken = (req as any).cookies?.agrilink_access;
-      const headerToken = req.headers.authorization;
-      const token = headerToken ?? (cookieToken ? `Bearer ${cookieToken}` : undefined);
+      const cid = await pinDocument(docText, docHash.slice(0, 16));
 
-      const authRes = await fetch(`${AUTH_URL}/auth/verify-password`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': token!
-        },
-        body: JSON.stringify({ password }),
-      });
+      const createReceipt = await writeAndWait('createAgreement', [{
+        farmer1UserId: p1.userId,
+        farmer1Name: displayName(p1),
+        farmer1Survey: p1.surveyNumber,
+        farmer1Centiacres: toCentiacres(p1.totalExtentAcres),
+        farmer1SharePercent: terms.share1,
+        farmer2UserId: p2.userId,
+        farmer2Name: displayName(p2),
+        farmer2Survey: p2.surveyNumber,
+        farmer2Centiacres: toCentiacres(p2.totalExtentAcres),
+        farmer2SharePercent: 100 - terms.share1,
+        startTimestamp: BigInt(start),
+        endTimestamp: BigInt(end),
+        documentCid: cid,
+      }]);
 
-      if (!authRes.ok) {
-        const authJson: any = await authRes.json();
-        return reply.status(401).send({ success: false, error: authJson.error ?? 'Authentication failed' });
+      let agreementId: Hex | undefined;
+      for (const log of createReceipt.logs) {
+        try {
+          const ev = decodeEventLog({ abi, data: log.data, topics: log.topics });
+          if (ev.eventName === 'AgreementCreated') { agreementId = (ev.args as any).agreementId; break; }
+        } catch { /* other contract's log */ }
       }
+      if (!agreementId) throw new Error('AgreementCreated event not found');
 
-      // 2. REAL transaction — Relayed via system admin account to pay for GAS
-      const txHash = await walletClient.writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: contractABI,
-        functionName: 'createAgreement',
-        args: [
-          d.farmer1UserId, d.farmer1Name, d.farmer1Address as Hex, d.farmer1SurveyNumber,
-          d.farmer1Centiacres, d.farmer1SharePercent,
-          d.farmer2UserId, d.farmer2Name, d.farmer2Address as Hex, d.farmer2SurveyNumber,
-          d.farmer2Centiacres, d.farmer2SharePercent,
-          BigInt(d.startTimestamp), BigInt(d.endTimestamp), d.documentCid,
-        ],
+      // The proposer has just re-authenticated → record their signature too
+      await writeAndWait('signAgreement', [agreementId, p1.userId]);
+
+      await publish('land.agreement.created', {
+        userId: p2.userId,
+        agreementId,
+        proposerName: displayName(p1),
+        subject: 'New land integration proposal',
+        body: `${displayName(p1)} proposed a land integration agreement. Review and sign it in AgriLink.`,
       });
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      const agreementId = receipt.logs[0]?.topics[1];
-
-      // Automatically submit Farmer 1's signature right after creation
-      if (agreementId) {
-        const signTx = await walletClient.writeContract({
-          address: CONTRACT_ADDRESS,
-          abi: contractABI,
-          functionName: 'signAgreement',
-          args: [agreementId as Hex, d.farmer1Address as Hex, d.farmer1Name],
-        });
-        await publicClient.waitForTransactionReceipt({ hash: signTx });
-      }
 
       return reply.status(201).send({
         success: true,
         data: {
-          txHash,
           agreementId,
-          blockNumber: receipt.blockNumber.toString(),
+          txHash: createReceipt.transactionHash,
+          blockNumber: createReceipt.blockNumber.toString(),
           network: CHAIN.name,
+          documentCid: cid,
+          documentUrl: `${PINATA_GATEWAY}/ipfs/${cid}`,
         },
       });
     } catch (err: any) {
       fastify.log.error({ err }, 'createAgreement failed');
-      return reply.status(500).send({ success: false, error: err.message });
+      return reply.status(err.statusCode ?? 502).send({ success: false, error: err.statusCode ? err.message : chainError(err) });
     }
   });
 
-  // POST /blockchain/agreements/:id/sign (Farmer or admin)
-  fastify.post(
-    '/blockchain/agreements/:id/sign',
-    { preHandler: [(fastify as any).authenticate, requireRole('admin', 'farmer')] },
-    async (req, reply) => {
-    if (!CONTRACT_ADDRESS) {
-      return reply.status(503).send({ success: false, error: 'Contract not deployed' });
-    }
+  // POST /blockchain/agreements/:id/sign — counter-sign as the logged-in farmer
+  fastify.post('/blockchain/agreements/:id/sign', {
+    preHandler: [auth, requireRole('farmer'), requireContract],
+    config: { rateLimit: { max: 10, timeWindow: '1m' } },
+  }, async (req: any, reply) => {
+    const id = AgreementId.safeParse(req.params.id);
+    if (!id.success) return reply.status(400).send({ success: false, error: 'Invalid agreement id' });
+    const { password } = (req.body ?? {}) as { password?: string };
+    if (!password) return reply.status(400).send({ success: false, error: 'Password is required for signing' });
 
-    const { id } = req.params as { id: string };
-    const { signerName, password } = req.body as { signerName: string; password?: string };
-
-    if (!password) {
-      return reply.status(400).send({ success: false, error: 'Password is required for signing' });
-    }
+    const pwErr = await verifyPassword(req, password);
+    if (pwErr) return reply.status(401).send({ success: false, error: pwErr });
 
     try {
-      // 1. Verify password with Auth Service (cookie-aware token extraction)
-      const AUTH_URL = process.env.AUTH_SERVICE_URL ?? 'http://localhost:4001';
-      const cookieToken = (req as any).cookies?.agrilink_access;
-      const headerToken = req.headers.authorization;
-      const token = headerToken ?? (cookieToken ? `Bearer ${cookieToken}` : undefined);
-
-      if (!token) {
-        return reply.status(401).send({ success: false, error: 'No auth token found' });
-      }
-
-      const authRes = await fetch(`${AUTH_URL}/auth/verify-password`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': token
-        },
-        body: JSON.stringify({ password }),
+      const receipt = await writeAndWait('signAgreement', [id.data as Hex, req.user.sub]);
+      const agreement = await readAgreement(id.data as Hex);
+      const other = agreement.farmer1UserId === req.user.sub ? agreement.farmer2UserId : agreement.farmer1UserId;
+      await publish('land.agreement.signed', {
+        userId: other,
+        agreementId: id.data,
+        subject: agreement.status === 2 ? 'Land agreement is now active' : 'Land agreement signed',
+        body: agreement.status === 2
+          ? 'Both parties have signed. Your land integration agreement is active on-chain.'
+          : 'Your partner signed the land integration agreement.',
       });
-
-      if (!authRes.ok) {
-        const authJson: any = await authRes.json();
-        return reply.status(401).send({ success: false, error: authJson.error ?? 'Authentication failed' });
-      }
-
-      // Compute the deterministic wallet address for the logged-in user
-      const userId = (req as any).user.sub;
-      if (!userId) {
-        return reply.status(401).send({ success: false, error: 'User ID missing in token payload' });
-      }
-      const farmerAddress = '0x' + Buffer.from(userId).toString('hex').padEnd(40, '0').slice(0, 40);
-
-      // 2. Perform blockchain transaction (proxy sign)
-      const txHash = await walletClient.writeContract({
-        address: CONTRACT_ADDRESS,
-        abi: contractABI,
-        functionName: 'signAgreement',
-        args: [id as Hex, farmerAddress as Hex, signerName],
-      });
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-      return reply.send({ success: true, data: { txHash, blockNumber: receipt.blockNumber.toString() } });
-    } catch (err: any) {
-      fastify.log.error({ err, id, signerName }, 'signAgreement failed');
-      return reply.status(500).send({ success: false, error: err.message });
-    }
-  });
-
-  // GET /blockchain/agreements/user/:address (Admin, or the user themselves)
-  fastify.get(
-    '/blockchain/agreements/user/:address',
-    { preHandler: [(fastify as any).authenticate] },
-    async (req, reply) => {
-    if (!CONTRACT_ADDRESS) {
-      return reply.status(503).send({ success: false, error: 'Contract not deployed' });
-    }
-
-    const { address } = req.params as { address: string };
-    try {
-      const ids = await publicClient.readContract({
-        address: CONTRACT_ADDRESS,
-        abi: contractABI,
-        functionName: 'getUserAgreements',
-        args: [address as Hex],
-      }) as unknown as string[];
-      
-      const agreements: any[] = [];
-      for (const id of ids) {
-        try {
-          const data = await publicClient.readContract({
-            address: CONTRACT_ADDRESS,
-            abi: contractABI,
-            functionName: 'getAgreement',
-            args: [id as Hex],
-          }) as unknown as any[];
-          agreements.push({
-            agreementId: data[0],
-            creator: data[1],
-            farmer1Name: data[2],
-            farmer1UserId: data[3],
-            farmer1Centiacres: Number(data[4]),
-            farmer1SharePercent: data[5],
-            farmer2Name: data[6],
-            farmer2UserId: data[7],
-            farmer2Centiacres: Number(data[8]),
-            farmer2SharePercent: data[9],
-            documentCid: data[10],
-            status: data[11],
-            signatureCount: Number(data[12]),
-            createdAt: Number(data[13]),
-          });
-        } catch(e) {}
-      }
-      return reply.send({ success: true, data: { agreements } });
-    } catch (err: any) {
-      return reply.status(500).send({ success: false, error: err.message });
-    }
-  });
-
-  // GET /blockchain/agreements/:id
-  fastify.get(
-    '/blockchain/agreements/:id', 
-    { preHandler: [(fastify as any).authenticate] }, 
-    async (req, reply) => {
-    if (!CONTRACT_ADDRESS) {
-      return reply.status(513).send({ success: false, error: 'Contract not deployed' });
-    }
-
-    const { id } = req.params as { id: string };
-    try {
-      const data = await publicClient.readContract({
-        address: CONTRACT_ADDRESS,
-        abi: contractABI,
-        functionName: 'getAgreement',
-        args: [id as Hex],
-      }) as unknown as any[];
-
       return reply.send({
         success: true,
-        data: {
-          agreementId: data[0],
-          creator: data[1],
-          farmer1Name: data[2],
-          farmer1UserId: data[3],
-          farmer1Centiacres: Number(data[4]),
-          farmer1SharePercent: data[5],
-          farmer2Name: data[6],
-          farmer2UserId: data[7],
-          farmer2Centiacres: Number(data[8]),
-          farmer2SharePercent: data[9],
-          documentCid: data[10],
-          status: data[11],
-          signatureCount: Number(data[12]),
-          createdAt: Number(data[13]),
-        },
+        data: { txHash: receipt.transactionHash, blockNumber: receipt.blockNumber.toString(), status: agreement.status },
       });
     } catch (err: any) {
-      return reply.status(500).send({ success: false, error: err.message });
+      fastify.log.error({ err }, 'signAgreement failed');
+      return reply.status(400).send({ success: false, error: chainError(err) });
     }
   });
 
-  // POST /blockchain/ipfs/upload (Admin or Farmer)
-  fastify.post(
-    '/blockchain/ipfs/upload',
-    { preHandler: [(fastify as any).authenticate, requireRole('admin', 'farmer')] },
-    async (req, reply) => {
-    // Expects multipart form data with 'file' field
-    const data = await (req as any).file();
-    if (!data) {
-      return reply.status(400).send({ success: false, error: 'No file uploaded' });
-    }
+  // POST /blockchain/agreements/:id/revoke — either party
+  fastify.post('/blockchain/agreements/:id/revoke', {
+    preHandler: [auth, requireRole('farmer'), requireContract],
+    config: { rateLimit: { max: 5, timeWindow: '1m' } },
+  }, async (req: any, reply) => {
+    const id = AgreementId.safeParse(req.params.id);
+    if (!id.success) return reply.status(400).send({ success: false, error: 'Invalid agreement id' });
+    const { password, reason } = (req.body ?? {}) as { password?: string; reason?: string };
+    if (!password) return reply.status(400).send({ success: false, error: 'Password is required' });
 
-    // BUG-035 fix: validate file type and size
-    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'text/plain'];
-    if (!allowed.includes(data.mimetype)) {
-      return reply.status(400).send({ success: false, error: `Type ${data.mimetype} not allowed. Supported: PDF, JPG, PNG, TXT.` });
-    }
-
-    const chunks: Buffer[] = [];
-    for await (const chunk of data.file) {
-      chunks.push(chunk);
-    }
-    const buffer = Buffer.concat(chunks);
-
-    if (buffer.length > 20 * 1024 * 1024) { // 20MB limit
-      return reply.status(400).send({ success: false, error: 'File too large (max 20MB)' });
-    }
+    const pwErr = await verifyPassword(req, password);
+    if (pwErr) return reply.status(401).send({ success: false, error: pwErr });
 
     try {
-      const cid = await uploadToPinata(buffer, data.filename, {
-        uploadedAt: new Date().toISOString(),
-      });
-      const gateway = process.env.PINATA_GATEWAY ?? 'https://gateway.pinata.cloud';
-      return reply.send({
-        success: true,
-        data: {
-          cid,
-          url: `${gateway}/ipfs/${cid}`,
-        },
-      });
+      const receipt = await writeAndWait('revokeAgreement', [id.data as Hex, req.user.sub, String(reason ?? '').slice(0, 200)]);
+      return reply.send({ success: true, data: { txHash: receipt.transactionHash } });
     } catch (err: any) {
-      fastify.log.error({ err }, 'IPFS upload failed');
-      return reply.status(500).send({ success: false, error: 'IPFS upload failed' });
+      return reply.status(400).send({ success: false, error: chainError(err) });
+    }
+  });
+
+  // GET /blockchain/agreements/me — agreements where the caller is a party
+  const listFor = async (userId: string) => {
+    const ids = await publicClient.readContract({
+      address: CONTRACT_ADDRESS!, abi, functionName: 'getPartyAgreements', args: [userId],
+    }) as readonly Hex[];
+    const results = await Promise.allSettled(ids.map((id) => readAgreement(id)));
+    return results.flatMap((r) => (r.status === 'fulfilled' ? [r.value] : [])).sort((a, b) => b.createdAt - a.createdAt);
+  };
+
+  fastify.get('/blockchain/agreements/me', { preHandler: [auth, requireContract] }, async (req: any, reply) => {
+    try {
+      return reply.send({ success: true, data: { agreements: await listFor(req.user.sub) } });
+    } catch (err: any) {
+      return reply.status(502).send({ success: false, error: chainError(err) });
+    }
+  });
+
+  // GET /blockchain/agreements/user/:userId — admin, or the user themselves
+  fastify.get('/blockchain/agreements/user/:userId', { preHandler: [auth, requireContract] }, async (req: any, reply) => {
+    const { userId } = req.params as { userId: string };
+    if (req.user.role !== 'admin' && req.user.sub !== userId) {
+      return reply.status(403).send({ success: false, error: 'Access denied' });
+    }
+    try {
+      return reply.send({ success: true, data: { agreements: await listFor(userId) } });
+    } catch (err: any) {
+      return reply.status(502).send({ success: false, error: chainError(err) });
+    }
+  });
+
+  // GET /blockchain/agreements/:id — public on-chain data, shown to parties/admin
+  fastify.get('/blockchain/agreements/:id', { preHandler: [auth, requireContract] }, async (req: any, reply) => {
+    const id = AgreementId.safeParse(req.params.id);
+    if (!id.success) return reply.status(400).send({ success: false, error: 'Invalid agreement id' });
+    try {
+      const agreement = await readAgreement(id.data as Hex);
+      if (req.user.role !== 'admin' && ![agreement.farmer1UserId, agreement.farmer2UserId].includes(req.user.sub)) {
+        return reply.status(404).send({ success: false, error: 'Agreement not found' });
+      }
+      return reply.send({ success: true, data: agreement });
+    } catch (err: any) {
+      return reply.status(404).send({ success: false, error: chainError(err) });
     }
   });
 }
@@ -450,7 +509,19 @@ async function main() {
   await start();
   const PORT = Number(process.env.BLOCKCHAIN_PORT ?? 4007);
   await fastify.listen({ port: PORT, host: '0.0.0.0' });
-  console.log(`⛓️  Blockchain service running on http://0.0.0.0:${PORT} [${CHAIN.name}]`);
+  fastify.log.info(`⛓️  Blockchain service on :${PORT} [${CHAIN.name}] relayer=${account.address}`);
 }
 
-main().catch(console.error);
+const shutdown = async () => {
+  await fastify.close();
+  await producer.disconnect().catch(() => {});
+  redis.disconnect();
+  process.exit(0);
+};
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

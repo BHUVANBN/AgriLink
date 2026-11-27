@@ -19,5 +19,8 @@
     "fastify": "^5.8.2",
     "typescript": "^5.0.0",
     "vitest": "^4.1.0"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

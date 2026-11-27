@@ -97,3 +97,18 @@ model LandAgreementIndex {
   @@index([partnerUserId])
   @@map("land_agreements")
 }
+
+// Durable event outbox (see @agrilink/platform). Holds events that could not
+// be delivered to Kafka yet, or that were written transactionally.
+model OutboxEvent {
+  id            String   @id @default(uuid())
+  topic         String
+  payload       String   @db.Text
+  attempts      Int      @default(0)
+  lastError     String?
+  nextAttemptAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  @@index([nextAttemptAt])
+  @@map("outbox_events")
+}

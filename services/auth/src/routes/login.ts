@@ -1,16 +1,14 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
-import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
 import { User } from '../models/User.js';
 import {
   incrementLoginAttempts,
   clearLoginAttempts,
   isLoginLocked,
-  trackSession,
 } from '../services/redis.service.js';
 import { publishEvent } from '../services/kafka.producer.js';
+import { issueSession } from '../services/tokens.service.js';
 
 // ── Schemas ───────────────────────────────────────────────────
 
@@ -19,12 +17,8 @@ const LoginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-const COOKIE_OPTS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
-  sameSite: 'lax' as const,
-  path: '/',
-};
+// Used to equalise timing when the email doesn't exist
+const DUMMY_HASH = bcrypt.hashSync('agrilink-timing-equaliser', 12);
 
 // ── Routes ────────────────────────────────────────────────────
 
@@ -35,7 +29,7 @@ export async function loginRoutes(fastify: FastifyInstance) {
     '/login',
     {
       config: {
-        rateLimit: { max: 100, timeWindow: '15m', keyGenerator: (req) => req.ip },
+        rateLimit: { max: 30, timeWindow: '15m', keyGenerator: (req) => req.ip },
       },
     },
     async (req: FastifyRequest, reply: FastifyReply) => {
@@ -47,11 +41,12 @@ export async function loginRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const { email, password } = result.data;
+      const email = result.data.email.toLowerCase().trim();
+      const { password } = result.data;
 
       // ─ Redis-backed account lockout ─────────────────────────
       // BUG-034 fix: track per-email, not just per-IP
-      const locked = await isLoginLocked(email);
+      const locked = await isLoginLocked(email, req.ip);
       if (locked) {
         return reply.status(429).send({
           success: false,
@@ -61,11 +56,13 @@ export async function loginRoutes(fastify: FastifyInstance) {
       }
 
       // ─ Lookup user ──────────────────────────────────────────
-      const user = await User.findUnique({ where: { email } }) as any;
+      const user = await User.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } }) as any;
 
       // Constant-time response — don't leak that email doesn't exist
       if (!user) {
-        await incrementLoginAttempts(email);
+        // Burn comparable CPU time so response timing doesn't reveal unknown emails
+        await bcrypt.compare(password, DUMMY_HASH);
+        await incrementLoginAttempts(email, req.ip);
         return reply.status(401).send({
           success: false,
           error: 'Invalid email or password',
@@ -77,7 +74,7 @@ export async function loginRoutes(fastify: FastifyInstance) {
       if (!user.isActive) {
         return reply.status(403).send({
           success: false,
-          error: 'Your account has been suspended. Contact support@agrilink.app',
+          error: 'Your account has been suspended. Please contact support.',
           code: 'ACCOUNT_SUSPENDED',
         });
       }
@@ -85,7 +82,7 @@ export async function loginRoutes(fastify: FastifyInstance) {
       // ─ Password verification ────────────────────────────────
       const passwordValid = await bcrypt.compare(password, user.passwordHash);
       if (!passwordValid) {
-        const attempts = await incrementLoginAttempts(email);
+        const attempts = await incrementLoginAttempts(email, req.ip);
         const remaining = 10 - attempts;
         return reply.status(401).send({
           success: false,
@@ -108,41 +105,10 @@ export async function loginRoutes(fastify: FastifyInstance) {
       }
 
       // ─ Clear failed attempt counter on success ──────────────
-      await clearLoginAttempts(email);
+      await clearLoginAttempts(email, req.ip);
 
-      // ─ Issue tokens ─────────────────────────────────────────
-      const sessionId = randomUUID();
-      const jwtPayload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        jti: sessionId,
-        tokenVersion: user.tokenVersion,
-      };
-
-      const accessToken = fastify.jwt.sign(jwtPayload, {
-        expiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '1h',
-      });
-
-      const refreshToken = jwt.sign(
-        { ...jwtPayload, type: 'refresh' },
-        process.env.JWT_REFRESH_SECRET!,
-        { expiresIn: (process.env.JWT_REFRESH_EXPIRES_IN ?? '7d') } as any
-      );
-
-      // ─ Track session in Redis ────────────────────────────────
-      await trackSession(user.id, sessionId, 7 * 24 * 3600);
-
-      // ─ Set cookies ──────────────────────────────────────────
-      reply.setCookie('agrilink_access', accessToken, {
-        ...COOKIE_OPTS,
-        maxAge: 3600, // 1 hour
-      });
-      reply.setCookie('agrilink_refresh', refreshToken, {
-        ...COOKIE_OPTS,
-        path: '/auth/refresh', // Limit refresh cookie scope
-        maxAge: 7 * 24 * 3600,
-      });
+      // ─ Issue tokens + cookies ───────────────────────────────
+      const { accessToken } = await issueSession(fastify, reply, user);
 
       // ─ Publish login event (for audit/notification) ─────────
       await publishEvent('notification.send', {

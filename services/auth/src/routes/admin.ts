@@ -34,11 +34,6 @@ const UpdateConfigSchema = z.object({
 export async function adminRoutes(fastify: FastifyInstance) {
   // Role guard middleware
   const requireAdmin = async (req: FastifyRequest, reply: FastifyReply) => {
-    const internalSecret = req.headers['x-internal-secret'];
-    if (!internalSecret || internalSecret !== process.env.INTERNAL_SECRET) {
-      return reply.status(403).send({ success: false, error: 'Access denied: Invalid internal secret' });
-    }
-
     const user = (req as any).user;
     if (!user || user.role !== 'admin') {
       return reply.status(403).send({ success: false, error: 'Admin access required' });
@@ -519,7 +514,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const { key, value, isActive } = UpdateConfigSchema.parse(req.body);
       const adminId = (req as any).user.sub;
 
-      const config = await (User as any).prisma.systemConfig.upsert({
+      const config = await prisma.systemConfig.upsert({
         where: { key },
         update: { value, isActive, updatedBy: adminId },
         create: { key, value, isActive: isActive ?? true, updatedBy: adminId },
@@ -545,14 +540,15 @@ export async function adminRoutes(fastify: FastifyInstance) {
     '/health-check',
     { preHandler: [(fastify as any).authenticate, requireAdmin] },
     async (_req, reply) => {
+      const env = (k: string, d: string) => process.env[k] ?? d;
       const services = [
-        { name: 'Auth Core', url: 'http://localhost:4001/health' },
-        { name: 'Farmer Node', url: 'http://localhost:4002/health' },
-        { name: 'Supplier Node', url: 'http://localhost:4003/health' },
-        { name: 'Marketplace', url: 'http://localhost:4004/health' },
-        { name: 'Notification Service', url: 'http://localhost:4005/health' },
-        { name: 'ML Engine', url: 'http://localhost:4010/health' },
-        { name: 'Blockchain Gateway', url: 'http://localhost:4011/health' },
+        { name: 'Auth', url: `http://127.0.0.1:${process.env.AUTH_PORT ?? 4001}/auth/health` },
+        { name: 'Farmer', url: `${env('FARMER_SERVICE_URL', 'http://localhost:4002')}/farmer/health` },
+        { name: 'Supplier', url: `${env('SUPPLIER_SERVICE_URL', 'http://localhost:4003')}/supplier/health` },
+        { name: 'Marketplace', url: `${env('MARKETPLACE_SERVICE_URL', 'http://localhost:4004')}/marketplace/health` },
+        { name: 'Notifications', url: `${env('NOTIFICATION_SERVICE_URL', 'http://localhost:4005')}/notification/health` },
+        { name: 'ML / OCR', url: `${env('ML_SERVICE_URL', 'http://localhost:4006')}/ml/health` },
+        { name: 'Blockchain', url: `${env('BLOCKCHAIN_SERVICE_URL', 'http://localhost:4007')}/blockchain/health` },
       ];
 
       const os = await import('node:os');

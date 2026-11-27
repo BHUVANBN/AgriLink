@@ -4,6 +4,8 @@ BUG-018 fix: no pdftotext dependency — uses pdf2image + Google Vision AI
 BUG-019 fix: structured AI parsing instead of fragile regex
 BUG-020 fix: normalizeName preserves display form separately
 """
+import asyncio
+from aadhaar_utils import verhoeff_valid, mask, parse_aadhaar_text
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from pydantic import BaseModel
 from typing import Optional
@@ -56,7 +58,8 @@ class RTCExtractResult(BaseModel):
 
 class AadhaarExtractResult(BaseModel):
     success: bool
-    aadhaarNumber: Optional[str] = None
+    aadhaarNumber: Optional[str] = None        # ALWAYS masked: XXXX XXXX 1234
+    aadhaarChecksumValid: Optional[bool] = None
     nameEnglish: Optional[str] = None
     nameKannada: Optional[str] = None
     nameDisplay: Optional[str] = None      # BUG-020 fix: separate display form
@@ -104,7 +107,7 @@ def pdf_to_images(pdf_bytes: bytes) -> list[Image.Image]:
         raise Exception("pdf2image not available. Install poppler-utils.")
     return convert_from_bytes(pdf_bytes, dpi=300, fmt='png')
 
-async def extract_text_from_file(content: bytes, content_type: str) -> str:
+def extract_text_from_file(content: bytes, content_type: str) -> str:
     """
     Main text extraction pipeline:
     1. Convert PDF to images (no pdftotext dependency — fixes BUG-018)
@@ -141,7 +144,7 @@ async def extract_text_from_file(content: bytes, content_type: str) -> str:
 
 # ── AI Field Extractor (Gemini) ─────────────────────────────
 
-async def extract_rtc_fields_with_ai(raw_text: str) -> dict:
+def extract_rtc_fields_with_ai(raw_text: str) -> dict:
     """
     Uses Groq (Llama 3) to intelligently extract structured RTC fields from OCR text.
     """
@@ -194,7 +197,7 @@ OCR Text:
         logger.error(f"Groq RTC extraction failed: {e}")
         return {}
 
-async def extract_aadhaar_fields_with_ai(raw_text: str) -> dict:
+def extract_aadhaar_fields_with_ai(raw_text: str) -> dict:
     """AI-powered Aadhaar field extraction using Groq."""
     if not GROQ_AVAILABLE:
         return {}
@@ -232,7 +235,7 @@ OCR Text:
         logger.error(f"Groq Aadhaar extraction failed: {e}")
         return {}
 
-async def extract_land_sketch_geometry(image_bytes: bytes) -> dict:
+def extract_land_sketch_geometry(image_bytes: bytes) -> dict:
     """
     High-precision Land Sketch integration.
     Calls the battle-tested sketch_to_map.py engine and parses its refined output.
@@ -323,12 +326,28 @@ async def extract_rtc(file: UploadFile = File(...)):
     content_type = file.content_type or 'application/pdf'
 
     try:
-        raw_text = await extract_text_from_file(content, content_type)
+        raw_text = await asyncio.to_thread(extract_text_from_file, content, content_type)
         if not raw_text.strip():
             return {"success": False, "error": "Could not extract text from document"}
 
-        # AI-powered extraction (BUG-019 fix)
-        fields = await extract_rtc_fields_with_ai(raw_text)
+        # AI-powered extraction (BUG-019 fix), with a light regex fallback
+        fields = await asyncio.to_thread(extract_rtc_fields_with_ai, raw_text) or {}
+        if not fields.get("survey_number"):
+            m = re.search(r"(?:Survey\s*(?:No|Number)\.?|ಸರ್ವೆ\s*ನಂ(?:ಬರ್)?\.?)\s*[:\-]?\s*([0-9]+(?:/[0-9A-Za-z*]+)?)", raw_text, re.I)
+            if m:
+                fields["survey_number"] = m.group(1)
+        if not fields.get("total_extent_acres"):
+            m = re.search(r"\b(\d{1,3}[.-]\d{1,2}[.-]\d{1,2})\b", raw_text)
+            if m:
+                fields["total_extent_acres"] = m.group(1)
+
+        owners = [o for o in (fields.get("owner_names") or []) if o]
+        if not fields.get("survey_number") or not owners:
+            return {
+                "success": False,
+                "error": "We couldn't read the survey number and owner name from this RTC. "
+                         "Upload a clearer copy, or use 'Fetch from Bhoomi' to get the record directly.",
+            }
 
         return {
             "success": True,
@@ -356,7 +375,8 @@ async def extract_rtc(file: UploadFile = File(...)):
                 "mutation_number": fields.get("mutation_number"),
             },
             "cultivation": fields.get("cultivation", []),
-            "confidence": 0.9 if GROQ_AVAILABLE else 0.6,
+            "confidence": round(sum(bool(x) for x in (fields.get("survey_number"), owners,
+                                     fields.get("total_extent_acres"), fields.get("village"))) / 4, 2),
         }
     except Exception as e:
         logger.error(f"RTC extraction error: {e}")
@@ -370,18 +390,30 @@ async def extract_aadhaar(file: UploadFile = File(...)):
     content_type = file.content_type or 'application/pdf'
 
     try:
-        raw_text = await extract_text_from_file(content, content_type)
+        raw_text = await asyncio.to_thread(extract_text_from_file, content, content_type)
         if not raw_text.strip():
             return {"success": False, "error": "Could not extract text"}
 
-        fields = await extract_aadhaar_fields_with_ai(raw_text)
+        ai_fields = await asyncio.to_thread(extract_aadhaar_fields_with_ai, raw_text)
+        # Deterministic parser fills anything the AI missed (or everything, without a Groq key)
+        fields = {**parse_aadhaar_text(raw_text), **{k: v for k, v in (ai_fields or {}).items() if v}}
 
         name_eng = fields.get("name_english")
         name_kan = fields.get("name_kannada")
+        number = fields.get("aadhaar_number")
+        checksum_ok = verhoeff_valid(number) if number else None
 
+        if number and not checksum_ok:
+            return {"success": False, "error": "The Aadhaar number could not be read correctly. Please upload a clearer photo of the front of the card."}
+        if not (name_eng or name_kan):
+            return {"success": False, "error": "We couldn't read the name on this card. Please upload a clear, well-lit photo of the front side."}
+
+        found = sum(bool(x) for x in (name_eng or name_kan, fields.get("dob"), fields.get("gender"), number))
         return {
             "success": True,
-            "aadhaarNumber": fields.get("aadhaar_number"),
+            # Compliance: never return or store the full Aadhaar number
+            "aadhaarNumber": mask(number),
+            "aadhaarChecksumValid": checksum_ok,
             "nameEnglish": name_eng,
             "nameKannada": name_kan,
             # BUG-020 fix: separate display vs comparison forms
@@ -390,7 +422,7 @@ async def extract_aadhaar(file: UploadFile = File(...)):
             "dob": fields.get("dob"),
             "gender": fields.get("gender"),
             "address": fields.get("address_english") or fields.get("address_kannada"),
-            "confidence": 0.92 if GROQ_AVAILABLE else 0.65,
+            "confidence": round(found / 4, 2),
         }
     except Exception as e:
         logger.error(f"Aadhaar extraction error: {e}")
@@ -404,7 +436,7 @@ async def extract_land_sketch(file: UploadFile = File(...)):
 
     try:
         # New high-precision CV pipeline
-        fields = await extract_land_sketch_geometry(content)
+        fields = await asyncio.to_thread(extract_land_sketch_geometry, content)
         
         if not fields.get("success"):
             return {"success": False, "error": fields.get("error", "Vision pipeline failed")}

@@ -1,15 +1,94 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Users, Timer, Target, ArrowRight, ShieldCheck, ShoppingBag, CheckCircle2 } from 'lucide-react';
+import { Users, Timer, Target, ArrowRight, ShieldCheck, ShoppingBag, CheckCircle2, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
+type Address = { name: string; phone: string; street: string; city: string; state: string; pincode: string };
+
+function PledgeModal({ deal, existing, onClose, onDone }: { deal: any; existing?: any; onClose: () => void; onDone: () => void }) {
+  const { user } = useAuth();
+  const [quantity, setQuantity] = useState<number>(existing?.quantity ?? 1);
+  const [addr, setAddr] = useState<Address>(() => ({
+    name: existing?.shippingAddress?.name ?? user?.fullName ?? '',
+    phone: existing?.shippingAddress?.phone ?? '',
+    street: existing?.shippingAddress?.street ?? '',
+    city: existing?.shippingAddress?.city ?? '',
+    state: existing?.shippingAddress?.state ?? 'Karnataka',
+    pincode: existing?.shippingAddress?.pincode ?? '',
+  }));
+  const [saving, setSaving] = useState(false);
+  const set = (k: keyof Address) => (e: React.ChangeEvent<HTMLInputElement>) => setAddr((a) => ({ ...a, [k]: e.target.value }));
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const res = await fetch(`${API_URL}/marketplace/community/deals/${deal.id}/join`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ quantity, shippingAddress: addr }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Could not join this deal');
+      toast.success(existing ? 'Pledge updated' : 'You joined the group buy!');
+      onDone();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const input = 'w-full px-4 py-3 rounded-xl border border-[#eae6de] focus:border-brand-green outline-none text-sm';
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-muted">Group buy</p>
+            <h3 className="text-lg font-serif font-bold text-text-dark">{deal.title}</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="p-2 rounded-full hover:bg-[#f8f7f4]"><X className="w-5 h-5 text-text-muted" /></button>
+        </div>
+        <label className="block text-sm font-bold text-text-dark">
+          Quantity
+          <input type="number" min={1} max={10000} required value={quantity} onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))} className={`${input} mt-1`} />
+        </label>
+        <p className="text-sm text-text-muted">
+          At the deal price you pay <strong className="text-brand-green">₹{((deal.dealPricePaise * quantity) / 100).toLocaleString('en-IN')}</strong>{' '}
+          — only if the group reaches {deal.targetQuantity} units by {new Date(deal.endsAt).toLocaleDateString('en-IN')}.
+        </p>
+        <fieldset className="space-y-3">
+          <legend className="text-sm font-bold text-text-dark mb-1">Delivery address</legend>
+          <input required placeholder="Full name" value={addr.name} onChange={set('name')} className={input} />
+          <input required placeholder="Mobile number" inputMode="tel" value={addr.phone} onChange={set('phone')} className={input} />
+          <input required placeholder="House / street / village" value={addr.street} onChange={set('street')} className={input} />
+          <div className="grid grid-cols-2 gap-3">
+            <input required placeholder="Town / city" value={addr.city} onChange={set('city')} className={input} />
+            <input required placeholder="PIN code" inputMode="numeric" pattern="\d{6}" value={addr.pincode} onChange={set('pincode')} className={input} />
+          </div>
+        </fieldset>
+        <button disabled={saving} className="w-full py-3 rounded-xl bg-brand-green text-white font-bold text-sm disabled:opacity-60">
+          {saving ? 'Saving…' : existing ? 'Update pledge' : 'Pledge to join'}
+        </button>
+        <p className="text-[11px] text-text-muted">No payment now. If the deal unlocks, an order appears in My Orders for you to pay.</p>
+      </form>
+    </div>
+  );
+}
+
 export default function CommunityBuyingPage() {
   const [deals, setDeals] = useState<any[]>([]);
+  const [mine, setMine] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [joining, setJoining] = useState<string | null>(null);
+  const [pledging, setPledging] = useState<any | null>(null);
 
   useEffect(() => {
     fetchDeals();
@@ -17,9 +96,12 @@ export default function CommunityBuyingPage() {
 
   const fetchDeals = async () => {
     try {
-      const res = await fetch(`${API_URL}/marketplace/community/deals`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) setDeals(data.data);
+      const [res, mineRes] = await Promise.all([
+        fetch(`${API_URL}/marketplace/community/deals`, { credentials: 'include' }).then((r) => r.json()),
+        fetch(`${API_URL}/marketplace/community/deals/mine`, { credentials: 'include' }).then((r) => r.json()).catch(() => null),
+      ]);
+      if (res.success) setDeals(res.data);
+      if (mineRes?.success) setMine(Object.fromEntries(mineRes.data.map((p: any) => [p.dealId, p])));
     } catch (err) {
       console.error(err);
     } finally {
@@ -27,19 +109,19 @@ export default function CommunityBuyingPage() {
     }
   };
 
-  const joinDeal = async (dealId: string) => {
+  const joinDeal = (dealId: string) => setPledging(deals.find((d) => d.id === dealId) ?? null);
+
+  const withdraw = async (dealId: string) => {
+    if (!window.confirm('Withdraw your pledge from this deal?')) return;
     setJoining(dealId);
     try {
-      const res = await fetch(`${API_URL}/marketplace/community/deals/${dealId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ quantity: 1 }),
-      });
+      const res = await fetch(`${API_URL}/marketplace/community/deals/${dealId}/join`, { method: 'DELETE', credentials: 'include' });
       const data = await res.json();
-      if (data.success) {
-        fetchDeals();
-      }
+      if (!res.ok) throw new Error(data.error ?? 'Could not withdraw');
+      toast.success('Pledge withdrawn');
+      fetchDeals();
+    } catch (err: any) {
+      toast.error(err.message);
     } finally {
       setJoining(null);
     }
@@ -137,6 +219,12 @@ export default function CommunityBuyingPage() {
                   </div>
                 </div>
 
+                {mine[deal.id] && (
+                  <div className="px-6 py-3 bg-brand-green/5 border-t border-brand-green/10 flex items-center justify-between text-xs">
+                    <span className="font-bold text-brand-green">Your pledge: {mine[deal.id].quantity} units</span>
+                    <button onClick={() => withdraw(deal.id)} className="text-red-600 font-bold hover:underline">Withdraw</button>
+                  </div>
+                )}
                 <button
                   onClick={() => joinDeal(deal.id)}
                   disabled={joining === deal.id}
@@ -150,7 +238,7 @@ export default function CommunityBuyingPage() {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      {isFull ? 'Confirm Order' : 'Join Group Buy'}
+                      {mine[deal.id] ? 'Change pledge' : isFull ? 'Join (target reached)' : 'Join Group Buy'}
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -160,6 +248,15 @@ export default function CommunityBuyingPage() {
           })
         )}
       </div>
+
+      {pledging && (
+        <PledgeModal
+          deal={pledging}
+          existing={mine[pledging.id]}
+          onClose={() => setPledging(null)}
+          onDone={() => { setPledging(null); fetchDeals(); }}
+        />
+      )}
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-8 py-12 border-t border-[#eae6de]">
          <div className="flex gap-4">

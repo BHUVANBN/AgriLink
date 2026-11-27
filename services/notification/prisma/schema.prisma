@@ -25,3 +25,19 @@ model NotificationLog {
   @@index([topic, status])
   @@map("notification_logs")
 }
+
+// In-app notifications shown in the bell / notifications page.
+model InAppNotification {
+  id        String    @id @default(uuid())
+  userId    String
+  topic     String
+  subject   String
+  body      String
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
+  @@map("in_app_notifications")
+}

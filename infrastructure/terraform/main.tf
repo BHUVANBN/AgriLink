@@ -1,3 +1,8 @@
+# ⚠️  NOT FREE: this provisions AWS EKS + VPC, which AWS bills for (EKS control
+# plane alone is ~USD 73/month). AgriLink's supported deployment is the free
+# single-VM Docker Compose setup — see README "Deploy for free". Kept only as a
+# reference for a future paid scale-out.
+
 terraform {
   required_version = ">= 1.5.0"
   required_providers {

@@ -1,30 +1,46 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Star, ShoppingCart, ArrowRight, Filter, SlidersHorizontal, Heart, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
 import { addToWishlist, removeFromWishlist, getWishlist } from '@/lib/marketplace/wishlist';
 import { addToCart as addToCartUtil } from '@/lib/marketplace/cart';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
-export default function MarketplacePage() {
+function MarketplaceContent() {
+  const searchParams = useSearchParams();
+  const q = searchParams.get('q') ?? '';
+  const category = searchParams.get('category') ?? '';
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [wishlistIds, setWishlistIds] = useState<Set<string>>(new Set());
+  const [sort, setSort] = useState('createdAt:desc');
 
   useEffect(() => {
-    fetchProducts();
     fetchWishlist();
   }, []);
 
+  useEffect(() => {
+    setLoading(true);
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, category, sort]);
+
   const fetchProducts = async () => {
     try {
-      const res = await fetch(`${API_URL}/marketplace/products/public`, { credentials: 'include' });
+      const sp = new URLSearchParams({ limit: '48' });
+      if (q) sp.set('search', q);
+      if (category) sp.set('category', category);
+      const [sortBy, sortOrder] = sort.split(':');
+      sp.set('sortBy', sortBy);
+      sp.set('sortOrder', sortOrder);
+      const res = await fetch(`${API_URL}/marketplace/products?${sp}`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         setProducts(data.data.items);
@@ -122,38 +138,29 @@ export default function MarketplacePage() {
           <p className="text-white/80 text-lg mb-8 leading-relaxed">
             Get exclusive access to certified seeds and fertilizers from trusted suppliers in Karnataka.
           </p>
-          <button className="px-8 py-4 bg-white text-brand-green rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-black/10 hover:bg-brand-orange hover:text-white transition-all flex items-center gap-3">
-            Shop Top Deals <ArrowRight className="w-4 h-4" />
-          </button>
+          <Link href="/dashboard/farmer/marketplace/community" className="w-fit px-8 py-4 bg-white text-brand-green rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-black/10 hover:bg-brand-orange hover:text-white transition-all flex items-center gap-3">
+            See group deals <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
       </section>
 
       {/* Main Content */}
       <div className="flex flex-col lg:flex-row gap-8">
-        {/* Filters Sidebar */}
-        <aside className="w-full lg:w-64 space-y-8">
-          <div>
-            <h3 className="text-sm font-black uppercase tracking-widest text-text-dark mb-4 flex items-center gap-2">
-              <Filter className="w-4 h-4" /> Categories
-            </h3>
-            <div className="space-y-2">
-              {['Seeds', 'Fertilizers', 'Tools', 'Machinery'].map((cat) => (
-                <label key={cat} className="flex items-center gap-3 p-3 rounded-xl hover:bg-white border border-transparent hover:border-[#eae6de] cursor-pointer transition-all group">
-                  <input type="checkbox" className="w-4 h-4 rounded-md border-[#eae6de] text-brand-green focus:ring-brand-green/20" />
-                  <span className="text-sm text-text-muted group-hover:text-text-dark transition-colors">{cat}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </aside>
-
         {/* Product Grid */}
         <div className="flex-1 space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-serif font-bold text-text-dark">All Products</h2>
-            <button className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted hover:text-text-dark transition-colors">
-              <SlidersHorizontal className="w-4 h-4" /> Sort By: Recommended
-            </button>
+            <h2 className="text-2xl font-serif font-bold text-text-dark capitalize">
+              {q ? `Results for “${q}”` : category ? category : 'All products'}
+            </h2>
+            <label className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-muted">
+              <SlidersHorizontal className="w-4 h-4" />
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className="bg-transparent text-text-dark font-black uppercase tracking-widest text-xs focus:outline-none" aria-label="Sort products">
+                <option value="createdAt:desc">Newest</option>
+                <option value="price:asc">Price: low to high</option>
+                <option value="price:desc">Price: high to low</option>
+                <option value="name:asc">Name A–Z</option>
+              </select>
+            </label>
           </div>
 
           {products.length === 0 ? (
@@ -211,10 +218,14 @@ export default function MarketplacePage() {
                       <Link href={`/dashboard/farmer/marketplace/products/${p.id}`}>
                         <h4 className="font-serif font-bold text-lg text-text-dark group-hover:text-brand-green transition-colors line-clamp-1">{p.name}</h4>
                       </Link>
-                      <div className="flex items-center gap-1 text-brand-orange">
-                        <Star className="w-3 h-3 fill-current" />
-                        <span className="text-[10px] font-black">4.8</span>
-                      </div>
+                      {p.reviewCount > 0 ? (
+                        <div className="flex items-center gap-1 text-brand-orange" title={`${p.reviewCount} review(s)`}>
+                          <Star className="w-3 h-3 fill-current" />
+                          <span className="text-[10px] font-black">{Number(p.rating).toFixed(1)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-[10px] text-text-muted">New</span>
+                      )}
                     </div>
                     <p className="text-text-muted text-xs line-clamp-2 mb-6 h-8">{p.description}</p>
                     
@@ -247,5 +258,13 @@ export default function MarketplacePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MarketplacePage() {
+  return (
+    <Suspense fallback={null}>
+      <MarketplaceContent />
+    </Suspense>
   );
 }

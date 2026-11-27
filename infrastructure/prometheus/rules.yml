@@ -1,0 +1,52 @@
+groups:
+  - name: agrilink
+    rules:
+      - alert: ServiceDown
+        expr: up{job="agrilink"} == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $labels.app }} is down"
+          description: "{{ $labels.instance }} has not answered /metrics for 2 minutes."
+
+      - alert: HighErrorRate
+        expr: |
+          sum by (service) (rate(http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum by (service) (rate(http_requests_total[5m])), 0.01) > 0.05
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.service }}: more than 5% of requests fail"
+
+      - alert: SlowRequests
+        expr: |
+          histogram_quantile(0.95, sum by (service, le) (rate(http_request_duration_seconds_bucket[5m]))) > 3
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.service }}: p95 latency above 3s"
+
+      - alert: EventsStuckInOutbox
+        expr: max by (service) (outbox_pending_events) > 50
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.service }}: {{ $value }} events waiting for Kafka"
+          description: "Kafka may be down. Events are safe in the database and will be delivered when it recovers."
+
+      - alert: RelayerLowBalance
+        expr: relayer_balance_native < 0.2
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "Blockchain relayer wallet low: {{ $value }} POL"
+          description: "Top up the relayer from https://faucet.polygon.technology or agreements will fail."
+
+      - alert: NotificationDeliveryFailing
+        expr: |
+          sum(rate(notification_deliveries_total{status="failed"}[15m]))
+            / clamp_min(sum(rate(notification_deliveries_total[15m])), 0.001) > 0.2
+        for: 15m
+        labels: { severity: warning }
+        annotations:
+          summary: "More than 20% of email/SMS deliveries are failing (check SMTP / SMS quota)"

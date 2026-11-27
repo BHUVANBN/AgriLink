@@ -21,8 +21,23 @@ kafka_2.13-3.6.1
 services/blockchain/artifacts/
 services/blockchain/cache/
 services/blockchain/typechain-types/
-services/blockchain/deployments/
+
 
 # Temp Notes
 *.txt
 
+
+# Generated Prisma clients (built by `prisma generate` in dev/build/Docker)
+services/*/prisma/client/
+services/*/prisma/generated/
+
+# Hardhat local deployments (testnet/mainnet deployment records ARE committed)
+services/blockchain/deployments/localhost.json
+services/blockchain/deployments/hardhat.json
+!services/blockchain/deployments/amoy.json
+!services/blockchain/deployments/polygon.json
+
+# Secrets
+infrastructure/gcp-service-account.json
+*.pem
+*.key

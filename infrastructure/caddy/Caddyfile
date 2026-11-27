@@ -1,0 +1,15 @@
+{
+	email {$ACME_EMAIL}
+}
+
+# Web app
+{$WEB_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy frontend:3000
+}
+
+# API gateway (REST + WebSocket)
+{$API_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy api-gateway:80
+}

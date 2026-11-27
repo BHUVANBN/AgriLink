@@ -3,29 +3,52 @@
  * Script-neutral normalization and multi-algorithm matching
  */
 
+/** Score at/above which Aadhaar and RTC names are considered the same person. */
+export const MATCH_THRESHOLD = 0.85;
+/** Only an exact (normalised) full-name match may skip admin review. */
+export const AUTO_APPROVE_THRESHOLD = 1.0;
+
+const normalise = (v: string) => v.toUpperCase().replace(/[^\p{L}\p{N}]/gu, '');
+const tokens = (v: string) => v.toUpperCase().split(/[\s.,]+/).map(normalise).filter(Boolean);
+
+/**
+ * Name match between Aadhaar and RTC owner name.
+ *  1.0  → identical after normalisation (only case that can auto-approve)
+ *  0.95 → every token of the shorter name appears in the longer one
+ *         (initials / father's-name ordering differences)
+ *  else → Levenshtein similarity
+ *
+ * The old rule returned 1.0 whenever one name was a *prefix* of the other,
+ * so "RAM" auto-approved against "RAMESH KUMAR"'s land record.
+ */
 export function computeNameMatchConfidence(a: string, b: string): number {
   if (!a || !b) return 0;
 
-  // Normalize: Uppercase and remove all punctuation/whitespace (Preserves Kannada & Unicode letters)
-  const normA = a.toUpperCase().replace(/[^\p{L}\p{N}]/gu, '');
-  const normB = b.toUpperCase().replace(/[^\p{L}\p{N}]/gu, '');
-
+  const normA = normalise(a);
+  const normB = normalise(b);
   if (!normA || !normB) return 0;
 
-  // 1. Exact or Prefix Match (Highest Confidence)
-  // Industry Standard: If the record starts with the Aadhaar name, it's a valid match
-  if (normB.startsWith(normA) || normA === normB) return 1.0;
+  if (normA === normB) return 1.0;
 
-  // 2. Fragment Match (If Aadhaar first name is found in RTC)
-  const firstWordA = a.trim().split(/\s+/)[0].toUpperCase().replace(/[^\p{L}\p{N}]/gu, '');
-  if (firstWordA.length >= 3 && normB.includes(firstWordA)) return 0.95;
+  const ta = tokens(a);
+  const tb = tokens(b);
+  const [short, long] = ta.length <= tb.length ? [ta, tb] : [tb, ta];
+  const meaningful = short.filter((t) => t.length >= 2);
+  if (meaningful.length >= 2 && meaningful.every((t) => long.includes(t))) return 0.95;
 
-  // 3. Fallback: Fuzzy Comparison (Levenshtein)
   const maxLen = Math.max(normA.length, normB.length);
-  const edits = levenshtein(normA, normB);
-  const confidence = 1 - edits / maxLen;
-  
-  return Number(confidence.toFixed(4));
+  const confidence = 1 - levenshtein(normA, normB) / maxLen;
+  return Number(Math.min(confidence, 0.94).toFixed(4));
+}
+
+/** Pick the RTC co-owner whose name best matches the farmer's Aadhaar name. */
+export function bestOwnerMatch(owners: string[], aadhaarName?: string | null): string | undefined {
+  const list = owners.filter(Boolean);
+  if (!list.length) return undefined;
+  if (!aadhaarName) return list[0];
+  return list
+    .map((o) => ({ o, c: computeNameMatchConfidence(aadhaarName, o) }))
+    .sort((x, y) => y.c - x.c)[0].o;
 }
 
 export function levenshtein(a: string, b: string): number {

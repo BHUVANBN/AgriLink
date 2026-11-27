@@ -7,6 +7,7 @@
  */
 import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
 import { prisma } from '../models/User.js';
+import { superviseConsumer } from '@agrilink/platform';
 
 let consumer: Consumer | null = null;
 
@@ -20,6 +21,7 @@ export async function connectKafkaConsumer(): Promise<void> {
   });
 
   consumer = kafka.consumer({ groupId: 'auth-service-group' });
+  superviseConsumer(consumer as any, () => connectKafkaConsumer(), console);
 
   try {
     await consumer.connect();
@@ -80,7 +82,9 @@ export async function connectKafkaConsumer(): Promise<void> {
       },
     });
   } catch (err) {
-    console.error('[kafka-consumer] Failed to start consumer:', err);
+    console.error('[kafka-consumer] Failed to start consumer — retrying in 10s:', (err as Error)?.message);
+    await consumer?.disconnect().catch(() => {});
+    setTimeout(() => { void connectKafkaConsumer(); }, 10_000);
   }
 }
 

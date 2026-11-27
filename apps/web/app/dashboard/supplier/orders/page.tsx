@@ -1,4 +1,5 @@
 'use client';
+import { itemName } from '@/lib/marketplace/format';
 
 import { motion } from 'framer-motion';
 import useSWR from 'swr';
@@ -27,15 +28,18 @@ const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r =
 
 const STATUS_CFG: Record<string, { label: string; cls: string; icon: any }> = {
   PLACED:    { label: 'Awaiting Action',  cls: 'bg-[#dbeafe] text-[#1e40af] border-[#3b82f6]/20', icon: Clock },
-  CONFIRMED: { label: 'Processing',      cls: 'bg-[#fef3c7] text-[#92400e] border-[#f59e0b]/20', icon: ClipboardList },
+  CONFIRMED: { label: 'Confirmed',       cls: 'bg-[#fef3c7] text-[#92400e] border-[#f59e0b]/20', icon: ClipboardList },
+  PROCESSING:{ label: 'Packing',         cls: 'bg-[#fef3c7] text-[#92400e] border-[#f59e0b]/20', icon: ClipboardList },
   SHIPPED:   { label: 'In Transit',      cls: 'bg-[#ede9fe] text-[#5b21b6] border-[#7c3aed]/20', icon: Truck },
   DELIVERED: { label: 'Delivered ✓',      cls: 'bg-[#d1fae5] text-[#065f46] border-[#10b981]/20', icon: CheckCircle },
   CANCELLED: { label: 'Cancelled',       cls: 'bg-[#fee2e2] text-[#991b1b] border-[#ef4444]/20', icon: XCircle },
+  RETURNED:  { label: 'Returned',        cls: 'bg-[#fee2e2] text-[#991b1b] border-[#ef4444]/20', icon: XCircle },
 };
 
 const NEXT_STATUS: Record<string, string> = {
-  PLACED: 'CONFIRMED', 
-  CONFIRMED: 'SHIPPED', 
+  PLACED: 'CONFIRMED',
+  CONFIRMED: 'PROCESSING',
+  PROCESSING: 'SHIPPED',
   SHIPPED: 'DELIVERED',
 };
 
@@ -124,7 +128,7 @@ export default function SupplierOrdersPage() {
                  <Box className="w-10 h-10 text-slate-300" />
               </div>
               <h3 className="text-text-dark font-serif text-2xl font-bold tracking-tight mb-2">
-                {search ? 'Zero Matches' : 'Operational Quiescence'}
+                {search ? 'Zero Matches' : 'No orders yet'}
               </h3>
               <p className="text-text-muted text-sm font-medium italic">
                 {search ? 'Adjust your search parameters' : 'No pending farmer requirements detected in your sector'}
@@ -152,7 +156,7 @@ export default function SupplierOrdersPage() {
                        <div className="flex-1 space-y-6">
                           <div className="flex items-center justify-between lg:justify-start lg:gap-8 border-b border-[#f8f7f4] pb-6">
                              <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-[#929285] mb-1 italic">V2 Protocol ID</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[#929285] mb-1 italic">Order</p>
                                 <p className="text-lg font-black text-text-dark uppercase italic">#{order.orderNumber || order.id.slice(0,8)}</p>
                              </div>
                              <div>
@@ -171,7 +175,7 @@ export default function SupplierOrdersPage() {
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 {items.map((item, j) => (
                                    <div key={j} className="bg-[#f8f7f4] p-3 rounded-xl flex items-center justify-between border border-[#eae6de]/50">
-                                      <span className="text-[11px] font-bold text-text-dark">{item.name}</span>
+                                      <span className="text-[11px] font-bold text-text-dark">{itemName(item)}</span>
                                       <span className="text-[10px] font-black text-brand-green">×{item.quantity || 1}</span>
                                    </div>
                                 ))}
@@ -187,9 +191,9 @@ export default function SupplierOrdersPage() {
                                 <div className="flex items-start gap-3">
                                    <MapPin className="w-4 h-4 text-brand-orange mt-0.5" />
                                    <div>
-                                      <p className="text-[11px] font-black text-text-dark uppercase leading-tight">{addr.name || 'Anonymous Farmer'}</p>
+                                      <p className="text-[11px] font-black text-text-dark uppercase leading-tight">{addr.name || addr.fullName || 'Farmer'}</p>
                                       <p className="text-[10px] font-medium text-text-muted mt-1 leading-relaxed">
-                                         {[addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}
+                                         {[addr.street ?? addr.address ?? addr.addressLine, addr.city, addr.state, addr.pincode].filter(Boolean).join(', ')}
                                       </p>
                                    </div>
                                 </div>

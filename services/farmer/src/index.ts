@@ -6,15 +6,18 @@ import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
 import FastifyMultipart from '@fastify/multipart';
 import FastifyRateLimit from '@fastify/rate-limit';
-import { makeAuthMiddleware, requireRole } from '@agrilink/auth-middleware';
+import { makeAuthMiddleware, requireRole, requireInternalKey } from '@agrilink/auth-middleware';
 import { v2 as cloudinary } from 'cloudinary';
 import { Kafka } from 'kafkajs';
+import { createOutbox, registerMetrics, superviseConsumer } from '@agrilink/platform';
 import { z } from 'zod';
-import { PrismaClient } from '../prisma/client/index.js';
+import { PrismaClient, Prisma } from '../prisma/client/index.js';
+import { Redis } from 'ioredis';
+import { presentProfile, toPrivateRef, uploadPrivate } from './utils/documents.js';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
 import type { JwtPayload, KafkaEvent, LandAgreementCreatedEvent } from '@agrilink/types';
-import { computeNameMatchConfidence, parseExtentToAcres } from './utils/logic.js';
+import { computeNameMatchConfidence, parseExtentToAcres, bestOwnerMatch, AUTO_APPROVE_THRESHOLD, MATCH_THRESHOLD } from './utils/logic.js';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -26,7 +29,10 @@ const prisma = new PrismaClient({
 
 // ── Bootstrap ─────────────────────────────────────────────────
 
-const fastify = Fastify({ logger: true });
+const fastify = Fastify({ logger: true, trustProxy: true });
+
+const redis = new Redis(process.env.REDIS_URL ?? 'redis://localhost:6379', { maxRetriesPerRequest: 2 });
+redis.on('error', () => {});
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
@@ -37,6 +43,24 @@ cloudinary.config({
 const kafka = new Kafka({ brokers: (process.env.KAFKA_BROKERS ?? 'localhost:9092').split(',') });
 const producer = kafka.producer();
 const consumer = kafka.consumer({ groupId: 'farmer-service-group' });
+
+// ── Durable event publishing (outbox: retried from the DB if Kafka is down) ──
+let producerReady = false;
+async function sendRaw(topic: string, value: string) {
+  if (!producerReady) { await producer.connect(); producerReady = true; }
+  try {
+    await producer.send({ topic, messages: [{ value }] });
+  } catch (err) {
+    producerReady = false;
+    throw err;
+  }
+}
+const outbox = createOutbox({ service: 'farmer', prisma, send: sendRaw });
+outbox.start();
+superviseConsumer(consumer, () => startKafkaConsumer(), console);
+async function publishViaOutbox(args: { topic: string; messages: { value: string | Buffer | null }[] }) {
+  for (const m of args.messages) if (m.value != null) await outbox.publish(args.topic, String(m.value));
+}
 
 // Kafka Startup Engine
 async function startKafka() {
@@ -107,7 +131,7 @@ await fastify.register(FastifyMultipart, {
   limits: { fileSize: 25 * 1024 * 1024, files: 2 }, // Aadhaar + RTC PDFs
 });
 
-await fastify.register(FastifyRateLimit, { global: true, max: 200, timeWindow: '1m' });
+await fastify.register(FastifyRateLimit, { global: true, max: 200, timeWindow: '1m', redis, skipOnError: true });
 
 // Swagger Documentation Engine
 await fastify.register(FastifySwagger, {
@@ -140,7 +164,8 @@ await fastify.register(FastifySwaggerUI, {
 });
 
 // Register standard auth decorator
-fastify.decorate('authenticate', makeAuthMiddleware(fastify));
+fastify.decorate('authenticate', makeAuthMiddleware(fastify, { redis }));
+registerMetrics(fastify, 'farmer');
 
 fastify.setErrorHandler(async (error: any, _req, reply) => {
   fastify.log.error({ err: error }, 'Unhandled error');
@@ -197,7 +222,6 @@ async function callOcrService(req: any, endpoint: string, buffer: Buffer, filena
     });
 
     const result = await res.json();
-    console.log(`[OCR] ML service response:`, result);
     return result;
   } catch (err: any) {
     console.error(`[OCR] ML service call failed:`, err.message);
@@ -205,30 +229,13 @@ async function callOcrService(req: any, endpoint: string, buffer: Buffer, filena
   }
 }
 
-// ── Helper: Upload to Cloudinary ──────────────────────────────
-
+// ── Helper: Upload sensitive documents (private, signed access only) ──
 async function uploadToCloudinary(buffer: Buffer, folder: string, filename: string): Promise<string> {
-  console.log(`[Cloudinary] Uploading to agrilink/${folder}/${filename}...`);
-  return new Promise((resolve, reject) => {
-    cloudinary.uploader.upload_stream(
-      { 
-        folder: `agrilink/${folder}`, 
-        resource_type: 'auto', 
-        public_id: filename,
-        use_filename: true,
-        unique_filename: false 
-      },
-      (err, result) => {
-        if (err) {
-          console.error(`[Cloudinary] Upload failed:`, err);
-          return reject(err);
-        }
-        console.log(`[Cloudinary] Upload success:`, result!.secure_url);
-        resolve(result!.secure_url);
-      }
-    ).end(buffer);
-  });
+  const result = await uploadPrivate(buffer, folder, filename);
+  return toPrivateRef(result);
 }
+
+const ALLOWED_DOC_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 
 // ── Routes ────────────────────────────────────────────────────
 
@@ -245,11 +252,11 @@ await fastify.register(async (app) => {
        update: {},
        create: {
           userId: req.user.sub,
-          nameDisplay: req.user.fullName ?? 'New Farmer',
+          nameDisplay: req.user.name ?? 'Farmer',
           kycStatus: 'not_started'
        }
     });
-    return reply.send({ success: true, data: profile });
+    return reply.send({ success: true, data: presentProfile(profile) });
   });
 
   app.get('/weather', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
@@ -262,6 +269,16 @@ await fastify.register(async (app) => {
     // Default to a central location in Karnataka (e.g., Dharwad) if no land is mapped
     const lat = profile?.centerLat ?? 15.4589;
     const lng = profile?.centerLng ?? 75.0078;
+
+    // Cache per ~1 km grid cell for 30 min: keeps us well inside Open-Meteo's
+    // free limits no matter how many farmers open the dashboard.
+    const cacheKey = `weather:${lat.toFixed(2)}:${lng.toFixed(2)}`;
+    try {
+      const cached = await redis.get(cacheKey);
+      if (cached) {
+        return reply.send({ success: true, data: { ...JSON.parse(cached), location: profile?.village || 'Region Default', isMapped } });
+      }
+    } catch { /* cache miss on Redis error */ }
 
     try {
       // Calculate dates for history (past 7 days)
@@ -278,7 +295,7 @@ await fastify.register(async (app) => {
 
       // 1. Fetch Forecast (Next 7 days) with fallback
       try {
-        const forecastRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`);
+        const forecastRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,et0_fao_evapotranspiration&timezone=auto`, { signal: AbortSignal.timeout(8000) });
         if (forecastRes.ok) {
            forecastData = await forecastRes.json();
         }
@@ -288,7 +305,7 @@ await fastify.register(async (app) => {
 
       // 2. Fetch History (Past 7 days) with fallback
       try {
-        const historyRes = await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lng}&start_date=${fmt(startHistory)}&end_date=${fmt(endHistory)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia/Kolkata`);
+        const historyRes = await fetch(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lng}&start_date=${fmt(startHistory)}&end_date=${fmt(endHistory)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Asia/Kolkata`, { signal: AbortSignal.timeout(8000) });
         if (historyRes.ok) {
            historyData = await historyRes.json();
         }
@@ -296,12 +313,17 @@ await fastify.register(async (app) => {
         console.error('History fetch failed:', e);
       }
 
+      const payload = {
+        current: forecastData.current || { temperature_2m: 28, relative_humidity_2m: 65, weather_code: 0 },
+        forecast: forecastData.daily || { time: [], weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
+        history: historyData.daily || { time: [], temperature_2m_max: [29], temperature_2m_min: [19] },
+        live: Boolean(forecastData.daily),
+      };
+      if (payload.live) redis.setex(cacheKey, 1800, JSON.stringify(payload)).catch(() => {});
       return reply.send({
         success: true,
         data: {
-          current: forecastData.current || { temperature_2m: 28, relative_humidity_2m: 65, weather_code: 0 },
-          forecast: forecastData.daily || { time: [], weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
-          history: historyData.daily || { time: [], temperature_2m_max: [29], temperature_2m_min: [19] },
+          ...payload,
 
           location: profile?.village || 'Region Default',
           isMapped
@@ -314,6 +336,7 @@ await fastify.register(async (app) => {
            current: { temperature_2m: 28, relative_humidity_2m: 65, weather_code: 0 },
            forecast: { time: [], weather_code: [0], temperature_2m_max: [30], temperature_2m_min: [20] },
            history: { time: [], temperature_2m_max: [29], temperature_2m_min: [19] },
+           live: false,
            location: profile?.village || 'Central Karnataka',
            isMapped
          }
@@ -331,7 +354,6 @@ await fastify.register(async (app) => {
       bankAccountNumber: z.string().max(30).optional(),
       bankIfsc: z.string().max(20).optional(),
       bankName: z.string().max(100).optional(),
-      readyToIntegrate: z.boolean().optional(),
       ethAddress: z.string().regex(/^0x[0-9a-fA-F]{40}$/, 'Invalid ETH address').optional(),
       annualIncomeINR: z.number().nonnegative().optional(),
       landOwnershipType: z.string().optional(),
@@ -353,7 +375,7 @@ await fastify.register(async (app) => {
       update: result.data,
       create: { userId: req.user.sub, ...result.data }
     });
-    return reply.send({ success: true, data: profile });
+    return reply.send({ success: true, data: presentProfile(profile) });
   });
 
   // ─ Real Stats Endpoint (BUG-028 fix) ──────────────────────
@@ -440,13 +462,17 @@ await fastify.register(async (app) => {
              where: { userId: req.user.sub },
              data: {
                nameMatchConfidence: confidence,
-               nameMatchStatus: confidence >= 0.85 ? 'matched' : 'mismatch',
+               nameMatchStatus: confidence >= MATCH_THRESHOLD ? 'matched' : 'mismatched',
              }
            });
         }
       }
 
-      return reply.send({ success: true, data: { cloudUrl, extracted: ocrResult } });
+      if (!ocrResult.success) {
+        // Upload is kept, but the farmer must re-upload a readable copy
+        return reply.status(422).send({ success: false, error: ocrResult.error ?? 'We could not read this document. Please upload a clearer copy.' });
+      }
+      return reply.send({ success: true, data: { uploaded: true, extracted: ocrResult } });
     }
   );
 
@@ -455,8 +481,9 @@ await fastify.register(async (app) => {
     { preHandler: [(fastify as any).authenticate] },
     async (req: any, reply) => {
       const file = await req.file();
-      if (!['application/pdf', 'image/jpeg', 'image/png', 'text/html'].includes(file.mimetype)) {
-        return reply.status(400).send({ success: false, error: 'Only PDF/JPEG/PNG/HTML allowed' });
+      if (!file) return reply.status(400).send({ success: false, error: 'No file uploaded' });
+      if (!ALLOWED_DOC_TYPES.includes(file.mimetype)) {
+        return reply.status(400).send({ success: false, error: 'Only PDF/JPEG/PNG allowed' });
       }
 
       const chunks: Buffer[] = [];
@@ -500,7 +527,7 @@ await fastify.register(async (app) => {
           totalExtentRaw: land.total_extent,
           totalExtentAcres,
           soilType: land.soil_type,
-          rtcOwnerName: own.owners?.[0],
+          rtcOwnerName: bestOwnerMatch(own.owners ?? [], (await prisma.farmerProfile.findUnique({ where: { userId: req.user.sub }, select: { nameEnglish: true } }))?.nameEnglish),
           rtcVerified: true,
         };
       }
@@ -521,13 +548,17 @@ await fastify.register(async (app) => {
              where: { userId: req.user.sub },
              data: {
                nameMatchConfidence: confidence,
-               nameMatchStatus: confidence >= 0.85 ? 'matched' : 'mismatch',
+               nameMatchStatus: confidence >= MATCH_THRESHOLD ? 'matched' : 'mismatched',
              }
            });
         }
       }
 
-      return reply.send({ success: true, data: { cloudUrl, extracted: ocrResult } });
+      if (!ocrResult.success) {
+        // Upload is kept, but the farmer must re-upload a readable copy
+        return reply.status(422).send({ success: false, error: ocrResult.error ?? 'We could not read this document. Please upload a clearer copy.' });
+      }
+      return reply.send({ success: true, data: { uploaded: true, extracted: ocrResult } });
     }
   );
 
@@ -536,6 +567,9 @@ await fastify.register(async (app) => {
     try {
       const file = await req.file();
       if (!file) return reply.status(400).send({ success: false, error: 'File is required' });
+      if (!ALLOWED_DOC_TYPES.includes(file.mimetype)) {
+        return reply.status(400).send({ success: false, error: 'Only PDF/JPEG/PNG allowed' });
+      }
       
       const chunks: Buffer[] = [];
       for await (const chunk of file.file) chunks.push(chunk);
@@ -572,7 +606,8 @@ await fastify.register(async (app) => {
         centerLng: ocrResult.center?.lng,
         totalExtentAcres: ocrResult.area_sq_mtrs ? parseFloat((ocrResult.area_sq_mtrs / 4046.86).toFixed(3)) : profile.totalExtentAcres,
         landMappingDataJson: ocrResult,
-        readyToIntegrate: !!ocrResult.boundary
+        // Visibility to other farmers still requires approved KYC + explicit opt-in
+        readyToIntegrate: !!ocrResult.boundary && profile.kycStatus === 'approved' && profile.readyToIntegrate,
       };
 
       // Sync survey number if profile is missing it
@@ -585,27 +620,32 @@ await fastify.register(async (app) => {
         data: updateData
       });
       
-      return reply.send({ success: true, data: { url: cloudUrl, profile: updated, extracted: ocrResult } });
+      return reply.send({ success: true, data: { profile: presentProfile(updated), extracted: ocrResult } });
     } catch (err: any) {
-      return reply.status(400).send({ success: false, error: err.message });
+      fastify.log.error({ err }, 'Sketch processing failed');
+      return reply.status(400).send({ success: false, error: 'Failed to process sketch' });
     }
   });
 
   // ── Save Land Boundary (GeoJSON Polygon) ────────────────────
   app.post('/land/boundary', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
     try {
-      const { boundary, centerLat, centerLng } = req.body;
+      const BoundarySchema = z.object({
+        boundary: z.any().refine((b) => b != null && JSON.stringify(b).length < 200_000, 'Invalid boundary'),
+        // Karnataka bounding box (with margin) — rejects junk coordinates
+        centerLat: z.coerce.number().min(11).max(19),
+        centerLng: z.coerce.number().min(73).max(79),
+      });
+      const parsed = BoundarySchema.safeParse(req.body);
+      if (!parsed.success) return reply.status(400).send({ success: false, error: parsed.error.flatten() });
+      const { boundary, centerLat, centerLng } = parsed.data;
       const updated = await prisma.farmerProfile.update({
         where: { userId: req.user.sub },
-        data: {
-          landBoundary: boundary,
-          centerLat: parseFloat(centerLat),
-          centerLng: parseFloat(centerLng)
-        }
+        data: { landBoundary: boundary, centerLat, centerLng }
       });
-      return reply.send({ success: true, data: updated });
+      return reply.send({ success: true, data: presentProfile(updated) });
     } catch (err: any) {
-      return reply.status(400).send({ success: false, error: err.message });
+      return reply.status(400).send({ success: false, error: 'Could not save boundary' });
     }
   });
 
@@ -635,10 +675,11 @@ await fastify.register(async (app) => {
       if (kanConfidence > confidence) confidence = kanConfidence;
     }
 
-    const nameMatchStatus = confidence >= 0.85 ? 'matched' : 'mismatched';
+    const nameMatchStatus = confidence >= MATCH_THRESHOLD ? 'matched' : 'mismatched';
 
-    // Perform auto-approval if confidence is perfect (100%)
-    const autoApprove = confidence >= 1.0;
+    // Auto-approve only on an exact full-name match between Aadhaar and RTC,
+    // and only if enabled. Anything else goes to the admin KYC queue.
+    const autoApprove = process.env.KYC_AUTO_APPROVE !== 'false' && confidence >= AUTO_APPROVE_THRESHOLD;
     const kycStatus = autoApprove ? 'approved' : 'submitted';
     const eventTopic = autoApprove ? 'kyc.approved' : 'kyc.submitted';
 
@@ -655,7 +696,7 @@ await fastify.register(async (app) => {
 
     // Publish event so Auth service can update roles and Notification service can alert user
     try {
-      await producer.send({
+      await publishViaOutbox({
         topic: eventTopic,
         messages: [{
           value: JSON.stringify({
@@ -711,7 +752,7 @@ await fastify.register(async (app) => {
       return reply.status(404).send({ success: false, error: 'Farmer node not found' });
     }
 
-    return reply.send({ success: true, data: profile });
+    return reply.send({ success: true, data: presentProfile(profile) });
   });
 
   // ─ Land Integration ───────────────────────────────────────
@@ -745,8 +786,9 @@ await fastify.register(async (app) => {
     const profile = await prisma.farmerProfile.findUnique({ where: { userId: req.user.sub } });
     if (!profile) return reply.status(404).send({ success: false, error: 'Profile not found' });
     
-    // Loosened: If not readyToIntegrate, just return neighbors without showing self or 403ing
-    const isReady = profile.readyToIntegrate === true;
+    if (profile.kycStatus !== 'approved') {
+      return reply.status(403).send({ success: false, error: 'KYC must be approved first' });
+    }
 
     const partners = await prisma.farmerProfile.findMany({
       where: {
@@ -764,7 +806,6 @@ await fastify.register(async (app) => {
         centerLat: true,
         centerLng: true,
         totalExtentAcres: true,
-        ethAddress: true
       },
       take: 50
     });
@@ -786,22 +827,31 @@ await fastify.register(async (app) => {
   });
 
   // GET /land/all-boundaries — Cross-profile discovery for the dashboard map
-  app.get('/land/all-boundaries', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
+  app.get('/land/all-boundaries', { preHandler: [(fastify as any).authenticate, requireRole('farmer', 'admin')] }, async (req: any, reply) => {
+    const isAdmin = req.user.role === 'admin';
+    // Farmers only see parcels of verified farmers who opted in to integration
+    // (plus their own). Admins see everything.
     const allFarmerLands = await prisma.farmerProfile.findMany({
       where: {
-        NOT: { landBoundary: undefined }
+        NOT: { landBoundary: { equals: Prisma.AnyNull } },
+        ...(isAdmin ? {} : {
+          OR: [
+            { userId: req.user.sub },
+            { readyToIntegrate: true, kycStatus: 'approved' },
+          ],
+        }),
       },
       select: {
         userId: true,
         nameDisplay: true,
         village: true,
-        surveyNumber: true,
+        surveyNumber: isAdmin,
         landBoundary: true,
         centerLat: true,
         centerLng: true,
         totalExtentAcres: true,
-        ethAddress: true
-      }
+      },
+      take: isAdmin ? 5000 : 1000,
     });
     return reply.send({ success: true, data: allFarmerLands });
   });
@@ -856,7 +906,7 @@ await fastify.register(async (app) => {
   // ─ Bhoomi Digital Land Integration ───────────────────────────
 
   app.post('/land/fetch-bhoomi', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
-    const { district, taluk, hobli, village, surveyNumber, hissaNumber } = req.body;
+    const { district, taluk, hobli, village, surveyNumber, hissaNumber } = req.body ?? {};
 
     if (!district || !taluk || !hobli || !village || !surveyNumber) {
       return reply.status(400).send({ success: false, error: 'Missing survey details' });
@@ -883,6 +933,13 @@ await fastify.register(async (app) => {
       const extentStr = rtc.land_details?.total_extent ?? '0.0.0.0';
       const acres = parseExtentToAcres(extentStr);
 
+      const current = await prisma.farmerProfile.findUnique({ where: { userId: req.user.sub } });
+      const owners: string[] = (rtc.ownership ?? []).map((o: any) => o?.name).filter(Boolean);
+      // Pick the RTC owner that best matches the farmer's Aadhaar name; the
+      // match is re-scored at KYC submission so a stranger's survey number
+      // can never auto-approve.
+      const ownerName = bestOwnerMatch(owners, current?.nameEnglish ?? current?.nameNormalized);
+
       // Update farmer profile
       const profile = await prisma.farmerProfile.update({
         where: { userId: req.user.sub },
@@ -896,16 +953,33 @@ await fastify.register(async (app) => {
           rtcVerified: true,
           totalExtentAcres: acres,
           totalExtentRaw: extentStr,
-          rtcOwnerName: rtc.ownership?.[0]?.name,
-          kycStatus: 'partially_uploaded'
+          rtcOwnerName: ownerName,
+          rtcDataJson: rtc,
+          kycStatus: 'partially_uploaded',
+          // Land changed → must re-verify before being visible for integration
+          readyToIntegrate: false,
         }
       });
 
-      return reply.send({ success: true, data: { profile, extracted: rtc } });
+      return reply.send({ success: true, data: { profile: presentProfile(profile), extracted: rtc } });
     } catch (err: any) {
       fastify.log.error({ err }, 'Bhoomi fetch error');
       return reply.status(500).send({ success: false, error: 'Bhoomi integration service unavailable' });
     }
+  });
+
+  // ─ Internal: verified profile data for other services (blocked at Nginx) ──
+  app.get('/internal/profiles', { preHandler: [requireInternalKey()] }, async (req: any, reply) => {
+    const ids = String(req.query?.ids ?? '').split(',').map((s: string) => s.trim()).filter(Boolean).slice(0, 50);
+    if (!ids.length) return reply.status(400).send({ success: false, error: 'ids required' });
+    const profiles = await prisma.farmerProfile.findMany({
+      where: { userId: { in: ids } },
+      select: {
+        userId: true, nameDisplay: true, nameEnglish: true, surveyNumber: true, hissaNumber: true,
+        village: true, taluk: true, district: true, totalExtentAcres: true, kycStatus: true, readyToIntegrate: true,
+      },
+    });
+    return reply.send({ success: true, data: profiles });
   });
 
   // ─ Admin: Schemes Management ──────────────────────────────
@@ -920,7 +994,8 @@ await fastify.register(async (app) => {
       const json = await res.json();
       return reply.send(json);
     } catch (err: any) {
-      return reply.status(500).send({ success: false, error: err.message });
+      fastify.log.error({ err }, 'ML schemes proxy failed');
+      return reply.status(503).send({ success: false, error: 'Schemes service is unavailable, please retry shortly' });
     }
   });
 
@@ -964,7 +1039,8 @@ await fastify.register(async (app) => {
       const json = await res.json();
       return reply.send(json);
     } catch (err: any) {
-      return reply.status(500).send({ success: false, error: err.message });
+      fastify.log.error({ err }, 'ML schemes proxy failed');
+      return reply.status(503).send({ success: false, error: 'Schemes service is unavailable, please retry shortly' });
     }
   });
 
@@ -974,18 +1050,32 @@ await fastify.register(async (app) => {
        const ML_URL = process.env.ML_SERVICE_URL ?? 'http://ml-service:4006';
        const res = await fetch(`${ML_URL}/ml/schemes/delete?name=${encodeURIComponent(name)}`, { 
          method: 'DELETE',
-         headers: { 'Authorization': req.headers.authorization }
+         headers: { 'Authorization': getAuthToken(req) ?? '' }
        });
        const json = await res.json();
        return reply.send(json);
     } catch (err: any) {
-       return reply.status(500).send({ success: false, error: err.message });
+       fastify.log.error({ err }, 'ML schemes proxy failed');
+       return reply.status(503).send({ success: false, error: 'Schemes service is unavailable, please retry shortly' });
     }
   });
 
 }, { prefix: '/farmer' });
 
 
+
+// Kafka may not be ready (or topics may not exist yet on a fresh broker):
+// keep retrying in the background instead of leaving the consumer dead.
+const runKafka = async (attempt = 1): Promise<void> => {
+  try {
+    await startKafka();
+    await startKafkaConsumer();
+  } catch (err) {
+    fastify.log.error({ err }, `[kafka] start failed (attempt ${attempt}) — retrying in 10s`);
+    await consumer.disconnect().catch(() => {});
+    setTimeout(() => { void runKafka(attempt + 1); }, 10_000);
+  }
+};
 
 // ── DB + Start ─────────────────────────────────────────────────
 
@@ -994,9 +1084,8 @@ async function bootstrap() {
     await prisma.$connect();
     fastify.log.info('[db] Connected to PostgreSQL Farmer');
     
-    // Start Kafka Infrastructure
-    await startKafka();
-    startKafkaConsumer().catch(err => fastify.log.error(err, '[kafka] Consumer error'));
+    // Start Kafka in the background with retries (non-fatal for HTTP)
+    void runKafka();
 
     const PORT = Number(process.env.FARMER_PORT ?? 4002);
     await fastify.listen({ port: PORT, host: '0.0.0.0' });

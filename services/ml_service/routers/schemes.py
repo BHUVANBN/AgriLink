@@ -3,14 +3,14 @@ Government Schemes Router
 BUG-022 fix: MongoDB-backed schemes with Selenium scraper to populate from govt websites
 Enhanced with the AgriLink Eligibility Engine for Top 10 Central Schemes.
 """
-from fastapi import APIRouter, Query, BackgroundTasks
+from fastapi import APIRouter, Query, BackgroundTasks, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-import logging, os, json
+import asyncio, logging, os, json
 from datetime import datetime, timedelta
 from db import get_pool
 from eligibility_engine import match_schemes
-from auth import require_token
+from auth import require_role
 
 router = APIRouter()
 logger = logging.getLogger("schemes")
@@ -36,7 +36,6 @@ class SchemeSearchRequest(BaseModel):
 # ── Search Endpoint ───────────────────────────────────────────
 
 @router.post("/search")
-@require_token
 async def search_schemes(req: SchemeSearchRequest, background_tasks: BackgroundTasks):
     pool = get_pool()
     
@@ -94,7 +93,6 @@ async def search_schemes(req: SchemeSearchRequest, background_tasks: BackgroundT
 
 
 @router.get("/all")
-@require_token
 async def list_all_schemes(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
@@ -140,8 +138,7 @@ class SchemeCreateRequest(BaseModel):
     state: Optional[str] = None
     eligibility: Optional[Dict[str, Any]] = {}
 
-@router.post("/add")
-@require_token
+@router.post("/add", dependencies=[Depends(require_role("admin"))])
 async def add_scheme(req: SchemeCreateRequest):
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -157,8 +154,7 @@ async def add_scheme(req: SchemeCreateRequest):
         ''', req.name, req.description, req.benefit, req.ministry, req.sourceUrl, req.state, datetime.utcnow(), json.dumps(req.eligibility))
     return {"success": True, "data": {"message": f"Scheme {req.name} added/updated successfully"}}
 
-@router.delete("/delete")
-@require_token
+@router.delete("/delete", dependencies=[Depends(require_role("admin"))])
 async def delete_scheme(name: str):
     pool = get_pool()
     async with pool.acquire() as conn:
@@ -167,69 +163,76 @@ async def delete_scheme(name: str):
 
 # ── Selenium Scraper ──────────────────────────────────────────
 
-async def scrape_and_store_schemes():
-    """
-    Selenium scraper for live government scheme data
-    """
-    from selenium import webdriver
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.chrome.service import Service
-    from webdriver_manager.chrome import ChromeDriverManager
-    from bs4 import BeautifulSoup
+_scrape_lock = asyncio.Lock()
+_last_scrape_attempt: Optional[datetime] = None
 
-    options = Options()
-    options.add_argument("--headless=new")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+
+def _scrape_sources() -> list:
+    """Blocking Selenium work — run in a worker thread."""
+    from bs4 import BeautifulSoup
+    from browser import chrome
 
     sources = [
         {"url": "https://pmkisan.gov.in/", "state": None, "ministry": "Ministry of Agriculture"},
         {"url": "https://agricoop.nic.in/en/schemes-programmes", "state": None, "ministry": "Ministry of Agriculture & Farmers Welfare"},
         {"url": "https://raitamitra.karnataka.gov.in/", "state": "Karnataka", "ministry": "Karnataka Agriculture Dept"},
     ]
-
-    schemes_to_store = []
-    driver = None
-    try:
-        service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=service, options=options)
-
+    keywords = ['scheme', 'yojana', 'mission', 'krishi', 'ಗೌರವ']
+    found: dict = {}
+    with chrome(wait_seconds=5) as driver:
         for source in sources:
             try:
                 driver.get(source["url"])
                 soup = BeautifulSoup(driver.page_source, 'lxml')
                 for link in soup.find_all('a', href=True):
                     text = link.get_text(strip=True)
-                    if len(text) < 10 or len(text) > 200: continue
-                    keywords = ['scheme', 'yojana', 'mission', 'krishi', 'ಗೌರವ']
+                    if len(text) < 10 or len(text) > 200:
+                        continue
                     if any(k.lower() in text.lower() for k in keywords):
                         href = link['href']
                         full_url = href if href.startswith('http') else source["url"].rstrip('/') + '/' + href.lstrip('/')
-                        schemes_to_store.append({
+                        found[(text, full_url)] = {
                             "name": text,
                             "sourceUrl": full_url,
                             "state": source["state"],
                             "ministry": source["ministry"],
                             "scrapedAt": datetime.utcnow(),
-                            "eligibility": json.dumps({})
-                        })
+                            "eligibility": json.dumps({}),
+                        }
             except Exception as e:
                 logger.error(f"Error scraping {source['url']}: {e}")
+    return list(found.values())
 
-        if schemes_to_store:
-            pool = get_pool()
-            async with pool.acquire() as conn:
-                for s in schemes_to_store:
-                    await conn.execute('''
-                        INSERT INTO schemes (name, "sourceUrl", state, ministry, "scrapedAt", eligibility)
-                        VALUES ($1, $2, $3, $4, $5, $6)
-                        ON CONFLICT (name, "sourceUrl") DO UPDATE SET
-                            state = EXCLUDED.state,
-                            ministry = EXCLUDED.ministry,
-                            "scrapedAt" = EXCLUDED."scrapedAt"
-                    ''', s["name"], s["sourceUrl"], s["state"], s["ministry"], s["scrapedAt"], s["eligibility"])
-            logger.info(f"Stored {len(schemes_to_store)} schemes")
-    except Exception as e:
-        logger.error(f"Scheme scrape error: {e}")
-    finally:
-        if driver: driver.quit()
+
+async def scrape_and_store_schemes():
+    """
+    Refresh scraped schemes. At most one scrape at a time per process, and
+    no more than one attempt every 6 hours even if it fails (portals are
+    often down), so search traffic can't spawn a browser per request.
+    """
+    global _last_scrape_attempt
+    if _scrape_lock.locked():
+        return
+    if _last_scrape_attempt and datetime.utcnow() - _last_scrape_attempt < timedelta(hours=6):
+        return
+    async with _scrape_lock:
+        _last_scrape_attempt = datetime.utcnow()
+        try:
+            schemes_to_store = await asyncio.to_thread(_scrape_sources)
+        except Exception as e:
+            logger.error(f"Scheme scrape error: {e}")
+            return
+        if not schemes_to_store:
+            return
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            for s in schemes_to_store:
+                await conn.execute('''
+                    INSERT INTO schemes (name, "sourceUrl", state, ministry, "scrapedAt", eligibility)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    ON CONFLICT (name, "sourceUrl") DO UPDATE SET
+                        state = EXCLUDED.state,
+                        ministry = EXCLUDED.ministry,
+                        "scrapedAt" = EXCLUDED."scrapedAt"
+                ''', s["name"], s["sourceUrl"], s["state"], s["ministry"], s["scrapedAt"], s["eligibility"])
+        logger.info(f"Stored {len(schemes_to_store)} schemes")

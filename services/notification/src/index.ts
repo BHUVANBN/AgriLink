@@ -12,19 +12,24 @@ import './config.js';
  */
 
 import Fastify from 'fastify';
+import { randomUUID } from 'crypto';
 import FastifyCors from '@fastify/cors';
 import FastifyJwt from '@fastify/jwt';
 import FastifyCookie from '@fastify/cookie';
 import { makeAuthMiddleware, requireRole } from '@agrilink/auth-middleware';
+import { registerMetrics, registry as promRegistry, superviseConsumer } from '@agrilink/platform';
+import { Counter } from 'prom-client';
 import { Kafka, Consumer, EachMessagePayload } from 'kafkajs';
 import nodemailer, { Transporter } from 'nodemailer';
 import { withRetry } from './utils/retry.js';
 
 import { getTemplate } from './templates/email.templates.js';
 import { getSmsText } from './templates/sms.templates.js';
-import { NotificationLog } from './models/NotificationLog.js';
+import { NotificationLog, InAppNotification } from './models/NotificationLog.js';
 import { getUsersForBroadcast } from './services/auth.js';
 import fastifyIO from 'fastify-socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { Redis } from 'ioredis';
 import FastifySwagger from '@fastify/swagger';
 import FastifySwaggerUI from '@fastify/swagger-ui';
 
@@ -39,6 +44,13 @@ const fastify = Fastify({
   },
 });
 
+// CORS for the REST API (the browser calls /notification/me from the web app)
+await fastify.register(FastifyCors, {
+  origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+});
+
 // JWT & Cookie for Auth Middleware
 await fastify.register(FastifyCookie, {
   secret: process.env.COOKIE_SECRET ?? process.env.JWT_ACCESS_SECRET ?? 'cookie-secret-dev',
@@ -49,15 +61,32 @@ await fastify.register(FastifyJwt, {
   secret: process.env.JWT_ACCESS_SECRET!,
 });
 
+// ── Redis (revocation checks + Socket.IO fan-out across replicas) ──
+const REDIS_URL = process.env.REDIS_URL ?? 'redis://localhost:6379';
+const redis = new Redis(REDIS_URL, { maxRetriesPerRequest: 2 });
+redis.on('error', (err) => fastify.log.warn({ err: err.message }, '[redis] error (non-fatal)'));
+
 // Register the standard auth decorator
-fastify.decorate('authenticate', makeAuthMiddleware(fastify));
+fastify.decorate('authenticate', makeAuthMiddleware(fastify, { redis }));
+registerMetrics(fastify, 'notification');
+
+// Socket.IO is served under /notification/socket.io so it goes through the
+// gateway like every other API. The Redis adapter makes `io.to(room).emit()`
+// reach sockets connected to ANY replica — required once you scale out,
+// because Kafka hands each event to only one replica in the consumer group.
+const pubClient = new Redis(REDIS_URL);
+const subClient = pubClient.duplicate();
+pubClient.on('error', () => {});
+subClient.on('error', () => {});
 
 await fastify.register(fastifyIO as any, {
+  path: '/notification/socket.io',
   cors: {
     origin: process.env.CORS_ORIGINS?.split(',') ?? ['http://localhost:3000'],
     methods: ['GET', 'POST'],
     credentials: true,
   },
+  adapter: createAdapter(pubClient, subClient),
 });
 
 // Swagger Documentation Engine
@@ -125,7 +154,15 @@ const TOPICS = [
   'notification.send',
   'user.registered',
   'system.broadcast',
+  'review.created',
 ] as const;
+
+const deliveries = new Counter({
+  name: 'notification_deliveries_total',
+  help: 'Email/SMS deliveries',
+  labelNames: ['channel', 'status'],
+  registers: [promRegistry],
+});
 
 const FROM_EMAIL = process.env.SMTP_FROM ?? 'AgriLink <noreply@agrilink.app>';
 
@@ -192,11 +229,14 @@ async function dispatch(
   topic: string,
   eventData: any
 ): Promise<void> {
-  const { userId, email, phone, channels } = eventData;
+  const { email, phone, channels } = eventData;
+  // Order events identify the recipient as farmerId rather than userId
+  const userId = eventData.userId ?? eventData.farmerId;
 
   const sendEmail = email && (channels === undefined || (channels as string[]).includes('email'));
   const sendSMS = phone && (channels === undefined || (channels as string[]).includes('sms'));
-  const sendWeb = userId && (channels === undefined || (channels as string[]).includes('web') || true);
+  // Web (socket) delivery is free, so it's always on for a known user
+  const sendWeb = Boolean(userId);
 
   if (!sendEmail && !sendSMS && !sendWeb) return;
 
@@ -204,15 +244,29 @@ async function dispatch(
   const smsText = sendSMS ? getSmsText(topic, eventData) : null;
 
   if (sendWeb) {
-    const payload = {
+    const subject = emailTemplate?.subject || eventData.subject || 'AgriLink update';
+    const body = eventData.body || smsText || emailTemplate?.text || 'New update available';
+    // Persist first so the user sees it later even if they're offline now
+    const saved = await InAppNotification.create({
+      data: {
+        userId,
+        topic,
+        subject: String(subject).slice(0, 200),
+        body: String(body).slice(0, 2000),
+        data: (eventData.data ?? null) as any,
+      },
+    }).catch((err: any) => {
+      fastify.log.warn({ err: err?.message }, '[in-app] persist failed');
+      return null;
+    });
+    (fastify as any).io.to(`user:${userId}`).emit('notification', {
+      id: saved?.id ?? randomUUID(),
       topic,
-      id: Math.random().toString(36).slice(2, 11),
-      timestamp: new Date().toISOString(),
-      subject: emailTemplate?.subject || eventData.subject || 'AgriLink Update',
-      body: eventData.body || smsText || emailTemplate?.text || 'New update available',
+      timestamp: (saved?.createdAt ?? new Date()).toISOString(),
+      subject,
+      body,
       data: eventData.data || eventData,
-    };
-    (fastify as any).io.to(`user:${userId}`).emit('notification', payload);
+    });
   }
 
   const jobs: Promise<void>[] = [];
@@ -229,6 +283,7 @@ async function dispatch(
         })
       );
 
+      deliveries.inc({ channel: 'email', status: result ? 'sent' : 'failed' });
       await NotificationLog.create({
         data: {
           userId,
@@ -255,6 +310,7 @@ async function dispatch(
         });
       });
 
+      deliveries.inc({ channel: 'sms', status: result ? 'sent' : 'failed' });
       await NotificationLog.create({
         data: {
           userId,
@@ -284,6 +340,7 @@ const consumer: Consumer = kafka.consumer({
 });
 
 let kafkaConnected = false;
+superviseConsumer(consumer, () => startKafkaConsumer(), console);
 
 async function startKafkaConsumer(): Promise<void> {
   try {
@@ -304,26 +361,51 @@ async function startKafkaConsumer(): Promise<void> {
 
         if (topic === 'system.broadcast') {
           const { targetRole, subject, body, priority } = event.data;
-          const users = await getUsersForBroadcast(targetRole);
-          await Promise.allSettled(users.map(u => 
-            dispatch('notification.send', {
-               userId: u.id,
-               email: u.email,
-               phone: u.phone,
-               subject,
-               body,
-               channels: ['email', 'web'],
-               priority
-            })
-          ));
+          // Free SMTP (e.g. Gmail ~500/day) can't take a platform-wide blast,
+          // so broadcasts go to the web channel by default; email is opt-in.
+          const channels = process.env.BROADCAST_EMAIL === 'true' ? ['email', 'web'] : ['web'];
+          for await (const page of getUsersForBroadcast(targetRole)) {
+            await mapWithConcurrency(page, 10, (u) =>
+              dispatch('notification.send', {
+                userId: u.id,
+                email: u.email,
+                phone: u.phone,
+                subject,
+                body,
+                channels,
+                priority,
+              }).catch(() => {}),
+            );
+          }
         } else {
-          await dispatch(topic, event.data ?? event).catch(() => {});
+          const data = event.data ?? event;
+          await dispatch(topic, data).catch(() => {});
+          // Tell the supplier about new orders (in-app only)
+          if (topic === 'order.placed' && data.supplierUserId) {
+            await dispatch('notification.send', {
+              userId: data.supplierUserId,
+              channels: ['web'],
+              subject: `New order ${data.orderNumber ?? ''}`.trim(),
+              body: `You have a new ${data.paymentStatus === 'PAID' ? 'paid' : 'cash-on-delivery'} order to fulfil.`,
+              data: { orderNumber: data.orderNumber },
+            }).catch(() => {});
+          }
         }
       },
     });
   } catch (err: any) {
     kafkaConnected = false;
+    fastify.log.error({ err: err?.message }, '[kafka] consumer failed — retrying in 10s');
+    setTimeout(() => { startKafkaConsumer().catch(() => {}); }, 10_000);
   }
+}
+
+async function mapWithConcurrency<T>(items: T[], limit: number, fn: (item: T) => Promise<unknown>) {
+  let i = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (i < items.length) await fn(items[i++]);
+  });
+  await Promise.all(workers);
 }
 
 // ── HTTP Server ──────────────────────────────────────────────
@@ -347,6 +429,38 @@ fastify.get(
   return reply.send({ success: true, data: { logs } });
 });
 
+// ── In-app notifications API (per user) ───────────────────────
+
+fastify.get('/notification/me', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
+  const { limit = 30, before } = req.query as { limit?: string | number; before?: string };
+  const items = await InAppNotification.findMany({
+    where: { userId: req.user.sub, ...(before ? { createdAt: { lt: new Date(before) } } : {}) },
+    orderBy: { createdAt: 'desc' },
+    take: Math.min(Number(limit) || 30, 100),
+  });
+  const unread = await InAppNotification.count({ where: { userId: req.user.sub, readAt: null } });
+  return reply.send({ success: true, data: { items, unread } });
+});
+
+fastify.get('/notification/me/unread-count', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
+  const unread = await InAppNotification.count({ where: { userId: req.user.sub, readAt: null } });
+  return reply.send({ success: true, data: { unread } });
+});
+
+fastify.post('/notification/me/read', { preHandler: [(fastify as any).authenticate] }, async (req: any, reply) => {
+  const ids = Array.isArray(req.body?.ids) ? (req.body.ids as unknown[]).filter((x): x is string => typeof x === 'string').slice(0, 200) : null;
+  const res = await InAppNotification.updateMany({
+    where: { userId: req.user.sub, readAt: null, ...(ids ? { id: { in: ids } } : {}) },
+    data: { readAt: new Date() },
+  });
+  return reply.send({ success: true, data: { marked: res.count } });
+});
+
+// Housekeeping: keep 90 days of in-app notifications
+setInterval(() => {
+  InAppNotification.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 90 * 86400_000) } } }).catch(() => {});
+}, 24 * 3600_000).unref();
+
 // ── Bootstrap ─────────────────────────────────────────────────
 
 async function bootstrap(): Promise<void> {
@@ -357,16 +471,17 @@ async function bootstrap(): Promise<void> {
   // ── WebSocket Security Fix (JWT Verification) ──────────
   (fastify as any).io.on('connection', async (socket: any) => {
     try {
-      const cookieHeader = socket.handshake.headers.cookie;
-      const cookies = cookieHeader ? Object.fromEntries(cookieHeader.split('; ').map((c: string) => c.split('='))) : {};
-      const token = cookies.agrilink_access || socket.handshake.auth?.token || socket.handshake.query.token;
+      const cookieHeader: string = socket.handshake.headers.cookie ?? '';
+      const cookies = (fastify as any).parseCookie(cookieHeader) as Record<string, string>;
+      // Only cookie / auth payload — never the query string (it ends up in logs)
+      const token = cookies.agrilink_access || socket.handshake.auth?.token;
 
       if (!token) return socket.disconnect(true);
 
       const decoded: any = fastify.jwt.verify(token);
       const userId = decoded.sub;
 
-      if (!userId) return socket.disconnect(true);
+      if (!userId || decoded.type === 'refresh') return socket.disconnect(true);
 
       socket.join(`user:${userId}`);
       fastify.log.info({ userId, socketId: socket.id }, '[ws] Authenticated ✓');

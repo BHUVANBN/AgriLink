@@ -5,186 +5,10 @@ import { motion } from 'framer-motion';
 import { TrendingUp, BarChart3, Search, AlertTriangle, Database } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FarmerSidebar from '@/components/FarmerSidebar';
-import masterData from '../../../../../../services/ml_service/data.json';
+import masterData from '@/data/agmarknet-master.json';
+import { forecastPrices } from '@/lib/forecast';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-
-// Simple LSTM implementation for price prediction
-class SimpleLSTM {
-  private weights: {
-    inputGate: number[][];
-    forgetGate: number[][];
-    outputGate: number[][];
-    cellState: number[][];
-  } = {
-    inputGate: [],
-    forgetGate: [],
-    outputGate: [],
-    cellState: []
-  };
-
-  constructor(inputSize: number, hiddenSize: number) {
-    // Initialize weights with random values
-    this.weights.inputGate = this.randomMatrix(inputSize + hiddenSize, hiddenSize);
-    this.weights.forgetGate = this.randomMatrix(inputSize + hiddenSize, hiddenSize);
-    this.weights.outputGate = this.randomMatrix(inputSize + hiddenSize, hiddenSize);
-    this.weights.cellState = this.randomMatrix(inputSize + hiddenSize, hiddenSize);
-  }
-
-  private randomMatrix(rows: number, cols: number): number[][] {
-    const matrix: number[][] = [];
-    for (let i = 0; i < rows; i++) {
-      matrix[i] = [];
-      for (let j = 0; j < cols; j++) {
-        matrix[i][j] = (Math.random() - 0.5) * 0.1;
-      }
-    }
-    return matrix;
-  }
-
-  private sigmoid(x: number): number {
-    return 1 / (1 + Math.exp(-x));
-  }
-
-  private tanh(x: number): number {
-    return Math.tanh(x);
-  }
-
-  private matrixMultiply(weights: number[][], input: number[]): number[] {
-    const result: number[] = [];
-    for (let i = 0; i < weights[0].length; i++) {
-      let sum = 0;
-      for (let j = 0; j < input.length; j++) {
-        sum += weights[j][i] * input[j];
-      }
-      result[i] = sum;
-    }
-    return result;
-  }
-
-  forward(prices: number[]): number[] {
-    if (prices.length < 3) return prices;
-
-    const sequenceLength = Math.min(12, prices.length); // Use last 12 months
-    const inputSequence = prices.slice(-sequenceLength);
-    const predictions: number[] = [];
-    let hiddenState = new Array(4).fill(0);
-    let cellState = new Array(4).fill(0);
-
-    // Process the sequence
-    for (let i = 0; i < inputSequence.length; i++) {
-      const input = [inputSequence[i], ...hiddenState];
-      
-      // LSTM gates
-      const inputGateRaw = this.matrixMultiply(this.weights.inputGate, input);
-      const forgetGateRaw = this.matrixMultiply(this.weights.forgetGate, input);
-      const outputGateRaw = this.matrixMultiply(this.weights.outputGate, input);
-      const cellGateRaw = this.matrixMultiply(this.weights.cellState, input);
-
-      const inputGate = inputGateRaw.map(x => this.sigmoid(x));
-      const forgetGate = forgetGateRaw.map(x => this.sigmoid(x));
-      const outputGate = outputGateRaw.map(x => this.sigmoid(x));
-      const cellGate = cellGateRaw.map(x => this.tanh(x));
-
-      // Update cell state and hidden state
-      for (let j = 0; j < cellState.length; j++) {
-        cellState[j] = forgetGate[j] * cellState[j] + inputGate[j] * cellGate[j];
-        hiddenState[j] = outputGate[j] * this.tanh(cellState[j]);
-      }
-
-      predictions.push(inputSequence[i]);
-    }
-
-    // Generate future predictions
-    for (let i = 0; i < 4; i++) {
-      const lastPrice = predictions[predictions.length - 1];
-      const input = [lastPrice, ...hiddenState];
-      
-      const inputGateRaw = this.matrixMultiply(this.weights.inputGate, input);
-      const forgetGateRaw = this.matrixMultiply(this.weights.forgetGate, input);
-      const outputGateRaw = this.matrixMultiply(this.weights.outputGate, input);
-      const cellGateRaw = this.matrixMultiply(this.weights.cellState, input);
-
-      const inputGate = inputGateRaw.map(x => this.sigmoid(x));
-      const forgetGate = forgetGateRaw.map(x => this.sigmoid(x));
-      const outputGate = outputGateRaw.map(x => this.sigmoid(x));
-      const cellGate = cellGateRaw.map(x => this.tanh(x));
-
-      for (let j = 0; j < cellState.length; j++) {
-        cellState[j] = forgetGate[j] * cellState[j] + inputGate[j] * cellGate[j];
-        hiddenState[j] = outputGate[j] * this.tanh(cellState[j]);
-      }
-
-      // Predict next price based on learned patterns
-      const trend = this.calculateTrend(predictions);
-      const seasonalFactor = this.calculateSeasonalFactor(predictions);
-      const predictedPrice = lastPrice * (1 + trend * 0.1 + seasonalFactor * 0.05 + (Math.random() - 0.5) * 0.02);
-      
-      predictions.push(Math.max(0, predictedPrice));
-    }
-
-    return predictions.slice(-4); // Return last 4 predictions
-  }
-
-  private calculateTrend(prices: number[]): number {
-    if (prices.length < 3) return 0;
-    
-    const recent = prices.slice(-3);
-    const older = prices.slice(-6, -3);
-    
-    if (older.length === 0) return 0;
-    
-    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
-    const olderAvg = older.reduce((a, b) => a + b, 0) / older.length;
-    
-    return (recentAvg - olderAvg) / olderAvg;
-  }
-
-  private calculateSeasonalFactor(prices: number[]): number {
-    if (prices.length < 12) return 0;
-    
-    const lastYear = prices.slice(-12);
-    const firstHalf = lastYear.slice(0, 6);
-    const secondHalf = lastYear.slice(6);
-    
-    const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-    const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
-    
-    return (secondAvg - firstAvg) / firstAvg;
-  }
-
-  // Simple training based on historical patterns
-  train(prices: number[]): void {
-    if (prices.length < 6) return;
-
-    // Learn from historical patterns
-    for (let epoch = 0; epoch < 10; epoch++) {
-      for (let i = 3; i < prices.length; i++) {
-        const sequence = prices.slice(i - 3, i);
-        const target = prices[i];
-        
-        // Simple weight adjustment based on prediction error
-        const prediction = this.forward(sequence)[sequence.length - 1];
-        const error = target - prediction;
-        
-        // Update weights slightly (simplified backpropagation)
-        this.adjustWeights(error * 0.01);
-      }
-    }
-  }
-
-  private adjustWeights(learningRate: number): void {
-    // Simple weight adjustment
-    Object.keys(this.weights).forEach(key => {
-      const weightMatrix = this.weights[key as keyof typeof this.weights];
-      for (let i = 0; i < weightMatrix.length; i++) {
-        for (let j = 0; j < weightMatrix[0].length; j++) {
-          weightMatrix[i][j] += (Math.random() - 0.5) * learningRate;
-        }
-      }
-    });
-  }
-}
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
@@ -202,27 +26,6 @@ export default function CropPricesPage() {
   const [prediction, setPrediction] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 5;
-  const [lstmModel, setLstmModel] = useState<SimpleLSTM | null>(null);
-
-  // Fallback simple prediction function
-  function generateSimplePredictions(prices: number[]): any[] {
-    const lastPrice = prices[prices.length - 1] || 0;
-    const predictions = [];
-    
-    for (let i = 1; i <= 4; i++) {
-      const futureDate = new Date(Date.now() + i * 30 * 24 * 60 * 60 * 1000);
-      const predictedPrice = lastPrice * (1 + (Math.random() - 0.5) * 0.1);
-      
-      predictions.push({
-        month: futureDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        predictedPrice: Math.round(predictedPrice),
-        minPrice: Math.round(predictedPrice * 0.95),
-        maxPrice: Math.round(predictedPrice * 1.05)
-      });
-    }
-    
-    return predictions;
-  }
 
   // Direct Agmarknet API fetch
   async function fetchAgmarknetDirect() {
@@ -258,44 +61,35 @@ export default function CropPricesPage() {
       if (data.success && data.rows && data.rows.length > 0) {
         toast.success(`Fetched ${data.rows.length} records directly from Agmarknet`);
         
-        // Initialize and train LSTM model
-        const model = new SimpleLSTM(1, 4);
-        const prices = data.rows.map((row: any) => parseFloat(row.model_price_wt)).filter((p: any) => !isNaN(p));
-        
-        if (prices.length >= 6) {
-          console.log('Training LSTM model with', prices.length, 'price points...');
-          model.train(prices);
-          
-          // Generate LSTM predictions
-          const lstmPredictions = model.forward(prices);
-          console.log('LSTM predictions:', lstmPredictions);
-          
-          const predictionData = {
-            historicalData: data.rows,
-            forecast: lstmPredictions.map((price, index) => ({
-              month: new Date(Date.now() + (index + 1) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-              predictedPrice: Math.round(price),
-              minPrice: Math.round(price * 0.95),
-              maxPrice: Math.round(price * 1.05)
-            })),
-            basePrice: data.rows[0]?.model_price_wt || 0,
-            showTable: true
-          };
-          
-          setLstmModel(model);
-          setPrediction(predictionData);
-        } else {
-          // Fallback to simple prediction if not enough data
-          const simplePredictions = generateSimplePredictions(prices);
-          const predictionData = {
-            historicalData: data.rows,
-            forecast: simplePredictions,
-            basePrice: data.rows[0]?.model_price_wt || 0,
-            showTable: true
-          };
-          setPrediction(predictionData);
+        // Deterministic damped-trend forecast on monthly averages (oldest → newest)
+        const monthly = new Map<string, number[]>();
+        for (const row of data.rows) {
+          const price = parseFloat(row.model_price_wt);
+          if (!Number.isFinite(price) || price <= 0) continue;
+          const d = new Date(row.rep_date);
+          const key = Number.isNaN(d.getTime()) ? String(row.rep_date) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+          if (!monthly.has(key)) monthly.set(key, []);
+          monthly.get(key)!.push(price);
         }
-        
+        const series = [...monthly.entries()]
+          .sort(([a], [b]) => a.localeCompare(b))
+          .map(([, ps]) => ps.reduce((x, y) => x + y, 0) / ps.length);
+
+        const forecast = forecastPrices(series, 4).map((f) => ({
+          month: new Date(new Date().getFullYear(), new Date().getMonth() + f.step, 1)
+            .toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          predictedPrice: f.predictedPrice,
+          minPrice: f.minPrice,
+          maxPrice: f.maxPrice,
+        }));
+
+        setPrediction({
+          historicalData: data.rows,
+          forecast,
+          basePrice: Math.round(series[series.length - 1] ?? 0),
+          showTable: true,
+        });
+
         setCurrentPage(1); // Reset to first page when new data is loaded
       } else {
         console.log('No data found in direct response');
@@ -614,7 +408,7 @@ export default function CropPricesPage() {
       prediction: null
     }));
     
-    // Add LSTM predictions to chart
+    // Add forecast points to chart
     const predictions = prediction.forecast || [];
     const chartPredictions = predictions.map((pred: any) => ({
       date: pred.month,

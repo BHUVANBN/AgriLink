@@ -1,397 +1,387 @@
-version: "3.9"
+# ─────────────────────────────────────────────────────────────────────────────
+# AgriLink — single-host deployment (runs on a free VM, e.g. Oracle Cloud
+# Always Free ARM: 4 vCPU / 24 GB). Everything here is free / open-source.
+#
+#   Infra only (hybrid dev, services run with `pnpm dev`):
+#     docker compose -f infrastructure/docker-compose.yml --env-file .env --profile dev up -d
+#
+#   Full stack (production):
+#     docker compose -f infrastructure/docker-compose.yml --env-file .env --profile app up -d --build
+#
+#   + Automatic HTTPS (Let's Encrypt via Caddy; needs WEB_DOMAIN / API_DOMAIN DNS):
+#     ... --profile app --profile https up -d
+#
+#   + Monitoring (Prometheus, Alertmanager, Grafana):
+#     ... --profile monitoring up -d
+#
+#   + Self-hosted Postgres instead of Neon:
+#     ... --profile localdb up -d     (and point DATABASE_URL_* at postgres:5432)
+#
+# Scale a stateless service:  ... up -d --scale marketplace-service=3
+#   then: docker compose ... exec api-gateway nginx -s reload
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: agrilink
 
-# ── Networks ──────────────────────────────────────────────────────────────────
 networks:
   agrilink-net:
     driver: bridge
 
-# ── Volumes ───────────────────────────────────────────────────────────────────
 volumes:
+  prometheus_data:
+  grafana_data:
   postgres_data:
   redis_data:
   kafka_data:
-  zookeeper_data:
-  prometheus_data:
-  grafana_data:
+  caddy_data:
+  caddy_config:
+
+x-node-service: &node-service
+  restart: unless-stopped
+  env_file: ../.env
+  networks: [agrilink-net]
+  logging:
+    driver: json-file
+    options: { max-size: "10m", max-file: "3" }
+
+x-internal-urls: &internal-urls
+  NODE_ENV: production
+  REDIS_URL: redis://redis:6379
+  KAFKA_BROKERS: kafka:9092
+  AUTH_SERVICE_URL: http://auth-service:4001
+  INTERNAL_AUTH_URL: http://auth-service:4001
+  FARMER_SERVICE_URL: http://farmer-service:4002
+  SUPPLIER_SERVICE_URL: http://supplier-service:4003
+  MARKETPLACE_SERVICE_URL: http://marketplace-service:4004
+  NOTIFICATION_SERVICE_URL: http://notification-service:4005
+  BLOCKCHAIN_SERVICE_URL: http://blockchain-service:4007
+  ML_SERVICE_URL: http://ml-service:4006
 
 services:
 
   # ══════════════════════════════════════════════════════════════
-  # INFRASTRUCTURE
+  # INFRASTRUCTURE (always on)
   # ══════════════════════════════════════════════════════════════
 
-
-
-#   postgres:
-#     image: postgres:16-alpine
-#     container_name: agrilink-postgres
-#     restart: unless-stopped
-#     environment:
-#       POSTGRES_USER: agrilink
-#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agrilink_dev_secret}
-#       POSTGRES_MULTIPLE_DATABASES: agrilink_auth,agrilink_farmer,agrilink_supplier,agrilink_marketplace,agrilink_notification,agrilink_ml
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
-#       - ./postgres/init-multi-db.sh:/docker-entrypoint-initdb.d/init-multi-db.sh
-#     networks:
-#       - agrilink-net
-#     ports:
-#       - "5433:5432"
-#     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U agrilink"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
-
   redis:
-    image: valkey/valkey:7.2-alpine
-    container_name: agrilink-redis
+    image: valkey/valkey:7.2-alpine          # BSD-licensed Redis fork
     restart: unless-stopped
-    command: valkey-server --save 60 1
-    volumes:
-      - redis_data:/data
-    networks:
-      - agrilink-net
-    ports:
-      - "6379:6379"
+    command: valkey-server --save 60 1 --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes: [redis_data:/data]
+    networks: [agrilink-net]
+    ports: ["127.0.0.1:6379:6379"]           # host-only (hybrid dev)
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.6.0
-    container_name: agrilink-zookeeper
-    restart: unless-stopped
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-    volumes:
-      - zookeeper_data:/var/lib/zookeeper/data
-    networks:
-      - agrilink-net
-
+  # Kafka in KRaft mode — no ZooKeeper, ~half the memory
   kafka:
-    image: confluentinc/cp-kafka:7.6.0
-    container_name: agrilink-kafka
+    image: apache/kafka:3.8.0
     restart: unless-stopped
-    depends_on:
-      zookeeper:
-        condition: service_started
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,PLAINTEXT_HOST://:29092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 3                # lets up to 3 replicas of a consumer share work
       KAFKA_LOG_RETENTION_HOURS: 168
-    volumes:
-      - kafka_data:/var/lib/kafka/data
-    ports:
-      - "29092:29092"   # Expose for local dev tools (Kafka UI, etc.)
-    networks:
-      - agrilink-net
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms256m"
+    volumes: [kafka_data:/var/lib/kafka/data]
+    ports: ["127.0.0.1:29092:29092"]         # host-only (hybrid dev)
+    networks: [agrilink-net]
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list"]
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
       interval: 15s
       timeout: 10s
-      retries: 5
+      retries: 10
       start_period: 30s
 
+  # One-shot: pre-create topics with 3 partitions so consumers never start
+  # against a missing topic and replicas can share partitions.
+  kafka-init:
+    image: apache/kafka:3.8.0
+    depends_on:
+      kafka: { condition: service_healthy }
+    networks: [agrilink-net]
+    restart: "no"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        for t in user.registered kyc.submitted kyc.approved kyc.rejected audit.log \
+                 order.placed order.status.updated notification.send system.broadcast \
+                 land.agreement.created land.agreement.signed \
+                 product.rating.updated review.created; do
+          /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists \
+            --topic "$$t" --partitions 3 --replication-factor 1
+        done
+
+  postgres:
+    profiles: [localdb]
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agrilink
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_MULTIPLE_DATABASES: agrilink_auth,agrilink_farmer,agrilink_supplier,agrilink_marketplace,agrilink_notification,agrilink_ml
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-multi-db.sh:/docker-entrypoint-initdb.d/init-multi-db.sh:ro
+    networks: [agrilink-net]
+    ports: ["127.0.0.1:5433:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrilink"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Gateway for hybrid dev (services on the host via host.docker.internal)
+  gateway-dev:
+    profiles: [dev]
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports: ["8080:80"]
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/routes.conf:/etc/nginx/agrilink/routes.conf:ro
+    extra_hosts: ["host.docker.internal:host-gateway"]
+    networks: [agrilink-net]
+
+  # ML service also runs in Docker during hybrid dev (needs Chromium + Tesseract)
+  ml-service:
+    profiles: [dev, app]
+    build:
+      context: ../services/ml_service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file: ../.env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-service-account.json
+      REDIS_URL: redis://redis:6379
+    volumes:
+      - ./gcp-service-account.json:/app/gcp-service-account.json:ro
+    networks: [agrilink-net]
+    ports: ["127.0.0.1:4006:4006"]
+    shm_size: 1gb                             # headless Chromium
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4006/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
   # ══════════════════════════════════════════════════════════════
-  # APPLICATION SERVICES
+  # APPLICATION SERVICES (profile: app)
   # ══════════════════════════════════════════════════════════════
 
   auth-service:
-    build:
-      context: ..
-      dockerfile: services/auth/Dockerfile
-      target: production
-    container_name: agrilink-auth
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL_AUTH}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      JWT_ACCESS_EXPIRES_IN: 1h
-      JWT_REFRESH_EXPIRES_IN: 7d
-      REDIS_URL: redis://redis:6379
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM}
-      FAST2SMS_API_KEY: ${FAST2SMS_API_KEY}
-      CORS_ORIGINS: http://frontend:3000,${ALLOWED_ORIGINS:-http://localhost:3000}
+    <<: *node-service
+    profiles: [app]
+    build: { context: .., dockerfile: infrastructure/docker/node-service.Dockerfile, args: { SERVICE: auth } }
+    environment: { <<: *internal-urls }
     depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - agrilink-net
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4001/auth/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4001/auth/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 20s
 
   farmer-service:
-    build:
-      context: ..
-      dockerfile: services/farmer/Dockerfile
-      target: production
-    container_name: agrilink-farmer
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL_FARMER}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      KAFKA_BROKERS: kafka:9092
-      ML_SERVICE_URL: http://ml-service:4006
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
-      PINATA_JWT: ${PINATA_JWT}
+    <<: *node-service
+    profiles: [app]
+    build: { context: .., dockerfile: infrastructure/docker/node-service.Dockerfile, args: { SERVICE: farmer } }
+    environment: { <<: *internal-urls }
     depends_on:
-      auth-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    networks:
-      - agrilink-net
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4002/farmer/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4002/farmer/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
   supplier-service:
-    build:
-      context: ..
-      dockerfile: services/supplier/Dockerfile
-      target: production
-    container_name: agrilink-supplier
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL_SUPPLIER}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      KAFKA_BROKERS: kafka:9092
-      REDIS_URL: redis://redis:6379
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    <<: *node-service
+    profiles: [app]
+    build: { context: .., dockerfile: infrastructure/docker/node-service.Dockerfile, args: { SERVICE: supplier } }
+    environment: { <<: *internal-urls }
     depends_on:
-#       postgres:
-#         condition: service_healthy
-      auth-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    networks:
-      - agrilink-net
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4003/supplier/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4003/supplier/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
   marketplace-service:
-    build:
-      context: ..
-      dockerfile: services/marketplace/Dockerfile
-      target: production
-    container_name: agrilink-marketplace
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      DATABASE_URL: ${DATABASE_URL_MARKETPLACE}
-      SUPPLIER_SERVICE_URL: http://supplier-service:4003
-      KAFKA_BROKERS: kafka:9092
-      REDIS_URL: redis://redis:6379
-      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
-      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+    <<: *node-service
+    profiles: [app]
+    build: { context: .., dockerfile: infrastructure/docker/node-service.Dockerfile, args: { SERVICE: marketplace } }
+    environment: { <<: *internal-urls }
     depends_on:
-#       postgres:
-#         condition: service_healthy
-      auth-service:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    networks:
-      - agrilink-net
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4004/marketplace/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4004/marketplace/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
   notification-service:
-    build:
-      context: ..
-      dockerfile: services/notification/Dockerfile
-      target: production
-    container_name: agrilink-notification
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      NOTIFICATION_PORT: 4005
-      KAFKA_BROKERS: kafka:9092
-      REDIS_URL: redis://redis:6379
-      SMTP_HOST: ${SMTP_HOST}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM}
-      FAST2SMS_API_KEY: ${FAST2SMS_API_KEY}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+    <<: *node-service
+    profiles: [app]
+    build: { context: .., dockerfile: infrastructure/docker/node-service.Dockerfile, args: { SERVICE: notification } }
+    environment: { <<: *internal-urls }
     depends_on:
-      kafka:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - agrilink-net
-
-  ml-service:
-    build:
-      context: ../ml_service
-      dockerfile: Dockerfile
-    container_name: agrilink-ml
-    restart: unless-stopped
-    environment:
-      DATABASE_URL: ${DATABASE_URL_ML}
-      DATABASE_URL_ML: ${DATABASE_URL_ML}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      GROQ_API_KEY: ${GROQ_API_KEY}
-      GOOGLE_APPLICATION_CREDENTIALS: /app/gcp-service-account.json
-    volumes:
-      - ./gcp-service-account.json:/app/gcp-service-account.json:ro
-    networks:
-      - agrilink-net
-    ports:
-      - "4006:4006"
+      redis: { condition: service_healthy }
+      kafka: { condition: service_healthy }
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:4006/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 30s
-
-  blockchain-service:
-    build:
-      context: ..
-      dockerfile: services/blockchain/Dockerfile
-      target: production
-    container_name: agrilink-blockchain
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      BLOCKCHAIN_PORT: 4007
-      BLOCKCHAIN_RPC_URL: ${BLOCKCHAIN_RPC_URL}
-      BLOCKCHAIN_ADMIN_PRIVATE_KEY: ${BLOCKCHAIN_ADMIN_PRIVATE_KEY}
-      BLOCKCHAIN_CONTRACT_ADDRESS: ${BLOCKCHAIN_CONTRACT_ADDRESS}
-      PINATA_JWT: ${PINATA_JWT}
-      PINATA_GATEWAY: ${PINATA_GATEWAY:-https://gateway.pinata.cloud}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-    networks:
-      - agrilink-net
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4007/blockchain/health"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4005/notification/health"]
       interval: 30s
       timeout: 5s
       retries: 3
 
-  # ══════════════════════════════════════════════════════════════
-  # FRONTEND
-  # ══════════════════════════════════════════════════════════════
+  # Keep at 1 replica per relayer key (one signer = one nonce sequence).
+  blockchain-service:
+    <<: *node-service
+    profiles: [app]
+    build: { context: .., dockerfile: infrastructure/docker/node-service.Dockerfile, args: { SERVICE: blockchain } }
+    environment: { <<: *internal-urls }
+    depends_on:
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4007/blockchain/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  api-gateway:
+    profiles: [app]
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports: ["8080:80"]
+    volumes:
+      - ./nginx/nginx.docker.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/routes.conf:/etc/nginx/agrilink/routes.conf:ro
+    depends_on: [auth-service, farmer-service, supplier-service, marketplace-service, notification-service, blockchain-service, ml-service]
+    networks: [agrilink-net]
 
   frontend:
+    profiles: [app]
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
-      target: production
       args:
-        # NEXT_PUBLIC_* must be baked at build time, not injected at runtime
+        # NEXT_PUBLIC_* are baked in at build time
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8080}
-        NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID}
-    container_name: agrilink-frontend
+        NEXT_PUBLIC_RAZORPAY_KEY_ID: ${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}
+        NEXT_PUBLIC_SUPPORT_EMAIL: ${NEXT_PUBLIC_SUPPORT_EMAIL:-}
+        NEXT_PUBLIC_SUPPORT_PHONE: ${NEXT_PUBLIC_SUPPORT_PHONE:-}
     restart: unless-stopped
-    depends_on:
-      - api-gateway
-    networks:
-      - agrilink-net
-    ports:
-      - "3000:3000"
+    ports: ["3000:3000"]
+    networks: [agrilink-net]
 
   # ══════════════════════════════════════════════════════════════
-  # API GATEWAY
+  # EDGE: free automatic HTTPS (profile: https)
   # ══════════════════════════════════════════════════════════════
 
-  api-gateway:
-    image: nginx:1.27-alpine
-    container_name: agrilink-gateway
+  caddy:
+    profiles: [https]
+    image: caddy:2-alpine
     restart: unless-stopped
-    ports:
-      - "8080:80"
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      WEB_DOMAIN: ${WEB_DOMAIN:?set WEB_DOMAIN in .env}
+      API_DOMAIN: ${API_DOMAIN:?set API_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    extra_hosts:
-      - "host.docker.internal:172.20.0.1"
-    networks:
-      - agrilink-net
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [api-gateway, frontend]
+    networks: [agrilink-net]
 
   # ══════════════════════════════════════════════════════════════
-  # MONITORING
+  # MONITORING (profile: monitoring) — all free / open source
+  # UIs bind to 127.0.0.1; reach them over SSH:  ssh -L 3001:localhost:3001 vm
   # ══════════════════════════════════════════════════════════════
 
   prometheus:
+    profiles: [monitoring]
     image: prom/prometheus:v2.53.0
-    container_name: agrilink-prometheus
     restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
       - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    networks:
-      - agrilink-net
+    ports: ["127.0.0.1:9090:9090"]
+    networks: [agrilink-net]
+
+  alertmanager:
+    profiles: [monitoring]
+    image: prom/alertmanager:v0.27.0
+    restart: unless-stopped
+    environment:
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      ALERT_EMAIL: ${ALERT_EMAIL:-}
+    volumes:
+      - ./alertmanager/alertmanager.tmpl.yml:/etc/alertmanager/alertmanager.tmpl.yml:ro
+    # Render SMTP settings from env, then start (alertmanager has no env templating)
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        sed -e "s|__SMTP_HOST__|$$SMTP_HOST|" -e "s|__SMTP_PORT__|$$SMTP_PORT|" \
+            -e "s|__SMTP_USER__|$$SMTP_USER|g" -e "s|__SMTP_PASS__|$$SMTP_PASS|" \
+            -e "s|__ALERT_EMAIL__|$${ALERT_EMAIL:-$$SMTP_USER}|" \
+            /etc/alertmanager/alertmanager.tmpl.yml > /tmp/alertmanager.yml
+        exec /bin/alertmanager --config.file=/tmp/alertmanager.yml --storage.path=/alertmanager
+    ports: ["127.0.0.1:9093:9093"]
+    networks: [agrilink-net]
 
   grafana:
+    profiles: [monitoring]
     image: grafana/grafana:11.0.0
-    container_name: agrilink-grafana
     restart: unless-stopped
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
-      GF_INSTALL_PLUGINS: grafana-clock-panel
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
     volumes:
       - grafana_data:/var/lib/grafana
-    ports:
-      - "3001:3000"
-    networks:
-      - agrilink-net
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports: ["127.0.0.1:3001:3000"]
+    depends_on: [prometheus]
+    networks: [agrilink-net]
 
-  # Kafka UI for dev visibility
+  # Kafka UI for debugging (profile: tools)
   kafka-ui:
+    profiles: [tools]
     image: provectuslabs/kafka-ui:latest
-    container_name: agrilink-kafka-ui
-    restart: unless-stopped
     environment:
-      KAFKA_CLUSTERS_0_NAME: agrilink-local
+      KAFKA_CLUSTERS_0_NAME: agrilink
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-    ports:
-      - "8090:8080"
+    ports: ["127.0.0.1:8090:8080"]
     depends_on:
-      kafka:
-        condition: service_healthy
-    networks:
-      - agrilink-net
-    profiles:
-      - dev    # Only starts with: docker compose --profile dev up
+      kafka: { condition: service_healthy }
+    networks: [agrilink-net]

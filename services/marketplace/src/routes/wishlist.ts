@@ -1,21 +1,34 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { prisma } from '../models/Order.js'; // Reusing prisma client
 import { z } from 'zod';
+import { getProduct } from '../services/supplier.js';
 
-const AddWishlistSchema = z.object({
-  productId: z.string(),
-  supplierId: z.string(),
-  snapshot: z.any(),
-});
+// Only the product ID is trusted; the snapshot comes from the catalogue.
+const AddWishlistSchema = z.object({ productId: z.string().min(1) }).passthrough();
 
 export async function wishlistRoutes(fastify: FastifyInstance) {
+  const { prisma } = fastify as any;
   // Add item to wishlist
   fastify.post(
     '/',
     { preHandler: [(fastify as any).authenticate] },
     async (req: FastifyRequest, reply: FastifyReply) => {
       const farmerId = (req as any).user.sub;
-      const { productId, supplierId, snapshot } = AddWishlistSchema.parse(req.body);
+      const parsed = AddWishlistSchema.safeParse(req.body);
+      if (!parsed.success) return reply.status(400).send({ success: false, error: parsed.error.flatten() });
+      const product = await getProduct(parsed.data.productId);
+      if (!product) return reply.status(404).send({ success: false, error: 'Product not available' });
+      const productId = product.id;
+      const supplierId = product.supplierId;
+      const snapshot = {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        mrp: product.mrp,
+        unit: product.unit,
+        category: product.category,
+        image: product.images?.[0] ?? null,
+        images: product.images ?? [],
+      };
 
       const item = await (prisma as any).wishlistItem.upsert({
         where: {

@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@9.0.0",
   "scripts": {
-    "predev": "fuser -k 3000/tcp 4001/tcp 4002/tcp 4003/tcp 4004/tcp 4005/tcp 4006/tcp 4007/tcp 8080/tcp || true",
+    "predev": "(fuser -k 3000/tcp 4001/tcp 4002/tcp 4003/tcp 4004/tcp 4005/tcp 4007/tcp 2>/dev/null || true) && pnpm --filter './packages/*' build",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
@@ -18,7 +18,10 @@
     "start:notification": "pnpm --filter @agrilink/notification dev",
     "start:ml": "pnpm --filter @agrilink/ml-service dev",
     "start:blockchain": "pnpm --filter @agrilink/blockchain dev",
-    "start:web": "pnpm --filter @agrilink/web dev"
+    "start:web": "pnpm --filter @agrilink/web dev",
+    "build:packages": "pnpm --filter './packages/*' build",
+    "test:contracts": "pnpm --filter @agrilink/blockchain test",
+    "test:ml": "python3 -I services/ml_service/tests/test_forecasting.py && python3 -I services/ml_service/tests/test_aadhaar.py"
   },
   "devDependencies": {
     "@types/node": "^20.17.0",

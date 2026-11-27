@@ -154,7 +154,7 @@ export default function AdminOverview() {
                 <div key={r.region} className="space-y-2">
                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
                       <span className="text-slate-900">{r.region}</span>
-                      <span className="text-slate-400">{r.count} Active Nodes</span>
+                      <span className="text-slate-400">{r.count} users</span>
                    </div>
                    <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                       <motion.div 

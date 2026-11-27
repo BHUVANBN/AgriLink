@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import NotificationBell from '@/components/NotificationBell';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -29,19 +30,21 @@ import {
   History,
   LayoutDashboard,
   BarChart3,
-  BookOpen
+  BookOpen,
+  Users
 } from 'lucide-react';
 
 const NAV = [
-  { icon: LayoutDashboard, label: 'Control Center',  href: '/dashboard/supplier' },
-  { icon: BarChart3,       label: 'Intelligence',    href: '/dashboard/supplier/analytics' },
-  { icon: Package,         label: 'Asset Gallery',   href: '/dashboard/supplier/products' },
-  { icon: History,         label: 'Audit Ledger',    href: '/dashboard/supplier/products/logs' },
-  { icon: ShoppingCart,    label: 'Order Pipeline',  href: '/dashboard/supplier/orders' },
-  { icon: MessageSquare,   label: 'Inquiry Matrix',  href: '/dashboard/supplier/inquiries' },
-  { icon: Star,            label: 'Feedback Engine', href: '/dashboard/supplier/reviews' },
-  { icon: ShieldCheck,     label: 'KYC & Compliance', href: '/dashboard/supplier/kyc' },
-  { icon: Settings,        label: 'System Config',   href: '/dashboard/supplier/settings' },
+  { icon: LayoutDashboard, label: 'Dashboard',        href: '/dashboard/supplier' },
+  { icon: BarChart3,       label: 'Analytics',        href: '/dashboard/supplier/analytics' },
+  { icon: Package,         label: 'Products',         href: '/dashboard/supplier/products' },
+  { icon: History,         label: 'Inventory log',    href: '/dashboard/supplier/products/logs' },
+  { icon: ShoppingCart,    label: 'Orders',           href: '/dashboard/supplier/orders' },
+  { icon: Users,           label: 'Group deals',      href: '/dashboard/supplier/deals' },
+  { icon: MessageSquare,   label: 'Inquiries',        href: '/dashboard/supplier/inquiries' },
+  { icon: Star,            label: 'Reviews',          href: '/dashboard/supplier/reviews' },
+  { icon: ShieldCheck,     label: 'KYC & documents',  href: '/dashboard/supplier/kyc' },
+  { icon: Settings,        label: 'Settings',         href: '/dashboard/supplier/settings' },
 ];
 
 export default function SupplierSidebar({ pageTitle }: { pageTitle?: string }) {
@@ -111,7 +114,7 @@ export default function SupplierSidebar({ pageTitle }: { pageTitle?: string }) {
         </div>
 
         <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
-          <p className="px-6 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-4 mt-2">Logistics Matrix</p>
+          <p className="px-6 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-4 mt-2">Menu</p>
           {NAV.map(item => {
             const isActive = pathname === item.href;
             return (
@@ -137,11 +140,11 @@ export default function SupplierSidebar({ pageTitle }: { pageTitle?: string }) {
 
         <div className="p-4 border-t border-[#f8f7f4] space-y-2 pb-8">
           <Link 
-            href="/dashboard/supplier/help"
+            href="/help"
             className="flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-wider text-text-muted hover:bg-[#f8f7f4] hover:text-text-dark transition-all"
           >
              <div className="w-9 h-9 rounded-xl bg-[#f8f7f4] flex items-center justify-center text-text-muted font-bold">?</div>
-            Resource Hub
+            Help & FAQ
           </Link>
           <button 
             onClick={logout}
@@ -161,22 +164,14 @@ export default function SupplierSidebar({ pageTitle }: { pageTitle?: string }) {
         <div className="flex items-center gap-4">
            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white border border-[#eae6de] rounded-full shadow-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-text-dark" />
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider leading-none pt-0.5">Supply sync online</span>
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider leading-none pt-0.5">Online</span>
            </div>
            <h1 className="text-2xl font-bold text-text-dark font-serif tracking-tighter">{pageTitle ?? 'Operations Center'}</h1>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden xl:flex items-center bg-white border border-[#eae6de] rounded-xl px-5 py-3 w-80 shadow-sm focus-within:ring-4 focus-within:ring-brand-green/5 transition-all">
-            <Search className="w-4 h-4 text-text-muted" />
-            <input type="text" placeholder="Audit inventory..." className="bg-transparent border-none text-[11px] font-bold uppercase tracking-wider focus:ring-0 ml-3 w-full text-text-dark placeholder:text-text-muted" />
-          </div>
-
           <div className="flex items-center gap-4 pl-4 border-l border-[#eae6de]">
-            <button className="relative w-12 h-12 rounded-2xl bg-white border border-[#eae6de] shadow-sm hover:shadow-md flex items-center justify-center text-text-muted transition-all hover:text-text-dark active:scale-90">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-text-dark rounded-full border-[3px] border-white" />
-            </button>
+            <NotificationBell />
             <Link href="/dashboard/supplier/settings" className="w-12 h-12 rounded-2xl bg-brand-green shadow-xl shadow-brand-green/20 flex items-center justify-center text-white hover:bg-brand-green-hover transition-all active:scale-95">
               <User className="w-5 h-5" />
             </Link>

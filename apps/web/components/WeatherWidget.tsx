@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const WEATHER_MAP: Record<number, { label: string; icon: any; color: string; bg: string }> = {
+export const WEATHER_MAP: Record<number, { label: string; icon: any; color: string; bg: string }> = {
   0: { label: 'Clear Sky', icon: Sun, color: 'text-amber-500', bg: 'bg-amber-50' },
   1: { label: 'Mainly Clear', icon: Sun, color: 'text-amber-400', bg: 'bg-amber-50/50' },
   2: { label: 'Partly Cloudy', icon: Cloud, color: 'text-text-muted', bg: 'bg-slate-50' },

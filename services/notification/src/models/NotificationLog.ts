@@ -8,3 +8,4 @@ export const prisma = new PrismaClient({
   }
 });
 export const NotificationLog = prisma.notificationLog;
+export const InAppNotification = prisma.inAppNotification;

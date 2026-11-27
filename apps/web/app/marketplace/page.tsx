@@ -86,10 +86,15 @@ function ProductCard({ product, onAddToCart }: { product: any; onAddToCart: (p: 
       <div className="p-6 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-3">
            <span className="text-[11px] text-[#69665f] uppercase font-bold tracking-wider">{product.category}</span>
-           <div className="flex items-center gap-1 bg-[#f6f3eb] px-2 py-1 rounded-md">
-              <Star className="w-3 h-3 text-brand-orange fill-brand-orange" />
-              <span className="text-[10px] text-brand-orange font-bold">4.8</span>
-           </div>
+           {product.reviewCount > 0 ? (
+             <div className="flex items-center gap-1 bg-[#f6f3eb] px-2 py-1 rounded-md" title={`${product.reviewCount} review(s)`}>
+                <Star className="w-3 h-3 text-brand-orange fill-brand-orange" />
+                <span className="text-[10px] text-brand-orange font-bold">{Number(product.rating).toFixed(1)}</span>
+                <span className="text-[10px] text-[#69665f]">({product.reviewCount})</span>
+             </div>
+           ) : (
+             <span className="text-[10px] text-[#69665f]">New</span>
+           )}
         </div>
         
         <h3 className="text-text-dark font-semibold text-base leading-snug mb-4 line-clamp-2 h-12 font-serif group-hover:text-brand-green transition-colors">{product.name}</h3>
@@ -201,7 +206,7 @@ function MarketplaceContent() {
           </div>
 
           <div className="flex items-center gap-4">
-             <Link href="/marketplace/cart" className="relative w-12 h-12 flex items-center justify-center bg-white border border-[#eae6de] rounded-xl hover:bg-[#f8f7f4] hover:shadow-md transition-all">
+             <Link href="/dashboard/farmer/marketplace/cart" className="relative w-12 h-12 flex items-center justify-center bg-white border border-[#eae6de] rounded-xl hover:bg-[#f8f7f4] hover:shadow-md transition-all">
                 <ShoppingCart className="w-5 h-5 text-text-muted" />
                 {cartCount > 0 && (
                   <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-brand-orange text-white text-[10px] flex items-center justify-center font-bold shadow-lg border-2 border-white">
@@ -234,24 +239,24 @@ function MarketplaceContent() {
            <div className="relative z-10 max-w-xl">
               <div className="flex items-center gap-2 mb-6 bg-white/10 w-fit px-4 py-2 rounded-full border border-white/10">
                  <Zap className="w-4 h-4 text-brand-orange fill-brand-orange" />
-                 <span className="text-[10px] font-bold text-white uppercase tracking-wider">Village Rewards Enabled</span>
+                 <span className="text-[10px] font-bold text-white uppercase tracking-wider">Verified suppliers only</span>
               </div>
               <h1 className="text-4xl md:text-6xl font-bold text-white leading-[0.9] font-serif tracking-tight">
                  High Quality <br /> Farm Inputs.
               </h1>
               <p className="text-white/80 mt-6 text-base lg:text-lg font-medium leading-relaxed max-w-md">
-                 Direct factory access for seeds, nutrients and machinery with verified cluster delivery.
+                 Seeds, fertilizers and tools from KYC-verified suppliers, delivered to your village.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4 mt-10">
-                 <button className="w-full sm:w-auto px-8 py-4 bg-brand-orange text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-2xl shadow-brand-orange/20 hover:scale-105 transition-all active:scale-95">Explore Catalogue</button>
-                 <button className="w-full sm:w-auto px-8 py-4 border-2 border-white/20 text-white rounded-xl font-bold uppercase text-xs tracking-wider hover:bg-white/10 transition-all">Support Center</button>
+                 <a href="#catalogue" className="w-full sm:w-auto px-8 py-4 bg-brand-orange text-white rounded-xl font-bold uppercase text-xs tracking-wider shadow-2xl shadow-brand-orange/20 hover:scale-105 transition-all active:scale-95 text-center">Explore Catalogue</a>
+                 <Link href="/help" className="w-full sm:w-auto px-8 py-4 border-2 border-white/20 text-white rounded-xl font-bold uppercase text-xs tracking-wider hover:bg-white/10 transition-all text-center">Help & FAQ</Link>
               </div>
            </div>
            
            <div className="relative z-10 grid grid-cols-2 gap-4 w-full lg:w-auto">
               {[
                 { icon: Shield, label: 'Verified' },
-                { icon: Truck, label: 'Fast Drop' },
+                { icon: Truck, label: 'Home delivery' },
                 { icon: Award, label: 'Premium' },
                 { icon: Verified, label: 'Trusted' },
               ].map((icon, i) => (
@@ -294,8 +299,8 @@ function MarketplaceContent() {
                    <div className="absolute -top-4 -right-4 w-20 h-20 bg-brand-green/5 rounded-full blur-2xl" />
                    <div className="relative z-10">
                       <p className="text-brand-green font-bold text-sm mb-3 font-serif uppercase tracking-wider">Bulk Program</p>
-                      <p className="text-text-muted/80 text-xs leading-relaxed mb-6 font-medium">Contact our village cluster managers for wholesale pricing and direct logistics.</p>
-                      <button className="w-full py-3 bg-white text-brand-green rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-sm hover:shadow-md transition-all">Connect with Expert</button>
+                      <p className="text-text-muted/80 text-xs leading-relaxed mb-6 font-medium">Join a group deal with other farmers to unlock lower prices on bulk orders.</p>
+                      <Link href="/dashboard/farmer/marketplace/community" className="block text-center w-full py-3 bg-white text-brand-green rounded-xl text-[10px] font-bold uppercase tracking-wider shadow-sm hover:shadow-md transition-all">See group deals</Link>
                    </div>
                 </div>
              </div>
@@ -304,7 +309,7 @@ function MarketplaceContent() {
           {/* Catalogue */}
           <div className="flex-1 min-w-0">
              {/* Catalogue Header */}
-             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8 mb-12 pb-8 border-b border-[#eae6de]">
+             <div id="catalogue" className="scroll-mt-24 flex flex-col sm:flex-row sm:items-end justify-between gap-8 mb-12 pb-8 border-b border-[#eae6de]">
                 <div>
                    <h2 className="text-3xl md:text-4xl font-bold text-text-dark font-serif tracking-tight capitalize">
                       {category === 'all' ? 'Featured Selection' : category}
@@ -402,7 +407,7 @@ function MarketplaceContent() {
             </div>
             <h2 className="text-4xl font-bold text-text-dark font-serif tracking-tight mb-6 uppercase">agrilink platform</h2>
             <p className="text-text-muted text-base max-w-2xl leading-relaxed font-medium px-4">
-               Optimizing agricultural value chain through verified factory access, blockchain security, and cluster-based smart logistics. Empowering modern Indian farmer.
+               Verified farm inputs, fair prices and tamper-proof land agreements for Karnataka's farmers.
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-12 mt-16 text-left w-full max-w-5xl border-t border-[#eae6de] pt-16">
                <div className="space-y-4">
@@ -413,15 +418,15 @@ function MarketplaceContent() {
                </div>
                <div className="space-y-4">
                   <p className="text-[11px] font-bold text-text-dark uppercase tracking-wider mb-6">Partner Program</p>
-                  <Link href="/register" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Supplier Onboarding</Link>
+                  <Link href="/auth/register/supplier" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Supplier Onboarding</Link>
                   <Link href="/auth/login" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Fulfilment Center</Link>
-                  <Link href="/terms" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Quality Control</Link>
+                  <Link href="/help" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Quality Control</Link>
                </div>
                <div className="space-y-4">
                   <p className="text-[11px] font-bold text-text-dark uppercase tracking-wider mb-6">Trust Center</p>
                   <Link href="/terms" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Terms of Service</Link>
                   <Link href="/privacy" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">Privacy Policy</Link>
-                  <Link href="/verification" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">KYC Verification</Link>
+                  <Link href="/dashboard/farmer/kyc" className="block text-text-muted hover:text-brand-green text-sm font-semibold transition-colors">KYC Verification</Link>
                </div>
                <div className="space-y-4">
                   <p className="text-[11px] font-bold text-text-dark uppercase tracking-wider mb-6">Initiatives</p>

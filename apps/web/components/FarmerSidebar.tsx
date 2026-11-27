@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import NotificationBell from '@/components/NotificationBell';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
   Leaf, BarChart3, FileCheck, TrendingUp, Link2, Map as MapIcon,
-  ShoppingBag, Settings, LogOut, Menu, X, Bell, User, Search, ChevronRight
+  ShoppingBag, Settings, LogOut, Menu, X, Bell, User, Search, ChevronRight, CloudSun
 } from 'lucide-react';
 import useSWR from 'swr';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,9 +21,10 @@ const NAV = [
   { icon: FileCheck,   label: 'KYC & Documents',  href: '/dashboard/farmer/kyc' },
   { icon: MapIcon,     label: 'Land Mapping',     href: '/dashboard/farmer/land' },
   { icon: TrendingUp,  label: 'Crop Prices',       href: '/dashboard/farmer/prices' },
+  { icon: CloudSun,    label: 'Weather',           href: '/dashboard/farmer/weather' },
   { icon: Leaf,        label: 'Govt. Schemes',     href: '/dashboard/farmer/schemes' },
   { icon: Link2,       label: 'Integration',       href: '/dashboard/farmer/integration' },
-  { icon: ShoppingBag, label: 'Marketplace',       href: '/marketplace' },
+  { icon: ShoppingBag, label: 'Marketplace',       href: '/dashboard/farmer/marketplace' },
   { icon: Settings,    label: 'Settings',           href: '/dashboard/farmer/settings' },
 ];
 
@@ -89,7 +91,7 @@ export default function FarmerSidebar({ pageTitle }: { pageTitle?: string }) {
               {profile?.nameDisplay?.[0]?.toUpperCase() ?? 'F'}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-bold text-text-dark font-serif truncate leading-none mb-1">{profile?.nameDisplay ?? 'Farmer Cluster'}</p>
+              <p className="text-[13px] font-bold text-text-dark font-serif truncate leading-none mb-1">{profile?.nameDisplay ?? 'Farmer'}</p>
               {profile?.village && (
                 <p className="text-[10px] text-text-muted font-bold truncate mb-1">{profile.village}, {profile.hobli || profile.district}</p>
               )}
@@ -103,7 +105,7 @@ export default function FarmerSidebar({ pageTitle }: { pageTitle?: string }) {
 
         {/* Navigation */}
         <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto custom-scrollbar">
-          <p className="px-6 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-4 mt-2">OPERATIONAL MATRIX</p>
+          <p className="px-6 text-[10px] font-bold text-text-muted uppercase tracking-wider mb-4 mt-2">Menu</p>
           {NAV.map(item => {
             const isActive = pathname === item.href;
             return (
@@ -133,11 +135,11 @@ export default function FarmerSidebar({ pageTitle }: { pageTitle?: string }) {
         {/* Footer Actions */}
         <div className="p-4 border-t border-[#f8f7f4] space-y-2 pb-8">
           <Link 
-            href="/dashboard/farmer/help"
+            href="/help"
             className="flex items-center gap-4 px-6 py-4 rounded-2xl text-[11px] font-bold uppercase tracking-wider text-text-muted hover:bg-[#f8f7f4] hover:text-text-dark transition-all"
           >
             <div className="w-9 h-9 rounded-xl bg-[#f8f7f4] flex items-center justify-center text-text-muted font-bold">?</div>
-            Help Oracle
+            Help & FAQ
           </Link>
           <button 
             onClick={logout}
@@ -158,23 +160,14 @@ export default function FarmerSidebar({ pageTitle }: { pageTitle?: string }) {
         <div className="flex items-center gap-4">
            <div className="hidden lg:flex items-center gap-2 px-3 py-1 bg-white border border-[#eae6de] rounded-full shadow-sm">
               <div className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse" />
-              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider leading-none pt-0.5">Network active</span>
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider leading-none pt-0.5">Online</span>
            </div>
            <h1 className="text-2xl font-bold text-text-dark font-serif tracking-tighter">{pageTitle ?? 'Overview'}</h1>
         </div>
 
         <div className="flex items-center gap-4">
-          {/* Internal Search */}
-          <div className="hidden xl:flex items-center bg-white border border-[#eae6de] rounded-xl px-5 py-3 w-80 shadow-sm focus-within:ring-4 focus-within:ring-brand-green/5 transition-all">
-            <Search className="w-4 h-4 text-text-muted" />
-            <input type="text" placeholder="Scan records..." className="bg-transparent border-none text-[11px] font-bold uppercase tracking-wider focus:ring-0 ml-3 w-full text-text-dark placeholder:text-text-muted" />
-          </div>
-
           <div className="flex items-center gap-4 pl-4 border-l border-[#eae6de]">
-            <button className="relative w-12 h-12 rounded-2xl bg-white border border-[#eae6de] shadow-sm hover:shadow-md flex items-center justify-center text-text-muted transition-all hover:text-brand-green active:scale-90">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-3.5 right-3.5 w-2.5 h-2.5 bg-brand-orange rounded-full border-[3px] border-white" />
-            </button>
+            <NotificationBell />
             <Link href="/dashboard/farmer/settings" className="w-12 h-12 rounded-2xl bg-text-dark shadow-xl shadow-[#eae6de] flex items-center justify-center text-white hover:bg-[#1a1a1a] transition-all active:scale-95">
               <User className="w-5 h-5" />
             </Link>

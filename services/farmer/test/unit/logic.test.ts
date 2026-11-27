@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeNameMatchConfidence, levenshtein } from '../../src/utils/logic.js';
+import { bestOwnerMatch, computeNameMatchConfidence, levenshtein } from '../../src/utils/logic.js';
 
 describe('Farmer Service - Internal Logic 🌾', () => {
   describe('Levenshtein Distance', () => {
@@ -27,9 +27,15 @@ describe('Farmer Service - Internal Logic 🌾', () => {
       expect(computeNameMatchConfidence('Bhuvan-BN', 'BHUVAN B.N.')).toBe(1.0);
     });
 
-    it('should return 1.0 for substring matches (First word match)', () => {
-      const conf = computeNameMatchConfidence('Bhuvan', 'Bhuva');
-      expect(conf).toBe(1.0);
+    it('should NOT auto-approve prefix matches (security regression)', () => {
+      // Previously 1.0 → a farmer named "Ram" auto-approved against "Ramesh Kumar"'s RTC
+      expect(computeNameMatchConfidence('Bhuvan', 'Bhuva')).toBeLessThan(1.0);
+      expect(computeNameMatchConfidence('Ram', 'Ramesh Kumar')).toBeLessThan(0.85);
+    });
+
+    it('should score reordered full names as a strong (non-auto) match', () => {
+      const conf = computeNameMatchConfidence('Kumar Ramesh', 'Ramesh Kumar');
+      expect(conf).toBe(0.95);
     });
 
     it('should return high confidence for genuine fuzzy mismatches', () => {
@@ -40,5 +46,15 @@ describe('Farmer Service - Internal Logic 🌾', () => {
     it('should return 0.0 for completely different names', () => {
       expect(computeNameMatchConfidence('ABC', 'XYZ')).toBe(0);
     });
+  });
+});
+
+describe('bestOwnerMatch', () => {
+  it('picks the co-owner matching the Aadhaar name, not just the first one', () => {
+    expect(bestOwnerMatch(['Lakshmi Devi', 'Ramesh Kumar'], 'Ramesh Kumar')).toBe('Ramesh Kumar');
+  });
+  it('falls back to the first owner without an Aadhaar name', () => {
+    expect(bestOwnerMatch(['A B', 'C D'], null)).toBe('A B');
+    expect(bestOwnerMatch([], 'x')).toBeUndefined();
   });
 });

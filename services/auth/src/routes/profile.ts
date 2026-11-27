@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { clearSessionCookies } from '../services/tokens.service.js';
 import { User } from '../models/User.js';
 import { revokeAllSessions } from '../services/redis.service.js';
 import { publishEvent } from '../services/kafka.producer.js';
@@ -92,8 +93,7 @@ export async function profileRoutes(fastify: FastifyInstance) {
       await revokeAllSessions(userId);
 
       // Clear current cookies
-      reply.clearCookie('agrilink_access', { path: '/' });
-      reply.clearCookie('agrilink_refresh', { path: '/auth/refresh' });
+      clearSessionCookies(reply);
 
       return reply.send({
         success: true,

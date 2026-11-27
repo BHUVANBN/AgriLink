@@ -33,6 +33,8 @@ export default function WishlistPage() {
         toast.success('Added to cart');
         await removeFromWishlist(item.productId);
         mutate();
+      } else {
+        toast.error(res.error ?? 'Could not add to cart');
       }
     } catch (err) {
       toast.error('Failed to move to cart');

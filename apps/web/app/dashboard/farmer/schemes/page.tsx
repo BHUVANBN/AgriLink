@@ -226,14 +226,14 @@ export default function SchemesPage() {
                            
                            <div className="space-y-8">
                               <div>
-                                 <label className="text-[10px] text-text-muted block mb-3 font-black uppercase tracking-widest">Ownership Matrix</label>
+                                 <label className="text-[10px] text-text-muted block mb-3 font-black uppercase tracking-widest">Land ownership</label>
                                  <select 
                                    value={formData?.landOwnershipType}
                                    onChange={e => setFormData({...formData, landOwnershipType: e.target.value})}
                                    className="w-full bg-[#f8f7f4] border border-[#eae6de] rounded-2xl px-6 py-4 text-xs font-black uppercase tracking-widest text-text-dark focus:ring-2 focus:ring-brand-green/10 focus:bg-white outline-none transition-all cursor-pointer"
                                  >
                                     <option value="OWNED">Freehold (Pattadar)</option>
-                                    <option value="LEASED">Leased / Cluster Contract</option>
+                                    <option value="LEASED">Leased / contract farming</option>
                                     <option value="TENANT">Tenant / Sharecropper</option>
                                  </select>
                               </div>

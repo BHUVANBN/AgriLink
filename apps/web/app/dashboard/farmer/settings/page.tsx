@@ -198,7 +198,7 @@ export default function FarmerSettingsPage() {
                       {[
                         { l: 'Survey / Hissa', v: `${profile?.surveyNumber ?? '—'} / ${profile?.hissaNumber ?? '—'}` },
                         { l: 'Total Extent', v: `${profile?.totalExtentAcres ?? '—'} Acres` },
-                        { l: 'Soil Matrix', v: profile?.soilType },
+                        { l: 'Soil type', v: profile?.soilType },
                         { l: 'Irrigation', v: profile?.irrigationType },
                       ].map((item, i) => (
                         <div key={i} className="flex justify-between items-center py-2 border-b border-[#f8f7f4] last:border-0">

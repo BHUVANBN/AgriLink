@@ -259,9 +259,9 @@ export default function LandingPage() {
               <h4 className="font-semibold text-white mb-4">Platform</h4>
               <ul className="space-y-2">
                 <li><Link href="/marketplace" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Marketplace</Link></li>
-                <li><Link href="/features" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Features</Link></li>
-                <li><Link href="/pricing" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Pricing</Link></li>
-                <li><Link href="/integrations" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Integrations</Link></li>
+                <li><Link href="/#features" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Features</Link></li>
+                <li><Link href="/auth/register" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Get started</Link></li>
+                <li><Link href="/help" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Help & FAQ</Link></li>
               </ul>
             </div>
 
@@ -270,16 +270,16 @@ export default function LandingPage() {
               <h4 className="font-semibold text-white mb-4">Company</h4>
               <ul className="space-y-2">
                 <li><Link href="/about" className="text-[#94a3b8] hover:text-white text-sm transition-colors">About Us</Link></li>
-                <li><Link href="/careers" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Careers</Link></li>
                 <li><Link href="/contact" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Contact</Link></li>
-                <li><Link href="/blog" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Blog</Link></li>
+                <li><Link href="/privacy" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Privacy Policy</Link></li>
+                <li><Link href="/terms" className="text-[#94a3b8] hover:text-white text-sm transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="border-t border-[#334155] pt-8 text-center">
             <p className="text-[#94a3b8] text-sm">
-              © 2024 AgriLink. All rights reserved.
+              © {new Date().getFullYear()} AgriLink. All rights reserved.
             </p>
           </div>
         </div>

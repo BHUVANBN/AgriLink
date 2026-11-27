@@ -11,7 +11,6 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then(r => r.json()).then(d => d.data);
-const getWallet = (userId: string) => '0x' + Array.from(userId).map(c => c.charCodeAt(0).toString(16)).join('').padEnd(40, '0').slice(0, 40);
 
 function AgreementModal({ partner, myProfile, onClose, onProposed }: { partner: any; myProfile: any; onClose: () => void; onProposed: () => void }) {
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +39,9 @@ TERMS OF INTEGRATION:
 4. Blockchain Verification: This agreement is secured on the Polygon network and is legally binding upon digital signature.
 
 DATE: ${new Date().toISOString()}
-AGREEMENT HASH: [PENDING DEPLOYMENT]`;
+AGREEMENT HASH: [ASSIGNED ON-CHAIN]
+
+(Preview — the final document is generated from your verified Aadhaar/RTC records.)`;
 
   async function propose() {
     const password = window.prompt('Please enter your password to authorize this legal contract on the blockchain:');
@@ -48,39 +49,13 @@ AGREEMENT HASH: [PENDING DEPLOYMENT]`;
 
     setSubmitting(true);
     try {
-      const blob = new Blob([agreementText], { type: 'text/plain' });
-      const formData = new FormData();
-      formData.append('file', blob, 'land_agreement.txt');
-
-      const ipfsRes = await fetch(`${API}/blockchain/ipfs/upload`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-      const ipfsJson = await ipfsRes.json();
-      if (!ipfsRes.ok) throw new Error(ipfsJson.error ?? 'IPFS failed');
-      const cid = ipfsJson.data.cid;
-
-      const now = Math.floor(Date.now() / 1000);
-      const endTs = now + (duration * 30 * 24 * 3600);
-
+      // The server builds the legal document from KYC-verified records,
+      // pins it to IPFS and writes it on-chain — the browser only sends terms.
       const contractPayload = {
-        farmer1UserId: myProfile.userId,
-        farmer1Name: myProfile.nameDisplay,
-        farmer1Address: myProfile.ethAddress || getWallet(myProfile.userId),
-        farmer1SurveyNumber: myProfile.surveyNumber,
-        farmer1Centiacres: Math.round((myProfile.totalExtentAcres ?? 0) * 100),
-        farmer1SharePercent: myShare,
         farmer2UserId: partner.userId,
-        farmer2Name: partner.nameDisplay,
-        farmer2Address: partner.ethAddress || getWallet(partner.userId),
-        farmer2SurveyNumber: partner.surveyNumber,
-        farmer2Centiacres: Math.round((partner.totalExtentAcres ?? 0) * 100),
-        farmer2SharePercent: 100 - myShare,
-        startTimestamp: now,
-        endTimestamp: endTs,
-        documentCid: cid,
-        password: password
+        farmer1SharePercent: myShare,
+        durationMonths: duration,
+        password,
       };
 
       const res = await fetch(`${API}/blockchain/agreements`, {
@@ -255,7 +230,7 @@ export default function IntegrationPage() {
   );
 
   const { data: agreementsResult, mutate: mutateAgreements, isLoading: agreementsLoading } = useSWR(
-    profile?.userId ? `${API}/blockchain/agreements/user/${profile.ethAddress || getWallet(profile.userId)}` : null,
+    profile?.userId ? `${API}/blockchain/agreements/me` : null,
     fetcher
   );
 
@@ -311,10 +286,7 @@ export default function IntegrationPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ 
-          signerName: profile.nameDisplay,
-          password: password
-        }),
+        body: JSON.stringify({ password }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to sign');
@@ -515,7 +487,7 @@ export default function IntegrationPage() {
                   const partnerName = isInitiator ? agr.farmer2Name : agr.farmer1Name;
                   const isPending = agr.status === 1;
                   const isActive = agr.status === 2;
-                  const needsMySignature = isPending && agr.creator !== getWallet(profile?.userId);
+                  const needsMySignature = isPending && (agr.farmer1UserId === profile?.userId ? !agr.farmer1SignedAt : !agr.farmer2SignedAt);
 
                   return (
                     <div key={agr.agreementId} className="bg-white rounded-3xl border border-[#eae6de] p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-6">

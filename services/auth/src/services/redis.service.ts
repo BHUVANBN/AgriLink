@@ -6,6 +6,7 @@
  *  - Password reset token storage (short-lived, single-use)
  */
 import { Redis } from 'ioredis';
+import { authStateKeys, AUTH_STATE_TTL_SECONDS } from '@agrilink/auth-middleware';
 
 let redis: Redis | null = null;
 
@@ -107,34 +108,64 @@ export function isOtpLocked(attempts: number): boolean {
 }
 
 // ── Login Attempt Counter ─────────────────────────────────────
+// Two counters:
+//  - per (email, IP): strict — 10 failures locks that IP out of that account
+//  - per email:       loose  — 50 failures from many IPs locks the account
+// Keying only by email let anyone lock any farmer out by guessing wrong 10x.
 
 const MAX_LOGIN_ATTEMPTS = 10;
+const MAX_LOGIN_ATTEMPTS_GLOBAL = 50;
 const LOGIN_LOCKOUT_TTL = 15 * 60; // 15 minutes
 
-export async function incrementLoginAttempts(email: string): Promise<number> {
+const loginKey = (email: string, ip: string) => `login_attempts:${email.toLowerCase()}:${ip}`;
+const loginKeyGlobal = (email: string) => `login_attempts:${email.toLowerCase()}`;
+
+export async function incrementLoginAttempts(email: string, ip = 'unknown'): Promise<number> {
   try {
-    const key = `login_attempts:${email.toLowerCase()}`;
-    const count = await getRedis().incr(key);
-    if (count === 1) await getRedis().expire(key, LOGIN_LOCKOUT_TTL);
-    return count;
+    const r = getRedis();
+    const [[, local], [, global]] = (await r
+      .multi()
+      .incr(loginKey(email, ip))
+      .incr(loginKeyGlobal(email))
+      .exec()) as [unknown, number][];
+    if (local === 1) await r.expire(loginKey(email, ip), LOGIN_LOCKOUT_TTL);
+    if (global === 1) await r.expire(loginKeyGlobal(email), LOGIN_LOCKOUT_TTL);
+    return Number(local);
   } catch {
     return 0;
   }
 }
 
-export async function clearLoginAttempts(email: string): Promise<void> {
+export async function clearLoginAttempts(email: string, ip = 'unknown'): Promise<void> {
   try {
-    await getRedis().del(`login_attempts:${email.toLowerCase()}`);
+    await getRedis().del(loginKey(email, ip), loginKeyGlobal(email));
   } catch { /* Non-fatal */ }
 }
 
-export async function isLoginLocked(email: string): Promise<boolean> {
+export async function isLoginLocked(email: string, ip = 'unknown'): Promise<boolean> {
   try {
-    const val = await getRedis().get(`login_attempts:${email.toLowerCase()}`);
-    return val ? parseInt(val) >= MAX_LOGIN_ATTEMPTS : false;
+    const [local, global] = await getRedis().mget(loginKey(email, ip), loginKeyGlobal(email));
+    return (local ? parseInt(local) >= MAX_LOGIN_ATTEMPTS : false)
+      || (global ? parseInt(global) >= MAX_LOGIN_ATTEMPTS_GLOBAL : false);
   } catch {
     return false;
   }
+}
+
+// ── Cross-service auth state (revocation) ─────────────────────
+
+/**
+ * Mirror a user's tokenVersion + active flag into Redis so every service's
+ * auth middleware can reject revoked or suspended sessions immediately.
+ */
+export async function syncAuthState(userId: string, tokenVersion: number, isActive: boolean): Promise<void> {
+  try {
+    const r = getRedis();
+    const pipe = r.pipeline().setex(authStateKeys.tokenVersion(userId), AUTH_STATE_TTL_SECONDS, String(tokenVersion));
+    if (isActive) pipe.del(authStateKeys.suspended(userId));
+    else pipe.setex(authStateKeys.suspended(userId), AUTH_STATE_TTL_SECONDS, '1');
+    await pipe.exec();
+  } catch { /* Non-fatal: tokens are short-lived */ }
 }
 
 // ── Session Store (Active sessions per user) ──────────────────

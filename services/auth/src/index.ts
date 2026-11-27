@@ -44,9 +44,13 @@ import { refreshRoutes } from './routes/refresh.js';
 import { passwordRoutes } from './routes/password.js';
 import { profileRoutes } from './routes/profile.js';
 import { adminRoutes } from './routes/admin.js';
-import { connectKafka, disconnectKafka } from './services/kafka.producer.js';
+import { connectKafka, disconnectKafka, initOutbox } from './services/kafka.producer.js';
+import { registerMetrics } from '@agrilink/platform';
+import { prisma } from './models/User.js';
 import { connectKafkaConsumer, disconnectKafkaConsumer } from './services/kafka.consumer.js';
 import { getRedis } from './services/redis.service.js';
+import { makeAuthMiddleware } from '@agrilink/auth-middleware';
+import { internalRoutes } from './routes/internal.js';
 
 // ── Fastify Instance ──────────────────────────────────────────
 
@@ -66,6 +70,10 @@ const fastify = Fastify({
 fastify.setErrorHandler(async (error: any, _req, reply) => {
   fastify.log.error({ err: error }, 'Unhandled error');
 
+  // zod .parse() failures are client errors, not server errors
+  if (error?.name === 'ZodError') {
+    return reply.status(400).send({ success: false, error: 'Validation error', details: error.flatten?.() ?? error.issues });
+  }
   if (error.validation) {
     return reply.status(422).send({
       success: false,
@@ -115,11 +123,13 @@ await fastify.register(FastifyCookie, {
   hook: 'onRequest',
 });
 
-// Rate limit: 200 attempts per 15 min per IP (increased for dashboard hydration)
+// Global rate limit (per client IP; Nginx forwards the real IP, trustProxy=true).
+// Backed by Redis so limits are shared across replicas.
 await fastify.register(FastifyRateLimit, {
-  max: 1000,
+  max: Number(process.env.AUTH_RATE_LIMIT_PER_MIN ?? 300),
   timeWindow: '1m',
-  allowList: ['127.0.0.1', 'host.docker.internal'], // Local dev
+  redis: getRedis(),
+  skipOnError: true,
   keyGenerator: (req) => req.ip,
 });
 
@@ -165,33 +175,11 @@ await fastify.register(FastifyJwt, {
 });
 
 // ── Auth Decorator ─────────────────────────────────────────────
-// Available to all routes as: { preHandler: [fastify.authenticate] }
-fastify.decorate('authenticate', async (req: any, reply: any) => {
-  try {
-    const cookieToken = req.cookies?.agrilink_access;
-    const headerToken = req.headers.authorization?.replace(/^Bearer\s+/i, '');
-    const token = cookieToken ?? headerToken;
+// Shared middleware: signature + expiry + Redis-backed revocation check.
+fastify.decorate('authenticate', makeAuthMiddleware(fastify, { redis: getRedis() }));
 
-    if (!token) {
-      return reply.status(401).send({
-        success: false,
-        error: 'Not authenticated',
-        code: 'NO_TOKEN',
-      });
-    }
-
-    req.user = fastify.jwt.verify(token);
-  } catch (err: any) {
-    const expired =
-      err?.code === 'FAST_JWT_EXPIRED' ||
-      err?.message?.includes('expired');
-    return reply.status(401).send({
-      success: false,
-      error: expired ? 'Session expired — please refresh your token' : 'Invalid token',
-      code: expired ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN',
-    });
-  }
-});
+// ── Metrics (GET /metrics, internal network only) ─────────────
+registerMetrics(fastify, 'auth');
 
 // ── Routes ────────────────────────────────────────────────────
 
@@ -214,6 +202,9 @@ await fastify.register(async (app) => {
 
   // ── Admin routes (prefixed + role-guarded) ────────────────
   await app.register(adminRoutes, { prefix: '/admin' });
+
+  // ── Internal service-to-service routes (blocked at Nginx) ─
+  await app.register(internalRoutes, { prefix: '/internal' });
 
 }, { prefix: '/auth' });
 
@@ -246,7 +237,8 @@ async function bootstrap() {
     'DATABASE_URL_AUTH', 
     'REDIS_URL', 
     'COOKIE_SECRET',
-    'KAFKA_BROKERS'
+    'KAFKA_BROKERS',
+    'INTERNAL_API_KEY'
   ];
   const missing = required.filter(k => !process.env[k]);
   if (missing.length > 0) {
@@ -256,6 +248,8 @@ async function bootstrap() {
 
 
 
+  // Durable events: anything Kafka can't take right now is retried from the DB
+  initOutbox(prisma);
   // Connect Kafka (non-fatal)
   await connectKafka();
   await connectKafkaConsumer();

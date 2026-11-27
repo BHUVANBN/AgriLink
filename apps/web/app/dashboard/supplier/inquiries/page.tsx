@@ -76,8 +76,8 @@ export default function SupplierInquiriesPage() {
              {/* Header */}
              <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 flex-shrink-0">
                 <div>
-                   <h2 className="text-4xl font-bold text-text-dark font-serif tracking-tighter italic">Inquiry Matrix</h2>
-                   <p className="text-text-muted font-bold text-[10px] uppercase tracking-widest mt-1 italic">Pre-sale Farmer Engagement Vector // 2.0 Stable</p>
+                   <h2 className="text-4xl font-bold text-text-dark font-serif tracking-tighter italic">Inquiries</h2>
+                   <p className="text-text-muted font-bold text-[10px] uppercase tracking-widest mt-1 italic">Questions from farmers about your products</p>
                 </div>
                 <div className="bg-white p-2 rounded-2xl border border-[#eae6de] shadow-sm flex items-center min-w-[320px]">
                    <Search className="w-4 h-4 text-text-muted ml-3" />
@@ -142,13 +142,13 @@ export default function SupplierInquiriesPage() {
                         <div className="w-24 h-24 bg-[#f8f7f4] rounded-[2.5rem] flex items-center justify-center mb-8">
                            <ShieldCheck className="w-12 h-12 text-slate-200" />
                         </div>
-                        <h3 className="text-3xl font-bold text-text-dark font-serif tracking-tight mb-4 italic">Secure Engagement Matrix</h3>
+                        <h3 className="text-3xl font-bold text-text-dark font-serif tracking-tight mb-4 italic">Conversation</h3>
                         <p className="text-text-muted text-[13px] leading-relaxed max-w-sm italic">Select a pre-sale vector from the list to initiate high-fidelity discussion with verified farmers.</p>
                      </div>
                    ) : loadingThread ? (
                      <div className="flex-1 flex flex-col items-center justify-center animate-pulse">
                         <div className="w-3 h-3 bg-brand-green rounded-full animate-bounce mb-2" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-brand-green italic">Syncing Vector...</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.25em] text-brand-green italic">Loading…</span>
                      </div>
                    ) : (
                      <>

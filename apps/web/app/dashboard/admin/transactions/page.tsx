@@ -1,68 +1,125 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { 
-  CreditCard, 
-  BarChart3, 
-  TrendingUp, 
-  Zap, 
-  Box, 
-  Lock,
-  ArrowUpRight,
-  ShieldAlert
-} from 'lucide-react';
-import AdminSidebar from '@/components/AdminSidebar';
+import { useState } from 'react';
+import useSWR from 'swr';
+import toast from 'react-hot-toast';
+import { CreditCard, IndianRupee, RotateCcw, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { inr } from '@/lib/marketplace/format';
 
-export default function TransactionsPlaceholder() {
+const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((r) => r.json()).then((d) => d.data);
+
+const STATUS_STYLE: Record<string, string> = {
+  PAID: 'bg-emerald-50 text-emerald-700',
+  PENDING: 'bg-amber-50 text-amber-700',
+  REFUNDED: 'bg-slate-100 text-slate-600',
+  FAILED: 'bg-red-50 text-red-700',
+};
+
+export default function AdminTransactionsPage() {
+  const [status, setStatus] = useState('');
+  const [method, setMethod] = useState('');
+  const params = new URLSearchParams({ ...(status && { status }), ...(method && { method }) });
+  const { data, isLoading, mutate } = useSWR(`${API}/marketplace/admin/transactions?${params}`, fetcher);
+  const [refunding, setRefunding] = useState<string | null>(null);
+
+  const s = data?.summary ?? {};
+  const cards = [
+    { label: 'Collected', value: inr(s.PAID?.totalPaise), sub: `${s.PAID?.count ?? 0} paid orders`, icon: CheckCircle2, cls: 'text-emerald-600 bg-emerald-50' },
+    { label: 'Awaiting payment', value: inr(s.PENDING?.totalPaise), sub: `${s.PENDING?.count ?? 0} orders (incl. COD)`, icon: Clock, cls: 'text-amber-600 bg-amber-50' },
+    { label: 'Refunded', value: inr(s.REFUNDED?.totalPaise), sub: `${s.REFUNDED?.count ?? 0} orders`, icon: RotateCcw, cls: 'text-slate-600 bg-slate-100' },
+    { label: 'Failed', value: `${s.FAILED?.count ?? 0}`, sub: 'payment attempts', icon: XCircle, cls: 'text-red-600 bg-red-50' },
+  ];
+
+  async function refund(order: any) {
+    if (!window.confirm(`Refund ${inr(order.totalPaise)} for ${order.orderNumber}? This calls Razorpay and cannot be undone.`)) return;
+    setRefunding(order.id);
+    try {
+      const res = await fetch(`${API}/marketplace/payment/refund`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Refund failed');
+      toast.success(`Refund started (${json.data.status})`);
+      mutate();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setRefunding(null);
+    }
+  }
+
+  const select = 'px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700';
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] font-sans">
-      <AdminSidebar pageTitle="Financial Matrix" />
-      
-      <main className="lg:ml-72 p-6 lg:p-12 overflow-hidden relative">
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex flex-col items-center justify-center py-40 text-center">
-             <div className="w-24 h-24 bg-red-600/10 text-red-600 rounded-[2rem] flex items-center justify-center mb-10 shadow-2xl relative group">
-                <CreditCard className="w-10 h-10 group-hover:rotate-12 transition-transform" />
-                <div className="absolute inset-0 bg-red-600 rounded-full blur-2xl opacity-20 animate-pulse" />
-             </div>
-             
-             <h2 className="text-6xl font-black text-white font-serif tracking-tighter italic uppercase mb-6 leading-none">Global Ledger</h2>
-             <p className="text-red-500 font-bold text-[11px] uppercase tracking-[0.3em] mb-12 italic">System-wide transactional node: Phase 2.0 Deployment</p>
-             
-             <div className="bg-white/5 border border-white/10 rounded-[3rem] p-12 max-w-2xl w-full backdrop-blur-xl relative overflow-hidden group">
-                <div className="flex items-start gap-6 mb-10 text-left">
-                   <ShieldAlert className="w-8 h-8 text-white/20 mt-1" />
-                   <div>
-                      <h3 className="text-xl font-bold text-white font-serif italic mb-2 uppercase tracking-tight">Active Cryptographic Lockdown</h3>
-                      <p className="text-[13px] text-white/40 leading-relaxed italic">The Financial service cluster is currently undergoing secure orchestration. All marketplace transactions are immutable via the Kafka backbone, but higher-level administrative reconciliation is offline for protocol hardening.</p>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                   <div className="p-6 bg-[#0f0f0f] rounded-2xl border border-white/5 text-left">
-                      <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Expected Latency</p>
-                      <p className="text-lg font-bold text-white font-serif italic">Pending Shard</p>
-                   </div>
-                   <div className="p-6 bg-[#0f0f0f] rounded-2xl border border-white/5 text-left">
-                      <p className="text-[8px] font-black text-white/20 uppercase tracking-widest mb-1">Audit Status</p>
-                      <p className="text-lg font-bold text-white font-serif italic">Verified Bus</p>
-                   </div>
-                </div>
-
-                <div className="mt-8 pt-8 border-t border-white/5">
-                   <button disabled className="w-full py-5 bg-white/5 text-white/20 rounded-[1.8rem] text-[10px] font-black uppercase tracking-[0.2em] italic border border-white/5 flex items-center justify-center gap-3">
-                      Initiate Reconciliation Protocol <ArrowUpRight className="w-4 h-4 opacity-10" />
-                   </button>
-                </div>
-                
-                <div className="absolute top-0 right-0 w-32 h-32 bg-red-600 rounded-full blur-[90px] -translate-y-16 translate-x-16 opacity-0 group-hover:opacity-10 transition-opacity" />
-             </div>
+    <div className="space-y-8">
+      <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {cards.map((c) => (
+          <div key={c.label} className="bg-white rounded-2xl border border-slate-200 p-5 flex items-center gap-4">
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${c.cls}`}><c.icon className="w-5 h-5" /></div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{c.label}</p>
+              <p className="text-xl font-bold text-slate-900">{c.value}</p>
+              <p className="text-xs text-slate-500">{c.sub}</p>
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        {/* Ambient background effects */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-red-600/5 rounded-full blur-[160px] pointer-events-none" />
-      </main>
+      <div className="flex flex-wrap gap-3">
+        <select value={status} onChange={(e) => setStatus(e.target.value)} className={select} aria-label="Payment status">
+          <option value="">All statuses</option>
+          {['PAID', 'PENDING', 'REFUNDED', 'FAILED'].map((v) => <option key={v}>{v}</option>)}
+        </select>
+        <select value={method} onChange={(e) => setMethod(e.target.value)} className={select} aria-label="Payment method">
+          <option value="">All methods</option>
+          <option value="RAZORPAY">Online (Razorpay)</option>
+          <option value="COD">Cash on delivery</option>
+        </select>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="text-left text-[10px] uppercase tracking-widest text-slate-500 border-b border-slate-100">
+            <tr>
+              <th className="p-4">Order</th><th className="p-4">Date</th><th className="p-4">Method</th>
+              <th className="p-4">Razorpay payment</th><th className="p-4 text-right">Amount</th><th className="p-4">Status</th><th className="p-4" />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {isLoading ? (
+              <tr><td colSpan={7} className="p-8 text-center text-slate-400">Loading…</td></tr>
+            ) : (data?.orders ?? []).length === 0 ? (
+              <tr><td colSpan={7} className="p-12 text-center text-slate-400"><CreditCard className="w-8 h-8 mx-auto mb-2" />No transactions match these filters.</td></tr>
+            ) : (
+              data.orders.map((o: any) => (
+                <tr key={o.id}>
+                  <td className="p-4 font-mono text-xs text-slate-900">{o.orderNumber}</td>
+                  <td className="p-4 text-slate-500">{new Date(o.paidAt ?? o.createdAt).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</td>
+                  <td className="p-4 text-slate-600">{o.paymentMethod === 'COD' ? 'Cash on delivery' : 'Online'}</td>
+                  <td className="p-4 font-mono text-xs text-slate-500">{o.razorpayPaymentId ?? '—'}</td>
+                  <td className="p-4 text-right font-bold text-slate-900"><IndianRupee className="w-3 h-3 inline -mt-0.5" />{(o.totalPaise / 100).toLocaleString('en-IN')}</td>
+                  <td className="p-4"><span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${STATUS_STYLE[o.paymentStatus] ?? ''}`}>{o.paymentStatus}</span></td>
+                  <td className="p-4 text-right">
+                    {o.paymentStatus === 'PAID' && o.razorpayPaymentId && (
+                      <button
+                        onClick={() => refund(o)}
+                        disabled={refunding === o.id}
+                        className="text-xs font-bold text-red-600 hover:underline disabled:opacity-50"
+                      >
+                        Refund
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

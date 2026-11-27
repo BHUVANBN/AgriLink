@@ -1,0 +1,20 @@
+# Rendered at container start from environment variables (see docker-compose).
+global:
+  smtp_smarthost: '__SMTP_HOST__:__SMTP_PORT__'
+  smtp_from: '__SMTP_USER__'
+  smtp_auth_username: '__SMTP_USER__'
+  smtp_auth_password: '__SMTP_PASS__'
+  smtp_require_tls: true
+
+route:
+  receiver: ops-email
+  group_by: [alertname, service, app]
+  group_wait: 1m
+  group_interval: 10m
+  repeat_interval: 6h
+
+receivers:
+  - name: ops-email
+    email_configs:
+      - to: '__ALERT_EMAIL__'
+        send_resolved: true

@@ -213,7 +213,7 @@ function ProductsContent() {
                                          : 'border-brand-green/30 text-brand-green hover:bg-brand-green/10'
                                       }`}
                                     >
-                                       {product.status === 'active' ? 'Retire Asset' : 'Deploy Asset'}
+                                       {product.status === 'active' ? 'Unpublish' : 'Publish'}
                                     </button>
                                     <Link href={`/dashboard/supplier/products/${product.id}`} className="p-2.5 rounded-xl border border-[#eae6de] text-text-muted hover:text-text-dark hover:bg-[#f8f7f4] transition-all">
                                        <Edit className="w-4 h-4" />

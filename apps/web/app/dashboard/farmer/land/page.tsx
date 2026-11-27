@@ -121,7 +121,7 @@ export default function LandMappingPage() {
                   <div className="w-16 h-16 bg-brand-green/5 rounded-3xl flex items-center justify-center mb-4">
                     <Loader2 className="w-8 h-8 text-brand-green animate-spin" />
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-green">Extracting Nodes...</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-green">Reading your sketch…</p>
                 </div>
               ) : (
                 <div className="flex-1 bg-white rounded-3xl p-6 border border-slate-200 shadow-sm overflow-y-auto flex flex-col">
@@ -160,7 +160,7 @@ export default function LandMappingPage() {
                     </div>
 
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Precision Nodes</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Boundary points</p>
                       <p className="text-sm font-bold text-slate-900 mt-0.5">{mappingResult?.boundary?.length || 0} Points</p>
                     </div>
                   </div>
@@ -219,7 +219,7 @@ export default function LandMappingPage() {
                         ${mappingResult ? `
                         <div style="display:flex; gap:15px; text-align:right;">
                           <div><div class="stat-lbl">Area</div><div class="stat-val">${(mappingResult.area_sq_mtrs / 4046.86).toFixed(3)} Ac</div></div>
-                          <div><div class="stat-lbl">Nodes</div><div class="stat-val">${mappingResult.boundary?.length || 0}</div></div>
+                          <div><div class="stat-lbl">Points</div><div class="stat-val">${mappingResult.boundary?.length || 0}</div></div>
                         </div>
                         ` : ''}
                       </div>

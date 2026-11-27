@@ -1,85 +1,89 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { User } from '../models/User.js';
-import type { JwtPayload } from '@agrilink/types';
 import jwt from 'jsonwebtoken';
-import { randomUUID } from 'crypto';
+import { User } from '../models/User.js';
+import { issueSession, clearSessionCookies } from '../services/tokens.service.js';
+
+interface RefreshClaims {
+  sub: string;
+  tokenVersion?: number;
+  type?: string;
+}
+
+function readRefreshToken(req: FastifyRequest): string | null {
+  const cookie = (req.cookies as any)?.agrilink_refresh;
+  if (cookie) return cookie;
+  // Mobile clients may send it explicitly in the body
+  const bodyToken = (req.body as any)?.refreshToken;
+  return typeof bodyToken === 'string' ? bodyToken : null;
+}
+
+function verifyRefresh(token: string): RefreshClaims | null {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as RefreshClaims;
+    return decoded?.type === 'refresh' ? decoded : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function refreshRoutes(fastify: FastifyInstance) {
   // ── POST /auth/refresh ──────────────────────────────────────
+  // Rotates both tokens. A refresh token is only valid while the user's
+  // tokenVersion is unchanged (logout / password change / suspension bump it).
   fastify.post(
     '/refresh',
-    { config: { rateLimit: { max: 30, timeWindow: '15m' } } },
+    { config: { rateLimit: { max: 60, timeWindow: '15m' } } },
     async (req: FastifyRequest, reply: FastifyReply) => {
-      const refreshToken =
-        (req.cookies as any)?.agrilink_refresh ??
-        (req.headers.authorization?.startsWith('Bearer ')
-          ? req.headers.authorization.slice(7)
-          : null);
-
-      if (!refreshToken) {
-        return reply.status(401).send({ success: false, error: 'No refresh token provided' });
+      const token = readRefreshToken(req);
+      if (!token) {
+        return reply.status(401).send({ success: false, error: 'No refresh token provided', code: 'NO_REFRESH' });
       }
 
-      let decoded: { sub: string; version: number };
-      try {
-        decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!) as { sub: string; version: number };
-      } catch {
-        return reply.status(401).send({ success: false, error: 'Invalid or expired refresh token' });
+      const decoded = verifyRefresh(token);
+      if (!decoded) {
+        clearSessionCookies(reply);
+        return reply.status(401).send({ success: false, error: 'Invalid or expired refresh token', code: 'INVALID_REFRESH' });
       }
 
       const user = await User.findUnique({ where: { id: decoded.sub } });
       if (!user || !user.isActive) {
-        return reply.status(401).send({ success: false, error: 'User not found' });
+        clearSessionCookies(reply);
+        return reply.status(401).send({ success: false, error: 'User not found or suspended', code: 'INVALID_REFRESH' });
       }
 
-      // Token invalidation check (logout/password change increments tokenVersion)
-      if (user.tokenVersion !== decoded.version) {
-        return reply.status(401).send({ success: false, error: 'Token has been revoked' });
+      if (user.tokenVersion !== (decoded.tokenVersion ?? 0)) {
+        clearSessionCookies(reply);
+        return reply.status(401).send({ success: false, error: 'Token has been revoked', code: 'TOKEN_REVOKED' });
       }
 
-      const sessionId = randomUUID();
-      const newAccessToken = fastify.jwt.sign({
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        jti: sessionId,
-        tokenVersion: user.tokenVersion,
-      }, {
-        expiresIn: process.env.JWT_ACCESS_EXPIRES_IN ?? '1h',
-      });
+      const { accessToken } = await issueSession(fastify, reply, user);
 
-      reply.setCookie('agrilink_access', newAccessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 3600,
-      });
-
-      return reply.send({
-        success: true,
-        data: { accessToken: newAccessToken },
-      });
+      return reply.send({ success: true, data: { accessToken } });
     }
   );
 
   // ── POST /auth/logout ───────────────────────────────────────
+  // Works even when the access token has already expired (uses refresh cookie).
   fastify.post('/logout', async (req: FastifyRequest, reply: FastifyReply) => {
-    // Try to get user from access token
-    try {
-      const token = (req.cookies as any)?.agrilink_access;
-      if (token) {
-        const payload = (fastify.jwt as any).verify(token) as JwtPayload;
-        // Increment tokenVersion to invalidate all existing refresh tokens
-        await User.update({ where: { id: payload.sub }, data: { tokenVersion: { increment: 1 } } });
-      }
-    } catch {
-      // Token already expired — still clear cookies
+    let userId: string | undefined;
+
+    const access = (req.cookies as any)?.agrilink_access;
+    if (access) {
+      try {
+        userId = ((fastify.jwt as any).verify(access) as { sub: string }).sub;
+      } catch { /* expired — fall through to refresh token */ }
+    }
+    if (!userId) {
+      const refresh = readRefreshToken(req);
+      userId = refresh ? verifyRefresh(refresh)?.sub : undefined;
     }
 
-    reply.clearCookie('agrilink_access', { path: '/' });
-    reply.clearCookie('agrilink_refresh', { path: '/auth/refresh' });
+    if (userId) {
+      // Invalidates every outstanding access + refresh token for this user
+      await User.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } }).catch(() => {});
+    }
 
+    clearSessionCookies(reply);
     return reply.send({ success: true, data: { message: 'Logged out successfully' } });
   });
 }

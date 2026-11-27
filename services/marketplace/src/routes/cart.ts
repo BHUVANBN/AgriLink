@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaClient } from '../../prisma/client/index.js';
 import { z } from 'zod';
+import { getProduct } from '../services/supplier.js';
 
 const UpdateQuantitySchema = z.object({
   quantity: z.number().int().min(1).max(999),
@@ -20,32 +20,57 @@ export async function cartRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, data: cartItems });
   });
 
-  // POST /marketplace/cart/add
-  fastify.post('/add', async (req: FastifyRequest, reply: FastifyReply) => {
-    const userId = (req as any).user.sub;
-    const { productId, supplierId, quantity, snapshot } = req.body as any;
-
-    if (!productId || !supplierId || !quantity) {
-      return reply.status(400).send({ success: false, error: 'Missing required fields' });
-    }
-
-    const existing = await prisma.cartItem.findFirst({
-      where: { farmerId: userId, productId },
-    });
-
-    if (existing) {
-      const updated = await prisma.cartItem.update({
-        where: { id: existing.id },
-        data: { quantity: existing.quantity + Math.max(1, Number(quantity)), snapshot },
-      });
-      return reply.send({ success: true, data: updated });
-    }
-
-    const created = await prisma.cartItem.create({
-      data: { farmerId: userId, productId, supplierId, quantity: Math.max(1, Number(quantity)), snapshot },
-    });
-    return reply.send({ success: true, data: created });
+  // POST /marketplace/cart  (and legacy /marketplace/cart/add)
+  // Client sends only { productId, quantity }. Supplier, price, name and image
+  // are looked up from the live catalogue so the cart can't be spoofed and
+  // every UI gets the same snapshot shape.
+  const AddSchema = z.object({
+    productId: z.string().min(1),
+    quantity: z.coerce.number().int().min(1).max(999).default(1),
   });
+
+  const addHandler = async (req: FastifyRequest, reply: FastifyReply) => {
+    const userId = (req as any).user.sub;
+    const parsed = AddSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ success: false, error: 'productId and quantity are required' });
+    }
+    const { productId, quantity } = parsed.data;
+
+    const product = await getProduct(productId);
+    if (!product) return reply.status(404).send({ success: false, error: 'Product not available' });
+
+    const existing = await prisma.cartItem.findFirst({ where: { farmerId: userId, productId: product.id } });
+    const newQty = (existing?.quantity ?? 0) + quantity;
+    if (newQty > product.stockQuantity) {
+      return reply.status(409).send({
+        success: false,
+        error: `Only ${product.stockQuantity} ${product.unit ?? 'units'} in stock`,
+        code: 'OUT_OF_STOCK',
+      });
+    }
+
+    const snapshot = {
+      name: product.name,
+      price: product.price,
+      mrp: product.mrp,
+      unit: product.unit,
+      category: product.category,
+      image: product.images?.[0] ?? null,
+      images: product.images ?? [],
+      supplierName: product.supplier?.companyName ?? null,
+    };
+
+    const item = existing
+      ? await prisma.cartItem.update({ where: { id: existing.id }, data: { quantity: newQty, snapshot } })
+      : await prisma.cartItem.create({
+          data: { farmerId: userId, productId: product.id, supplierId: product.supplierId, quantity, snapshot },
+        });
+    return reply.send({ success: true, data: item });
+  };
+
+  fastify.post('/', addHandler);
+  fastify.post('/add', addHandler);
 
   // PATCH /marketplace/cart/:id — update quantity (BUG-013 fix)
   fastify.patch('/:id', async (req: FastifyRequest, reply: FastifyReply) => {
